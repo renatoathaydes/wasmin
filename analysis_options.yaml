@@ -1,0 +1,9 @@
+include: package:pedantic/analysis_options.yaml
+
+# For lint rules and documentation, see http://dart-lang.github.io/linter/lints.
+analyzer:
+  strong-mode:
+    implicit-dynamic: false
+    implicit-casts: false
+#  enable-experiment:
+#    - non-nullable
