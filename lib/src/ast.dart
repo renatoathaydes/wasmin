@@ -11,20 +11,28 @@ abstract class AstNode {
 
 enum ValueType { i32, i64, f32, f64 }
 
-extension on ValueType {
-  String name() {
+extension ValueTypeMethods on ValueType {
+  T match<T>({
+    T Function() i32,
+    T Function() i64,
+    T Function() f32,
+    T Function() f64,
+  }) {
     switch (this) {
       case ValueType.i32:
-        return 'i32';
+        return i32();
       case ValueType.i64:
-        return 'i64';
+        return i64();
       case ValueType.f32:
-        return 'f32';
+        return f32();
       case ValueType.f64:
-        return 'f64';
+        return f64();
     }
     throw 'Uncovered: $this';
   }
+
+  String name() => match(
+      i32: () => 'i32', i64: () => 'i64', f32: () => 'f32', f64: () => 'f64');
 }
 
 class Expression {
