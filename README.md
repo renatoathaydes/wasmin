@@ -10,8 +10,10 @@ Checklist:
 - [x] let declarations.
 - [ ] functions.
 - [ ] if/else blocks.
-- [ ] function pointers.
-- [ ] data pointers.
+- [ ] globals.
 - [ ] string values.
+- [ ] function pointers.
+- [ ] parenthesis grouping.
+- [ ] data pointers.
 - [ ] import external functions.
 - [ ] export symbols.
