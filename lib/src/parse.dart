@@ -19,45 +19,54 @@ class WasminParser {
   final _wordParser = WordParser();
 
   Stream<AstNode> parse(RuneIterator runes) async* {
-    final _let = LetParser(_wordParser);
-    while (true) {
-      final result = _wordParser.parse(runes);
+    final expr = ExpressionParser(_wordParser);
+    final let = LetParser(expr);
+    ParseResult result = ParseResult.CONTINUE;
+
+    while (result == ParseResult.CONTINUE) {
+      result = _wordParser.parse(runes);
+      Parser currentParser;
       switch (result) {
         case ParseResult.CONTINUE:
           final word = _wordParser.consumeWord();
 //          print("Word: '$word'");
           if (word == 'let') {
-            final letResult = _let.parse(runes);
-            switch (letResult) {
-              case ParseResult.CONTINUE:
-              case ParseResult.DONE:
-                yield _let.consume();
-                if (letResult == ParseResult.DONE) {
-//                  print("Let says it's done");
-                  return;
-                }
-                break;
-              case ParseResult.FAIL:
-                throw _let.failure;
-            }
+            currentParser = let;
           } else if (word.isEmpty) {
 //            print("Got empty word, skipping separator");
             runes.moveNext();
           } else {
-            throw Exception("Cannot recognize: '$word'");
+            throw "top-level element not allowed: '$word'";
           }
           break;
         case ParseResult.DONE:
-          return;
+          break;
         case ParseResult.FAIL:
           throw 'unreachable';
+      }
+      if (currentParser != null) {
+        result = currentParser.parse(runes);
+        if (result == ParseResult.FAIL) {
+          throw currentParser.failure;
+        } else {
+          yield currentParser.consume();
+        }
       }
     }
   }
 }
 
 mixin Parser {
+  /// The last failure seem by this parser.
+  String get failure;
+
+  /// Parse the runes emitted by the given iterator.
   ParseResult parse(RuneIterator runes);
+
+  /// Consume the AST node parsed by this parser.
+  ///
+  /// If no node has been parsed successfully, returns null.
+  AstNode consume();
 }
 
 mixin RuneBasedParser implements Parser {
@@ -97,6 +106,8 @@ mixin WordBasedParser implements Parser {
 class SkipWhitespaces with RuneBasedParser {
   const SkipWhitespaces();
 
+  final String failure = null;
+
   bool _whitespace(String rune) => whitespace.contains(rune);
 
   @override
@@ -104,10 +115,15 @@ class SkipWhitespaces with RuneBasedParser {
     if (_whitespace(rune)) return ParseResult.CONTINUE;
     return ParseResult.DONE;
   }
+
+  @override
+  AstNode consume() => const Noop();
 }
 
 class WordParser with RuneBasedParser {
   final _buffer = StringBuffer();
+
+  final String failure = null;
 
   String consumeWord() {
     final word = _buffer.toString();
@@ -121,6 +137,9 @@ class WordParser with RuneBasedParser {
     _buffer.write(rune);
     return ParseResult.CONTINUE;
   }
+
+  @override
+  AstNode consume() => const Noop();
 }
 
 class LetParser with WordBasedParser {
@@ -131,7 +150,7 @@ class LetParser with WordBasedParser {
   final _whitespaces = const SkipWhitespaces();
   final WordParser _words;
 
-  LetParser(this._words) : _expr = ExpressionParser(_words);
+  LetParser(this._expr) : _words = _expr._words;
 
   @override
   ParseResult parse(RuneIterator runes) {
@@ -168,6 +187,7 @@ class LetParser with WordBasedParser {
     failure = null;
   }
 
+  @override
   Let consume() {
     if (_id.isEmpty) throw Exception('Let identifier has not been set');
     if (_expression == null) throw Exception('Let expression has not been set');
@@ -216,6 +236,7 @@ class ExpressionParser with WordBasedParser {
     failure = null;
   }
 
+  @override
   Expression consume() {
     if (_op.isEmpty) throw Exception('op has not been set');
     final expr = exprWithInferredType(_op, _args);

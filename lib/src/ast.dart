@@ -1,9 +1,12 @@
 abstract class AstNode {
   const AstNode._();
 
-  T match<T>(T Function(Let) onLet) {
+  T match<T>(T Function(Let) onLet, T Function(Expression) onExpression) {
     if (this is Let) {
       return onLet(this as Let);
+    }
+    if (this is Expression) {
+      return onExpression(this as Expression);
     }
     throw 'unreachable';
   }
@@ -35,17 +38,36 @@ extension ValueTypeMethods on ValueType {
       i32: () => 'i32', i64: () => 'i64', f32: () => 'f32', f64: () => 'f64');
 }
 
-class Expression {
+class Noop extends AstNode {
+  const Noop() : super._();
+}
+
+class Expression extends AstNode {
   final String op;
-  final List<String> args;
+  final List<Expression> args;
   final ValueType type;
 
-  const Expression(this.op, this.args, this.type);
+  const Expression(this.op, this.args, this.type) : super._();
+
+  const Expression.constant(String name, ValueType type)
+      : this(name, const [], type);
 
   @override
   String toString() => args.isEmpty
       ? '($op ${type.name()})'
       : '($op ${args.join(' ')} ${type.name()})';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Expression &&
+          runtimeType == other.runtimeType &&
+          op == other.op &&
+          args == other.args &&
+          type == other.type;
+
+  @override
+  int get hashCode => op.hashCode ^ args.hashCode ^ type.hashCode;
 }
 
 class Let extends AstNode {
@@ -58,4 +80,15 @@ class Let extends AstNode {
 
   @override
   String toString() => '(let $id $expr)';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Let &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          expr == other.expr;
+
+  @override
+  int get hashCode => id.hashCode ^ expr.hashCode;
 }

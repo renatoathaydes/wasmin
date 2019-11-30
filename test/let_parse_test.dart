@@ -3,7 +3,7 @@ import 'package:wasmin/wasmin.dart';
 
 void main() {
   LetParser parser;
-  setUp(() => parser = LetParser(WordParser()));
+  setUp(() => parser = LetParser(ExpressionParser(WordParser())));
 
   group('success cases', () {
     test('can parse let expression', () {
