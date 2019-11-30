@@ -25,7 +25,7 @@ class TextSink with Sink<AstNode> {
   }
 
   void _letDeclaration(Let let) {
-    _textSink.writeln('(local \$${let.id} ${let.type})');
+    _textSink.writeln('(local \$${let.id} ${let.type.name()})');
   }
 
   void _letAssignment(Let let) {

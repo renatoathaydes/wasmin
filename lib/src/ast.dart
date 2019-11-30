@@ -76,7 +76,7 @@ class Let extends AstNode {
 
   const Let(this.id, this.expr) : super._();
 
-  String get type => expr.type.name();
+  ValueType get type => expr.type;
 
   @override
   String toString() => '(let $id $expr)';
