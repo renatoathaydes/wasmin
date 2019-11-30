@@ -32,14 +32,14 @@ void main() {
     });
 
     test('can parse let expression with complex expression', () {
-      final result = parser.parse("abc = * 30 50;".runes.iterator);
+      final result = parser.parse("abc = mul 30 50;".runes.iterator);
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.CONTINUE));
 
       final let = parser.consume();
 
       expect(let.id, equals('abc'));
-      expect(let.expr.op, equals('*'));
+      expect(let.expr.op, equals('mul'));
       expect(
           let.expr.args,
           equals(
