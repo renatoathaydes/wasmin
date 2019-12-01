@@ -133,7 +133,7 @@ class WordParser with RuneBasedParser {
 
   @override
   ParseResult accept(String rune) {
-    if (separators.contains(rune)) return ParseResult.DONE;
+    if (_separator(rune)) return ParseResult.DONE;
     _buffer.write(rune);
     return ParseResult.CONTINUE;
   }
@@ -197,9 +197,35 @@ class LetParser with WordBasedParser {
   }
 }
 
+class ParsedGroup {
+  final String _entity;
+  final List<ParsedGroup> _members;
+
+  const ParsedGroup.empty()
+      : _entity = null,
+        _members = const [];
+
+  const ParsedGroup.entity(String entity)
+      : _entity = entity,
+        _members = null;
+
+  const ParsedGroup.group(List<ParsedGroup> members)
+      : _entity = null,
+        _members = members;
+
+  int get length => _members?.length ?? 1;
+
+  T match<T>(
+      {T Function(List<ParsedGroup> members) onGroup,
+      T Function(String value) onMember}) {
+    if (_entity != null) return onMember(_entity);
+    if (_members != null) return onGroup(_members);
+    throw 'unreachable';
+  }
+}
+
 class ExpressionParser with WordBasedParser {
-  String _op = '';
-  List<String> _args = <String>[];
+  Expression _expr;
   final WordParser _words;
 
   ExpressionParser(this._words);
@@ -207,39 +233,68 @@ class ExpressionParser with WordBasedParser {
   @override
   ParseResult parse(RuneIterator runes) {
     _reset();
-    var word = _nextWord(runes);
-    if (word.isEmpty) {
-      failure = "Empty expression";
+
+    final result = _whitespaces.parse(runes);
+    if (result == ParseResult.DONE) {
+      failure = 'Empty expression';
       return ParseResult.FAIL;
     }
-    _op = word;
 
-    var result = _whitespaces.parse(runes);
-
-    if (_separator(runes.currentAsString)) return ParseResult.CONTINUE;
-
-    while (result == ParseResult.CONTINUE) {
-      result = _whitespaces.parse(runes);
-      if (result == ParseResult.DONE) return result;
-      if (_separator(runes.currentAsString)) return ParseResult.CONTINUE;
-      word = _nextWord(runes);
-      if (word.isEmpty) return ParseResult.CONTINUE;
-      _args.add(word);
+    try {
+      return _parseGroup(runes);
+    } catch (e) {
+      failure = e.toString();
+      return ParseResult.FAIL;
     }
+  }
 
-    return result;
+  ParseResult _parseGroup(RuneIterator runes) {
+    var isEnd = _isEndOfExpression;
+    if (runes.currentAsString == '(') {
+      isEnd = _isCloseBracket;
+      runes.moveNext();
+    }
+    final group = _parseToGroupEnd(runes, isEnd);
+    _expr = exprWithInferredType(group, const WasmDefaultTypeContext());
+    return runes.moveNext() ? ParseResult.CONTINUE : ParseResult.DONE;
+  }
+
+  ParsedGroup _parseToGroupEnd(
+      RuneIterator runes, bool Function(RuneIterator) isEnd) {
+    final members = <ParsedGroup>[];
+    while (!isEnd(runes)) {
+      var word = _nextWord(runes);
+      if (word.isNotEmpty) members.add(ParsedGroup.entity(word));
+      _whitespaces.parse(runes);
+      if (runes.currentAsString == '(') {
+        runes.moveNext();
+        members.add(_parseToGroupEnd(runes, _isCloseBracket));
+      } else if (word.isEmpty) {
+        throw Exception("Unterminated expression");
+      }
+    }
+    if (!isEnd(runes)) {
+      throw Exception("Unterminated expression");
+    }
+    runes.moveNext();
+    return ParsedGroup.group(members);
   }
 
   void _reset() {
-    _op = '';
-    _args = <String>[];
+    _expr = null;
     failure = null;
   }
 
+  static bool _isCloseBracket(RuneIterator runes) =>
+      runes.currentAsString == ')';
+
+  static bool _isEndOfExpression(RuneIterator runes) =>
+      runes.currentAsString == null || runes.currentAsString == ';';
+
   @override
   Expression consume() {
-    if (_op.isEmpty) throw Exception('op has not been set');
-    final expr = exprWithInferredType(_op, _args);
+    if (_expr == null) throw Exception('expression not parsed yet');
+    final expr = _expr;
     _reset();
     return expr;
   }

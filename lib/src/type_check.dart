@@ -1,3 +1,5 @@
+import 'package:wasmin/src/parse.dart';
+
 import 'ast.dart';
 
 const operators = {
@@ -11,40 +13,64 @@ class TypeCheckException implements Exception {
   final String message;
 
   const TypeCheckException(this.message);
+
+  @override
+  String toString() => 'type checking failed: $message';
 }
 
-Expression exprWithInferredType(String op, List<String> args) {
-  if (args.isEmpty) {
-    // must be literal or local variable
-    // TODO handle local variable
-    final valueType = inferValueType(op);
-    if (valueType != null) return Expression.constant(op, valueType);
-    throw 'Cannot type literal or local: $op';
-  } else {
-    if (operators.contains(op)) {
-      return _operatorExpression(op, args);
+class FunctionType {
+  final ValueType returns;
+  final List<ValueType> takes;
+
+  const FunctionType(this.returns, this.takes);
+}
+
+mixin TypeContext {
+  FunctionType typeOfFun(String funName, Iterable<Expression> args);
+}
+
+class WasmDefaultTypeContext with TypeContext {
+  const WasmDefaultTypeContext();
+
+  @override
+  FunctionType typeOfFun(String funName, Iterable<Expression> args) {
+    if (operators.contains(funName)) {
+      final type = args.first.type;
+      return FunctionType(type, [type, type]);
     }
+    throw TypeCheckException("unknown function: '$funName'");
   }
-  throw 'Cannot type complex expression: $op $args';
 }
 
-Expression _operatorExpression(String op, List<String> args) {
-  // operators can only work on 2 arguments
-  // TODO allow arguments to be grouped with brackets
-  if (args.length != 2) {
-    throw TypeCheckException(
-        "Operator '$op' expects 2 arguments, but was given ${args.length}");
+Expression exprWithInferredType(ParsedGroup group, TypeContext context) {
+  if (group.length == 1) {
+    // groups of length 1 must be either a constant or a single wrapped group
+    return group.match(
+        onMember: (member) =>
+            Expression.constant(member, inferValueType(member)),
+        onGroup: (gr) => exprWithInferredType(gr[0], context));
+  }
+  if (group.length > 1) {
+    // groups of length > 1 must be a function call
+    return group.match(onGroup: (members) {
+      final opGroup = members[0];
+      String op = opGroup.match(
+        onGroup: (_) =>
+            throw Exception('Expression must start with function or operator'),
+        onMember: (member) => member,
+      );
+      if (operators.contains(op) && members.length != 3) {
+        throw TypeCheckException("Operator '$op' expects 2 arguments, "
+            "but was given ${members.length - 1}");
+      }
+      final exprArgs =
+          members.skip(1).map((arg) => exprWithInferredType(arg, context));
+      final type = context.typeOfFun(op, exprArgs);
+      return Expression(op, exprArgs.toList(growable: false), type.returns);
+    });
   }
 
-  // take type of first argument
-  final valueType = inferValueType(args[0]);
-  if (valueType == null) throw 'Cannot type literal or local: ${args[0]}';
-
-  final exprArgs = args
-      .map((arg) => Expression.constant(arg, valueType))
-      .toList(growable: false);
-
-  return Expression(op, exprArgs, valueType);
+  throw Exception('Empty expression');
 }
 
 ValueType inferValueType(String value) {
@@ -52,5 +78,5 @@ ValueType inferValueType(String value) {
   if (i != null) return ValueType.i64;
   double d = double.tryParse(value);
   if (d != null) return ValueType.f64;
-  return null;
+  throw TypeCheckException("unknown variable: '$value'");
 }

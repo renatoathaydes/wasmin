@@ -21,20 +21,25 @@ Future<void> compile(String inputFile, String outputFile,
 
   out.openWrite().use((writer) async {
     final sink = TextSink(writer);
-    await compileWasmin(inputFile, lines, sink);
+    final source = compileWasmin(inputFile, lines);
+    await for (final node in source) {
+      sink.add(node);
+    }
     sink.close();
   });
 }
 
-Future<void> compileWasmin(
-    String inputName, Iterable<String> inputLines, Sink<AstNode> sink) async {
+Stream<AstNode> compileWasmin(
+    String inputName, Iterable<String> inputLines) async* {
   final parser = WasminParser();
 
   final iterator = ParserIterator.fromLines(inputLines);
   Stream<AstNode> ast = parser.parse(iterator);
 
   try {
-    await ast.forEach(sink.add);
+    await for (final node in ast) {
+      yield node;
+    }
   } on Exception catch (e) {
     print("[ERROR] ${inputName}:${iterator.position} - $e");
   }

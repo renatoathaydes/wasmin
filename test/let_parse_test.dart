@@ -31,10 +31,12 @@ void main() {
       expect(let.expr.args, isEmpty);
     });
 
-    test('can parse let expression with complex expression', () {
-      final result = parser.parse("abc = mul 30 50;".runes.iterator);
+    test('can parse let expression with function call', () {
+      final iter = "abc = mul 30 50;X".runes.iterator;
+      final result = parser.parse(iter);
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.CONTINUE));
+      expect(iter.currentAsString, equals('X'));
 
       final let = parser.consume();
 
@@ -44,6 +46,42 @@ void main() {
           let.expr.args,
           equals(
               ['30', '50'].map((i) => Expression.constant(i, ValueType.i64))));
+    });
+
+    test('can parse let expression with complex expression', () {
+      final result = parser
+          .parse("complex = div_s (add 2 3) (mul 30 (sub 32 21))".runes.iterator);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.DONE));
+
+      final let = parser.consume();
+
+      expect(let.id, equals('complex'));
+      expect(let.expr.op, equals('div_s'));
+      expect(
+          let.expr.args,
+          equals(const [
+            Expression(
+                'add',
+                [
+                  Expression.constant('2', ValueType.i64),
+                  Expression.constant('3', ValueType.i64),
+                ],
+                ValueType.i64),
+            Expression(
+                'mul',
+                [
+                  Expression.constant('30', ValueType.i64),
+                  Expression(
+                      'sub',
+                      [
+                        Expression.constant('32', ValueType.i64),
+                        Expression.constant('21', ValueType.i64),
+                      ],
+                      ValueType.i64),
+                ],
+                ValueType.i64),
+          ]));
     });
   });
 

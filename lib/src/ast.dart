@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 abstract class AstNode {
   const AstNode._();
 
@@ -21,6 +23,7 @@ extension ValueTypeMethods on ValueType {
     T Function() f32,
     T Function() f64,
   }) {
+    if (this == null) return null;
     switch (this) {
       case ValueType.i32:
         return i32();
@@ -63,7 +66,7 @@ class Expression extends AstNode {
       other is Expression &&
           runtimeType == other.runtimeType &&
           op == other.op &&
-          args == other.args &&
+          const ListEquality<Expression>().equals(args, other.args) &&
           type == other.type;
 
   @override
