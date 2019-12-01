@@ -20,14 +20,14 @@ Checklist:
 
 - [x] primitive values.
 - [x] let declarations.
-- [ ] math operators.
+- [x] math operators.
 - [ ] functions.
 - [ ] if/else blocks.
 - [ ] loops.
 - [ ] constant globals.
 - [ ] string values.
 - [ ] function pointers.
-- [ ] parenthesis grouping.
+- [x] parenthesis grouping.
 - [ ] data pointers.
 - [ ] single-line comments.
 - [ ] multi-line comments.
