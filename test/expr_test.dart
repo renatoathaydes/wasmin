@@ -117,19 +117,19 @@ void main() {
 
     test('cannot parse function call that was terminated in the middle', () {
       final result = parser.parse('add (1; 2)'.runes.iterator);
-      expect(parser.failure, equals("Exception: Unterminated expression"));
+      expect(parser.failure, equals("Unterminated expression"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse function call that was not terminated', () {
       final result = parser.parse('(mul 3 2'.runes.iterator);
-      expect(parser.failure, equals("Exception: Unterminated expression"));
+      expect(parser.failure, equals("Unterminated expression"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse nested function call that was not terminated', () {
       final result = parser.parse('(mul (add 3 2);'.runes.iterator);
-      expect(parser.failure, equals("Exception: Unterminated expression"));
+      expect(parser.failure, equals("Unterminated expression"));
       expect(result, equals(ParseResult.FAIL));
     });
   });

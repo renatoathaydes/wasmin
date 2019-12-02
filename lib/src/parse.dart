@@ -224,9 +224,12 @@ class ParsedGroup {
   }
 }
 
+class _UnterminatedExpression implements Exception {}
+
 class ExpressionParser with WordBasedParser {
   Expression _expr;
   final WordParser _words;
+  bool _done = false;
 
   ExpressionParser(this._words);
 
@@ -252,11 +255,17 @@ class ExpressionParser with WordBasedParser {
     var isEnd = _isEndOfExpression;
     if (runes.currentAsString == '(') {
       isEnd = _isCloseBracket;
-      runes.moveNext();
+      _done = !runes.moveNext();
+      if (_done) return _unterminatedExpression();
     }
-    final group = _parseToGroupEnd(runes, isEnd);
+    ParsedGroup group;
+    try {
+      group = _parseToGroupEnd(runes, isEnd);
+    } on _UnterminatedExpression {
+      return _unterminatedExpression();
+    }
     _expr = exprWithInferredType(group, const WasmDefaultTypeContext());
-    return runes.moveNext() ? ParseResult.CONTINUE : ParseResult.DONE;
+    return _done ? ParseResult.DONE : ParseResult.CONTINUE;
   }
 
   ParsedGroup _parseToGroupEnd(
@@ -267,22 +276,26 @@ class ExpressionParser with WordBasedParser {
       if (word.isNotEmpty) members.add(ParsedGroup.entity(word));
       _whitespaces.parse(runes);
       if (runes.currentAsString == '(') {
-        runes.moveNext();
+        _done = !runes.moveNext();
         members.add(_parseToGroupEnd(runes, _isCloseBracket));
       } else if (word.isEmpty) {
-        throw Exception("Unterminated expression");
+        throw _UnterminatedExpression();
       }
     }
-    if (!isEnd(runes)) {
-      throw Exception("Unterminated expression");
-    }
-    runes.moveNext();
+    if (members.isEmpty) throw _UnterminatedExpression();
+    _done = !runes.moveNext();
     return ParsedGroup.group(members);
   }
 
   void _reset() {
     _expr = null;
     failure = null;
+    _done = false;
+  }
+
+  ParseResult _unterminatedExpression() {
+    failure = "Unterminated expression";
+    return ParseResult.FAIL;
   }
 
   static bool _isCloseBracket(RuneIterator runes) =>
