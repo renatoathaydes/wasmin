@@ -41,24 +41,49 @@ extension ValueTypeMethods on ValueType {
       i32: () => 'i32', i64: () => 'i64', f32: () => 'f32', f64: () => 'f64');
 }
 
+/// The no-op node can be used when a source code construct
+/// performs no operation (e.g. whitespace).
 class Noop extends AstNode {
   const Noop() : super._();
 }
 
+/// An Expression is an arrangement, or combination, of function calls,
+/// constants and variables.
 class Expression extends AstNode {
   final String op;
-  final List<Expression> args;
   final ValueType type;
 
-  const Expression(this.op, this.args, this.type) : super._();
+  const Expression._create(this.op, this.type) : super._();
 
-  const Expression.constant(String name, ValueType type)
-      : this(name, const [], type);
+  factory Expression.constant(String value, ValueType type) {
+    return _Const(value, type);
+  }
+
+  factory Expression.variable(String name, ValueType type) {
+    return _Var(name, type);
+  }
+
+  factory Expression.funCall(
+      String name, List<Expression> args, ValueType type) {
+    return _FunCall(name, args, type);
+  }
+
+  T matchExpr<T>({
+    T Function(String value, ValueType type) onConst,
+    T Function(String value, ValueType type) onVariable,
+    T Function(String name, List<Expression> args, ValueType type) onFunCall,
+  }) {
+    if (this is _Const) return onConst(op, type);
+    if (this is _Var) return onVariable(op, type);
+    if (this is _FunCall) {
+      final f = this as _FunCall;
+      return onFunCall(op, f.args, type);
+    }
+    throw 'unreachable';
+  }
 
   @override
-  String toString() => args.isEmpty
-      ? '($op ${type.name()})'
-      : '($op ${args.join(' ')} ${type.name()})';
+  String toString() => '($op ${type.name()})';
 
   @override
   bool operator ==(Object other) =>
@@ -66,13 +91,44 @@ class Expression extends AstNode {
       other is Expression &&
           runtimeType == other.runtimeType &&
           op == other.op &&
-          const ListEquality<Expression>().equals(args, other.args) &&
           type == other.type;
 
   @override
-  int get hashCode => op.hashCode ^ args.hashCode ^ type.hashCode;
+  int get hashCode => op.hashCode ^ type.hashCode;
 }
 
+class _Const extends Expression {
+  const _Const(String value, ValueType type) : super._create(value, type);
+}
+
+class _Var extends Expression {
+  const _Var(String name, ValueType type) : super._create(name, type);
+}
+
+class _FunCall extends Expression {
+  final List<Expression> args;
+
+  _FunCall(String name, this.args, ValueType type) : super._create(name, type);
+
+  void foo() {}
+
+  @override
+  String toString() => args.isEmpty
+      ? super.toString()
+      : '($op ${args.join(' ')} ${type.name()})';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other &&
+          other is _FunCall &&
+          const ListEquality<Expression>().equals(this.args, other.args);
+
+  @override
+  int get hashCode => super.hashCode ^ args.hashCode;
+}
+
+/// Let expressions are simple assignments of expressions to an identifier.
 class Let extends AstNode {
   final String id;
   final Expression expr;

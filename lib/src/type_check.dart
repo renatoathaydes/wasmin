@@ -1,6 +1,6 @@
-import 'package:wasmin/src/parse.dart';
-
 import 'ast.dart';
+import 'parse.dart';
+import 'type_context.dart';
 
 const operators = {
   'add', 'sub', 'mul', 'div_s', 'div_u', 'rem_s', 'rem_u', //
@@ -25,29 +25,17 @@ class FunctionType {
   const FunctionType(this.returns, this.takes);
 }
 
-mixin TypeContext {
-  FunctionType typeOfFun(String funName, Iterable<Expression> args);
-}
-
-class WasmDefaultTypeContext with TypeContext {
-  const WasmDefaultTypeContext();
-
-  @override
-  FunctionType typeOfFun(String funName, Iterable<Expression> args) {
-    if (operators.contains(funName)) {
-      final type = args.first.type;
-      return FunctionType(type, [type, type]);
-    }
-    throw TypeCheckException("unknown function: '$funName'");
-  }
-}
-
 Expression exprWithInferredType(ParsedGroup group, TypeContext context) {
   if (group.length == 1) {
-    // groups of length 1 must be either a constant or a single wrapped group
+    // groups of length 1 must be either a constant or a variable
     return group.match(
-        onMember: (member) =>
-            Expression.constant(member, inferValueType(member)),
+        onMember: (member) {
+          final funType = context.typeOfFun(member, const []);
+          if (funType != null) {
+            return Expression.variable(member, funType.returns);
+          }
+          return Expression.constant(member, inferValueType(member, context));
+        },
         onGroup: (gr) => exprWithInferredType(gr[0], context));
   }
   if (group.length > 1) {
@@ -66,14 +54,16 @@ Expression exprWithInferredType(ParsedGroup group, TypeContext context) {
       final exprArgs =
           members.skip(1).map((arg) => exprWithInferredType(arg, context));
       final type = context.typeOfFun(op, exprArgs);
-      return Expression(op, exprArgs.toList(growable: false), type.returns);
+      if (type == null) throw TypeCheckException("unknown function: '$op'");
+      return Expression.funCall(
+          op, exprArgs.toList(growable: false), type.returns);
     });
   }
 
   throw Exception('Empty expression');
 }
 
-ValueType inferValueType(String value) {
+ValueType inferValueType(String value, TypeContext context) {
   int i = int.tryParse(value);
   if (i != null) return ValueType.i64;
   double d = double.tryParse(value);

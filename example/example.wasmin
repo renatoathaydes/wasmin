@@ -1,3 +1,3 @@
 let a = 10;
 let b = 20;
-let result = add 20 40;
+let result = add a b;

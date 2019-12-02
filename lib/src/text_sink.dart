@@ -35,35 +35,30 @@ class TextSink with Sink<AstNode> {
   }
 
   void _writeExpression(Expression expr) {
-    if (expr.args.isEmpty) {
-      final constant = expr.op;
-      _writeConst(constant, expr.type);
-    } else {
-      _writeFunctionCall(expr);
-    }
+    expr.matchExpr(
+      onConst: _writeConst,
+      onVariable: _writeVariable,
+      onFunCall: _writeFunctionCall,
+    );
   }
 
   void _writeConst(String cons, ValueType type) {
     return _textSink.write('(${type.name()}.const $cons)');
   }
 
-  void _writeFunctionCall(Expression expr) {
-    final prefix =
-        operators.contains(expr.op) ? '${expr.type.name()}.' : r'call $';
-    _textSink.write('($prefix${expr.op} ');
+  void _writeVariable(String name, ValueType type) {
+    return _textSink.write('(local.get \$$name)');
+  }
 
-    // TODO allow non-constant arguments
-    int index = 0;
-    for (final arg in expr.args) {
-      if (arg.args.isNotEmpty) {
-        throw 'writing non-constant function args not supported yet: ${arg.args}';
-      }
-      _writeConst(arg.op, arg.type);
-      if ((++index) != expr.args.length) {
-        _textSink.write(' ');
-      }
+  void _writeFunctionCall(String name, List<Expression> args, ValueType type) {
+    final prefix = operators.contains(name) ? '${type.name()}.' : r'call $';
+    _textSink.write('($prefix${name} ');
+    var index = 0;
+    for (final arg in args) {
+      _writeExpression(arg);
+      index++;
+      if (index < args.length) _textSink.write(' ');
     }
-
     _textSink.writeln(')');
   }
 }

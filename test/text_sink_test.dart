@@ -16,7 +16,7 @@ void main() {
   });
 
   test('Can write simple math expression', () {
-    textSink.add(Expression(
+    textSink.add(Expression.funCall(
         'add',
         [
           Expression.constant('10', ValueType.i64),
@@ -59,6 +59,21 @@ void main() {
             r'(local.set $b2 (f32.const 0.22))'
             '\n'
             r'(local.set $c3 (i64.const 55))'
+            '\n'));
+  });
+
+  test('Can write expression of variables', () {
+    textSink.add(Expression.funCall(
+        'add',
+        [
+          Expression.variable('a', ValueType.i64),
+          Expression.variable('b', ValueType.i64)
+        ],
+        ValueType.i64));
+
+    expect(
+        readText(),
+        equals(r'(i64.add (local.get $a) (local.get $b))'
             '\n'));
   });
 }

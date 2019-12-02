@@ -1,6 +1,8 @@
 import 'package:test/test.dart';
 import 'package:wasmin/wasmin.dart';
 
+import 'test_helper.dart';
+
 void main() {
   LetParser parser;
   setUp(() => parser = LetParser(ExpressionParser(WordParser())));
@@ -15,7 +17,7 @@ void main() {
 
       expect(let.id, equals('x'));
       expect(let.expr.op, equals('0'));
-      expect(let.expr.args, isEmpty);
+      expect(let.expr, isConstant);
     });
 
     test('can parse let expression with whitespace', () {
@@ -28,7 +30,7 @@ void main() {
 
       expect(let.id, equals('one_thousand'));
       expect(let.expr.op, equals('1000'));
-      expect(let.expr.args, isEmpty);
+      expect(let.expr, isConstant);
     });
 
     test('can parse let expression with function call', () {
@@ -43,7 +45,7 @@ void main() {
       expect(let.id, equals('abc'));
       expect(let.expr.op, equals('mul'));
       expect(
-          let.expr.args,
+          argsOfFunCall(let.expr),
           equals(
               ['30', '50'].map((i) => Expression.constant(i, ValueType.i64))));
     });
@@ -59,20 +61,20 @@ void main() {
       expect(let.id, equals('complex'));
       expect(let.expr.op, equals('div_s'));
       expect(
-          let.expr.args,
-          equals(const [
-            Expression(
+          argsOfFunCall(let.expr),
+          equals([
+            Expression.funCall(
                 'add',
                 [
                   Expression.constant('2', ValueType.i64),
                   Expression.constant('3', ValueType.i64),
                 ],
                 ValueType.i64),
-            Expression(
+            Expression.funCall(
                 'mul',
                 [
                   Expression.constant('30', ValueType.i64),
-                  Expression(
+                  Expression.funCall(
                       'sub',
                       [
                         Expression.constant('32', ValueType.i64),

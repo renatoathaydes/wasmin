@@ -1,6 +1,6 @@
-import 'package:wasmin/src/type_check.dart';
-
 import 'ast.dart';
+import 'type_check.dart';
+import 'type_context.dart';
 
 const whitespace = {
   ' ', '\r', '\n', '\t', //
@@ -17,10 +17,11 @@ bool _separator(String rune) => separators.contains(rune);
 
 class WasminParser {
   final _wordParser = WordParser();
+  final _context = ParsingContext();
 
   Stream<AstNode> parse(RuneIterator runes) async* {
-    final expr = ExpressionParser(_wordParser);
-    final let = LetParser(expr);
+    final expr = ExpressionParser(_wordParser, _context);
+    final let = LetParser(expr, _context);
     ParseResult result = ParseResult.CONTINUE;
 
     while (result == ParseResult.CONTINUE) {
@@ -149,8 +150,10 @@ class LetParser with WordBasedParser {
 
   final _whitespaces = const SkipWhitespaces();
   final WordParser _words;
+  final TypeContext _typeContext;
 
-  LetParser(this._expr) : _words = _expr._words;
+  LetParser(this._expr, [this._typeContext = const WasmDefaultTypeContext()])
+      : _words = _expr._words;
 
   @override
   ParseResult parse(RuneIterator runes) {
@@ -177,6 +180,12 @@ class LetParser with WordBasedParser {
       failure = "Let expression error: ${_expr.failure}";
     } else {
       _expression = _expr.consume();
+
+      // success!! Remember defined variable
+      if (_typeContext is MutableTypeContext) {
+        (_typeContext as MutableTypeContext)
+            .addFun(_id, FunctionType(_expression.type, const []));
+      }
     }
     return result;
   }
@@ -184,6 +193,7 @@ class LetParser with WordBasedParser {
   void _reset() {
     _id = '';
     _expression = null;
+    _expr._reset();
     failure = null;
   }
 
@@ -224,14 +234,18 @@ class ParsedGroup {
   }
 }
 
-class _UnterminatedExpression implements Exception {}
+class _UnterminatedExpression implements Exception {
+  const _UnterminatedExpression();
+}
 
 class ExpressionParser with WordBasedParser {
-  Expression _expr;
   final WordParser _words;
+  final TypeContext _typeContext;
+  Expression _expr;
   bool _done = false;
 
-  ExpressionParser(this._words);
+  ExpressionParser(this._words,
+      [this._typeContext = const WasmDefaultTypeContext()]);
 
   @override
   ParseResult parse(RuneIterator runes) {
@@ -264,7 +278,7 @@ class ExpressionParser with WordBasedParser {
     } on _UnterminatedExpression {
       return _unterminatedExpression();
     }
-    _expr = exprWithInferredType(group, const WasmDefaultTypeContext());
+    _expr = exprWithInferredType(group, _typeContext);
     return _done ? ParseResult.DONE : ParseResult.CONTINUE;
   }
 
@@ -279,10 +293,10 @@ class ExpressionParser with WordBasedParser {
         _done = !runes.moveNext();
         members.add(_parseToGroupEnd(runes, _isCloseBracket));
       } else if (word.isEmpty) {
-        throw _UnterminatedExpression();
+        throw const _UnterminatedExpression();
       }
     }
-    if (members.isEmpty) throw _UnterminatedExpression();
+    if (members.isEmpty) throw const _UnterminatedExpression();
     _done = !runes.moveNext();
     return ParsedGroup.group(members);
   }

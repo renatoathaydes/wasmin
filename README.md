@@ -21,7 +21,9 @@ Checklist:
 - [x] primitive values.
 - [x] let declarations.
 - [x] math operators.
-- [ ] functions.
+- [x] function calls.
+- [ ] function declarations.
+- [ ] explicitly typed constants.
 - [ ] if/else blocks.
 - [ ] loops.
 - [ ] constant globals.

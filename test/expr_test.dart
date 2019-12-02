@@ -20,7 +20,7 @@ void main() {
       expect(result, equals(ParseResult.DONE));
       expect(
           parser.consume(),
-          equals(Expression(
+          equals(Expression.funCall(
             'mul',
             [
               Expression.constant('1', ValueType.i64),
@@ -36,7 +36,7 @@ void main() {
       expect(result, equals(ParseResult.DONE));
       expect(
           parser.consume(),
-          equals(Expression(
+          equals(Expression.funCall(
             'mul',
             [
               Expression.constant('1', ValueType.i64),
@@ -52,10 +52,10 @@ void main() {
       expect(result, equals(ParseResult.DONE));
       expect(
           parser.consume(),
-          equals(Expression(
+          equals(Expression.funCall(
             'mul',
             [
-              Expression(
+              Expression.funCall(
                 'add',
                 [
                   Expression.constant('1', ValueType.i64),
@@ -75,10 +75,10 @@ void main() {
       expect(result, equals(ParseResult.DONE));
       expect(
           parser.consume(),
-          equals(Expression(
+          equals(Expression.funCall(
             'mul',
             [
-              Expression(
+              Expression.funCall(
                 'add',
                 [
                   Expression.constant('1', ValueType.i64),
@@ -86,7 +86,7 @@ void main() {
                 ],
                 ValueType.i64,
               ),
-              Expression(
+              Expression.funCall(
                 'div_s',
                 [
                   Expression.constant('10', ValueType.i64),
