@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'ast.dart';
 import 'iterator.dart';
-import 'parse.dart';
+import 'parse/parse.dart';
 import 'text_sink.dart';
 
 enum TargetFormat { wat, wasm }

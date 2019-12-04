@@ -1,7 +1,7 @@
 import 'package:test/test.dart';
 import 'package:wasmin/wasmin.dart';
 
-import 'test_helper.dart';
+import '../test_helper.dart';
 
 void main() {
   test('can parse simple let expressions', () async {

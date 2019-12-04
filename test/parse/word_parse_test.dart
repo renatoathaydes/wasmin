@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:wasmin/wasmin.dart';
+import 'package:wasmin/src/parse/base_parse.dart';
 
 void main() {
   WordParser parser;

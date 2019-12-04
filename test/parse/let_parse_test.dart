@@ -1,7 +1,10 @@
 import 'package:test/test.dart';
+import 'package:wasmin/src/parse/base_parse.dart';
+import 'package:wasmin/src/parse/expression_parse.dart';
+import 'package:wasmin/src/parse/let_parse.dart';
 import 'package:wasmin/wasmin.dart';
 
-import 'test_helper.dart';
+import '../test_helper.dart';
 
 void main() {
   LetParser parser;

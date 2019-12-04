@@ -23,6 +23,7 @@ Checklist:
 - [x] math operators.
 - [x] function calls.
 - [ ] function declarations.
+- [ ] module declarations.
 - [ ] explicitly typed constants.
 - [ ] if/else blocks.
 - [ ] loops.
