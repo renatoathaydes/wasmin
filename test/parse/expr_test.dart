@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import 'package:wasmin/src/parse/base_parse.dart';
-import 'package:wasmin/src/parse/expression_parse.dart';
+import 'package:wasmin/src/parse/base.dart';
+import 'package:wasmin/src/parse/expression.dart';
 import 'package:wasmin/wasmin.dart';
 
 void main() {

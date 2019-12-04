@@ -1,7 +1,7 @@
 import '../ast.dart';
 import '../type_check.dart';
 import '../type_context.dart';
-import 'base_parse.dart';
+import 'base.dart';
 
 class ParsedGroup {
   final String _entity;

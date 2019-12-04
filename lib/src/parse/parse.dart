@@ -1,8 +1,8 @@
 import '../ast.dart';
 import '../type_context.dart';
-import 'base_parse.dart';
-import 'expression_parse.dart';
-import 'let_parse.dart';
+import 'base.dart';
+import 'expression.dart';
+import 'let.dart';
 
 class WasminParser {
   final _wordParser = WordParser();

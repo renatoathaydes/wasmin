@@ -1,7 +1,7 @@
 import 'package:test/test.dart';
-import 'package:wasmin/src/parse/base_parse.dart';
-import 'package:wasmin/src/parse/expression_parse.dart';
-import 'package:wasmin/src/parse/let_parse.dart';
+import 'package:wasmin/src/parse/base.dart';
+import 'package:wasmin/src/parse/expression.dart';
+import 'package:wasmin/src/parse/let.dart';
 import 'package:wasmin/wasmin.dart';
 
 import '../test_helper.dart';

@@ -1,9 +1,9 @@
-import 'package:wasmin/src/parse/expression_parse.dart';
+import 'package:wasmin/src/parse/expression.dart';
 
 import '../ast.dart';
 import '../type_check.dart';
 import '../type_context.dart';
-import 'base_parse.dart';
+import 'base.dart';
 
 class LetParser with WordBasedParser {
   String _id = '';
