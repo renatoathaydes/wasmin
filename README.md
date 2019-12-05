@@ -62,15 +62,19 @@ let echo i = i + 1;
 > Notice that function's type signatures are separated from a function's implementation, and
 > must be declared before they are used or implemented.
 
-Function signatures have the following form:
+Function signatures, in general, have the following form:
 
 ```
 function_name [ args ... ] return_type;
 ```
 
-Variables do not declare their types, they assume the type of the last expression in their body.
+Variables do not declare their types, they assume their expression (they cannot be unassigned or re-assigned).
 
-The only difference between a variable and a function is the fact that functions take one or more arguments.
+In fact, variables in Wasmin are just special-cases of functions: functions which do not take any arguments.
+
+> Wasmin will only generate an actual WASM `func` for a variable if the type of the variable is declared in Wasmin
+> as a function. Otherwise, Wasmin will simply calculate the value at compile time and generate a simple
+> WASM assignment.
 
 A variable definition, like a function, can even be made up of many expressions! Just group the expressions
 together within parenthesis:
@@ -84,14 +88,13 @@ let complex-var = (
     mul c 3
 )
 
+// a function definition
+complex-fun [i64 i64] i64;
 let complex-fun a b = (
     let c = add a b;
     mul c 3
 )
 ```
-
-> The body of a "variable" is evaluated only once, where it is declared. To evaluate the body multiple times, it must be
-> declared as a function instead. Hence, it must take at least one argument even if it just ignores it.
 
 A `;` (semi-colon) is used to separate consecutive expressions. Grouping expressions inside parenthesis,
 however, makes it unnecessary to use `;`.
@@ -122,7 +125,7 @@ last argument(s) of the next (if it takes any):
 let y = mul 2 3 > add 1;
 ```
 
-The `>` operator actually allows the programmer to use the WASM stack machine directly!
+The `>` operator actually allows the programmer to use the WASM virtual stack directly!
 
 This example:
 
@@ -135,9 +138,9 @@ Gets translated into WASM as:
 ```wat
 i64.const 2
 i64.const 3
-add
+i64.add
 i64.const 2
-mul
+i64.mul
 ```
 
 And is equivalent to:
