@@ -49,7 +49,7 @@ can!
 
 There's only one way to define variables and functions, with the `let` keyword:
 
-```pony
+```rust
 // variable
 let my-var = 10;
 
@@ -66,7 +66,7 @@ The only difference between a variable and a function is the fact that functions
 A variable definition, like a function, can even be made up of many expressions! Just group the expressions
 together within `(` and `)`:
 
-```pony
+```rust
 // variable that resolves to the result of some expressions
 let complex-var = (
     let a = 1;
@@ -85,7 +85,7 @@ Expressions must be either separated with a `;` or grouped between parenthesis.
 
 The 2 examples below are equivalent:
 
-```pony
+```rust
 // using ;
 let x = mul 2 3;
 let y = add x 1;
@@ -97,14 +97,14 @@ let y = (add x 1)
 
 Nested expressions are either grouped with parenthesis:
 
-```pony
+```rust
 let y = (add 1 (mul 2 3))
 ```
 
 Or passed over with the `>` operator, which uses the result of the previous expression as the
 last argument of the next:
 
-```pony
+```rust
 // this is equivalent to the previous example
 let y = mul 2 3 > add 1;
 ```
@@ -114,7 +114,7 @@ let y = mul 2 3 > add 1;
 
 Variables and functions may be exported:
 
-```pony
+```rust
 // export the main function, which does not take any arguments
 // and returns an i64
 export main: i64;
@@ -136,33 +136,55 @@ Whole numbers are `i64` by default, and fractional numbers are `f64` by default.
 To make a number use the 32-bit types, you need to append the appropriate type name to the
 number:
 
-```pony
+```rust
 let an-i32-int = 100i32;
 let a-f32-float = 0.314f32;
 ```
 
+Besides number types, Wasmin also has `String`, for text, and custom record types.
+
 Strings can be declared as in most other languages:
 
-```pony
+```rust
 let my-string = "hello world";
 ```
 
 Records can be defined similarly to functions and variables, but instead of taking an expression
 as the body, they take a record definition, which have the following form:
 
-```pony
+```
 { [field_name field_type,]... }
 ```
 
 For example:
 
-```pony
+```rust
 let Person = {name string, age i32}
 ```
 
 An instance of a record can be created as follows:
 
-```pony
+```rust
 let joe = {name "Joe", age 35.i32};
 ```
 
+As Wasmin has no methods, only functions can manipulate data.
+
+Supposing there is a function `toUpper [String] String`, one could use it as such:
+
+```rust
+let upper = toUpper "hello";
+
+// alternatively
+let upper2 = "hello" > toUpper;
+```
+
+Similarly, record fields can be obtained by using their names as functions:
+
+```rust
+let joe = {name "Joe", age 35.i32};
+let joesAge = age joe;
+
+// or, more property-like
+let joesAge2 = joe > age;
+```
