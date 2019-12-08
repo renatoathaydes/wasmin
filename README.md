@@ -1,13 +1,22 @@
 # Wasmin
 
-A programming language that is a thin layer over pure WebAssembly (WASM).
+A functional, concatenative, statically typed programming language that builds on the primitives provided by
+[WebAssembly (WASM)](https://developer.mozilla.org/en-US/docs/WebAssembly).
 
-Because it compiles down to WASM, it can run anywhere: browsers, native WASM runtimes, JVM.
+Because it compiles down to WASM, it can run anywhere at near-native speeds:
 
-Because the compiler is written in Dart, Wasmin code can be compiled from
- Flutter mobile apps, web apps, native Dart applications.
+- nearly [all browsers](https://developer.mozilla.org/en-US/docs/WebAssembly#Browser_compatibility).
+- native WASM runtimes ([Wasmtime](https://wasmtime.dev/), [Wasmer](https://wasmer.io/)).
+- JVM ([GraalWasm](https://medium.com/graalvm/announcing-graalwasm-a-webassembly-engine-in-graalvm-25cd0400a7f2)).
 
-## Goals of this project
+Because the compiler is written in Dart, Wasmin code can be compiled from:
+
+- Dart applications.
+- Web applications (by compiling Dart to JS).
+- Flutter apps (iOS, Android).
+- Any native application (by calling the native Wasmin compiler).
+
+## Wasmin Goals
 
 - stay close to WASM for fast compilation and zero runtime dependencies.
 - no heap memory management (GC) by using a linear type system.
@@ -39,8 +48,8 @@ Feature Checklist:
 - [ ] function pointers.
 - [ ] arrays.
 - [ ] records.
-- [ ] special functions (get, set, remove, size, copy)
-- [ ] typeof special function.
+- [ ] special functions (`get`, `set`, `remove`, `size`, `copy`).
+- [ ] `typeof` special function.
 
 Not yet designed features (may never be added):
 
@@ -110,16 +119,16 @@ Invalid identifiers:
 - `foo=bar` (`=` is the assignment operator, which can only appear in a `let` expression).
 - `big>small` (`>` is the stack operator, so this is valid, but is an expression, not an identifier).
 - `let`, `fun`, `mut`, `export` (these are the only keywords in Wasmin).
-- `get`, `set`, `remove`, `size`, `copy` (special functions).
+- `get`, `set`, `remove`, `size`, `copy`, `typeof` (special functions).
 
-<div>
-<small id="footnote-1">[1] expressions with more than one entry are evaluated as functions, with the first entry being the name of the function, and the rest as its arguments.</small>
+<div id="footnote-1">
+<small>[1] expressions with more than one entry are evaluated as functions, with the first entry being the name of the function, and the rest as its arguments.</small>
 </div>
-<div>
-<small id="footnote-2">[2] two consecutive expressions can appear anywhere, and are separated from one another with either a `;` between them, or by delimiting them with parenthesis, as in Lisp.</small>
+<div id="footnote-2">
+<small>[2] two consecutive expressions can appear anywhere, and are separated from one another with either a `;` between them, or by delimiting them with parenthesis, as in Lisp.</small>
 </div>
-<div>
-<small id="footnote-3">[3] any word starting with a number is interpreted as a number constant.</small>
+<div id="footnote-3">
+<small>[3] any word starting with a number is interpreted as a number constant.</small>
 </div>
 
 ### Let expressions
@@ -722,7 +731,7 @@ to manage memory in any way.
 
 You may be asking yourself: how does it do that?
 
-Simple: Wasmin use a [linear type](https://wiki.c2.com/?LinearTypes) system for everything except WASM primitives (number types).
+Simple: Wasmin uses a [linear type](https://wiki.c2.com/?LinearTypes) system for everything except WASM primitives (number types).
 
 Another small restriction is that no global state may be mutable, which is why only `let` can declare globals, but
 not `mut`.
