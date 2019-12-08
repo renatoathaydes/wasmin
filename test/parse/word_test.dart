@@ -8,15 +8,15 @@ void main() {
   test('can parse a word', () {
     final result = parser.parse("hello".runes.iterator);
     expect(result, equals(ParseResult.DONE));
-    expect(parser.consumeWord(), equals('hello'));
-    expect(parser.consumeWord(), equals(''));
+    expect(parser.consume(), equals('hello'));
+    expect(parser.consume(), equals(''));
   });
 
   test('does not consume more than a word', () {
     final iter = 'hello world'.runes.iterator;
     final result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
-    expect(parser.consumeWord(), equals('hello'));
+    expect(parser.consume(), equals('hello'));
     expect(iter.currentAsString, equals(' '));
     expect(iter.moveNext(), isTrue);
     expect(iter.currentAsString, equals('w'));
@@ -26,19 +26,19 @@ void main() {
     final iter = 'let x=10'.runes.iterator;
     var result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
-    expect(parser.consumeWord(), equals('let'));
+    expect(parser.consume(), equals('let'));
     expect(iter.currentAsString, equals(' '));
     expect(iter.moveNext(), isTrue);
 
     result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
-    expect(parser.consumeWord(), equals('x'));
+    expect(parser.consume(), equals('x'));
     expect(iter.currentAsString, equals('='));
     expect(iter.moveNext(), isTrue);
 
     result = parser.parse(iter);
     expect(result, equals(ParseResult.DONE));
-    expect(parser.consumeWord(), equals('10'));
+    expect(parser.consume(), equals('10'));
     expect(iter.currentAsString, isNull);
     expect(iter.moveNext(), isFalse);
   });
@@ -48,43 +48,43 @@ void main() {
 
     var result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
-    expect(parser.consumeWord(), equals('abc'));
+    expect(parser.consume(), equals('abc'));
     expect(iter.currentAsString, equals('\n'));
     expect(iter.moveNext(), isTrue);
 
     result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
-    expect(parser.consumeWord(), equals('def'));
+    expect(parser.consume(), equals('def'));
     expect(iter.currentAsString, equals(';'));
     expect(iter.moveNext(), isTrue);
 
     result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
-    expect(parser.consumeWord(), equals(''));
+    expect(parser.consume(), equals(''));
     expect(iter.currentAsString, equals(';'));
     expect(iter.moveNext(), isTrue);
 
     result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
-    expect(parser.consumeWord(), equals('ghi'));
+    expect(parser.consume(), equals('ghi'));
     expect(iter.currentAsString, equals(','));
     expect(iter.moveNext(), isTrue);
 
     result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
-    expect(parser.consumeWord(), equals('jkl'));
+    expect(parser.consume(), equals('jkl'));
     expect(iter.currentAsString, equals('\n'));
     expect(iter.moveNext(), isTrue);
 
     result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
-    expect(parser.consumeWord(), equals('mno'));
+    expect(parser.consume(), equals('mno'));
     expect(iter.currentAsString, equals(' '));
     expect(iter.moveNext(), isTrue);
 
     result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
-    expect(parser.consumeWord(), equals('pqr'));
+    expect(parser.consume(), equals('pqr'));
     expect(iter.currentAsString, equals('\n'));
     expect(iter.moveNext(), isFalse);
   });

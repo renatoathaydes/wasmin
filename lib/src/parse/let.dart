@@ -4,7 +4,7 @@ import '../ast.dart';
 import '../type_context.dart';
 import 'base.dart';
 
-class LetParser with WordBasedParser {
+class LetParser with WordBasedParser<Let> {
   String _id = '';
   Expression _expression;
   final ExpressionParser _expr;

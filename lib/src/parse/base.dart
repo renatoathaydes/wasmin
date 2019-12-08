@@ -13,20 +13,20 @@ enum ParseResult { CONTINUE, DONE, FAIL }
 
 bool isSeparator(String rune) => separators.contains(rune);
 
-mixin Parser {
+mixin Parser<N> {
   /// The last failure seem by this parser.
   String get failure;
 
   /// Parse the runes emitted by the given iterator.
   ParseResult parse(RuneIterator runes);
 
-  /// Consume the AST node parsed by this parser.
+  /// Consume the node parsed by this parser.
   ///
   /// If no node has been parsed successfully, returns null.
-  AstNode consume();
+  N consume();
 }
 
-mixin RuneBasedParser implements Parser {
+mixin RuneBasedParser<N> implements Parser<N> {
   ParseResult parse(RuneIterator runes) {
     bool firstRune = runes.currentAsString != null;
     while (firstRune || runes.moveNext()) {
@@ -48,7 +48,7 @@ mixin RuneBasedParser implements Parser {
   ParseResult accept(String rune);
 }
 
-mixin WordBasedParser implements Parser {
+mixin WordBasedParser<N> implements Parser<N> {
   final whitespaces = const SkipWhitespaces();
   WordParser words;
   String failure;
@@ -56,11 +56,11 @@ mixin WordBasedParser implements Parser {
   String nextWord(RuneIterator runes) {
     whitespaces.parse(runes);
     words.parse(runes);
-    return words.consumeWord();
+    return words.consume();
   }
 }
 
-class SkipWhitespaces with RuneBasedParser {
+class SkipWhitespaces with RuneBasedParser<Noop> {
   const SkipWhitespaces();
 
   final String failure = null;
@@ -74,15 +74,15 @@ class SkipWhitespaces with RuneBasedParser {
   }
 
   @override
-  AstNode consume() => const Noop();
+  Noop consume() => const Noop();
 }
 
-class WordParser with RuneBasedParser {
+class WordParser with RuneBasedParser<String> {
   final _buffer = StringBuffer();
 
   final String failure = null;
 
-  String consumeWord() {
+  String consume() {
     final word = _buffer.toString();
     _buffer.clear();
     return word;
@@ -94,7 +94,4 @@ class WordParser with RuneBasedParser {
     _buffer.write(rune);
     return ParseResult.CONTINUE;
   }
-
-  @override
-  AstNode consume() => const Noop();
 }

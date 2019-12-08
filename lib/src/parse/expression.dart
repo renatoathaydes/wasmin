@@ -1,4 +1,4 @@
-import '../ast.dart';
+import '../_expression.dart';
 import '../type_check.dart';
 import '../type_context.dart';
 import 'base.dart';
@@ -34,7 +34,7 @@ class _UnterminatedExpression implements Exception {
   const _UnterminatedExpression();
 }
 
-class ExpressionParser with WordBasedParser {
+class ExpressionParser with WordBasedParser<Expression> {
   final WordParser words;
   final TypeContext _typeContext;
   Expression _expr;
