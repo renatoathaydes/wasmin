@@ -6,8 +6,8 @@ class ParserIterator implements RuneIterator {
 
   ParserIterator(this._delegate);
 
-  ParserIterator.fromLines(Iterable<String> lines)
-      : _delegate = _LinesRunes(lines.iterator);
+  ParserIterator.fromChunks(Iterable<String> chunks)
+      : _delegate = _ChunkedRunes(chunks.iterator);
 
   String get position => "$_line:$_col";
 
@@ -56,11 +56,11 @@ class ParserIterator implements RuneIterator {
   String get string => "ParserIterator{line=$_line,col=$_col}";
 }
 
-class _LinesRunes implements RuneIterator {
-  final Iterator<String> _lines;
+class _ChunkedRunes implements RuneIterator {
+  final Iterator<String> _chunks;
   RuneIterator _currentRunes;
 
-  _LinesRunes(this._lines) {
+  _ChunkedRunes(this._chunks) {
     _currentRunes = _next();
   }
 
@@ -98,11 +98,11 @@ class _LinesRunes implements RuneIterator {
   }
 
   @override
-  String get string => "_LinesRunes";
+  String get string => "_ChunkedRunes";
 
   RuneIterator _next() {
-    if (_lines.moveNext()) {
-      return "${_lines.current}\n".runes.iterator;
+    if (_chunks.moveNext()) {
+      return _chunks.current.runes.iterator;
     }
     return null;
   }
