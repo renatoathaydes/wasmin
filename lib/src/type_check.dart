@@ -18,13 +18,6 @@ class TypeCheckException implements Exception {
   String toString() => 'type checking failed: $message';
 }
 
-class FunctionType {
-  final ValueType returns;
-  final List<ValueType> takes;
-
-  const FunctionType(this.returns, this.takes);
-}
-
 Expression exprWithInferredType(ParsedGroup group, TypeContext context) {
   if (group.length == 1) {
     // groups of length 1 must be either a constant or a variable

@@ -149,3 +149,92 @@ class Let extends AstNode {
   @override
   int get hashCode => id.hashCode ^ expr.hashCode;
 }
+
+/// The type of a function.
+class FunctionType {
+  final ValueType returns;
+  final List<ValueType> takes;
+
+  const FunctionType(this.returns, this.takes);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FunctionType &&
+          runtimeType == other.runtimeType &&
+          returns == other.returns &&
+          takes == other.takes;
+
+  @override
+  int get hashCode => returns.hashCode ^ takes.hashCode;
+
+  @override
+  String toString() {
+    return 'FunctionType{returns: $returns, takes: $takes}';
+  }
+}
+
+class FunDeclaration extends AstNode {
+  final FunctionType type;
+  final String id;
+  final bool isExported;
+
+  const FunDeclaration(this.type, this.id, [this.isExported = false])
+      : super._();
+
+  FunDeclaration.variable(ValueType type, String id)
+      : this(FunctionType(type, const []), id, false);
+
+  FunDeclaration toExported(FunDeclaration funDeclaration) {
+    return isExported ? this : FunDeclaration(type, id, true);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FunDeclaration &&
+          runtimeType == other.runtimeType &&
+          type == other.type &&
+          id == other.id &&
+          isExported == other.isExported;
+
+  @override
+  int get hashCode => type.hashCode ^ id.hashCode ^ isExported.hashCode;
+
+  @override
+  String toString() {
+    return 'FunDeclaration{type: $type, id: $id, isExported: $isExported}';
+  }
+}
+
+/// Fun represents a function implementation.
+class Fun extends AstNode {
+  final List<Expression> body;
+  final FunDeclaration declaration;
+
+  static List<Expression> _nonEmpty(List<Expression> body) {
+    if (body.isEmpty) {
+      throw ArgumentError.value(
+          body, 'body', 'Function body must not be empty');
+    }
+    return body;
+  }
+
+  Fun(this.declaration, List<Expression> body)
+      : this.body = _nonEmpty(body),
+        super._();
+
+  @override
+  String toString() => '(fun ${declaration.id} (${body.join(' ')}))';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Fun &&
+          runtimeType == other.runtimeType &&
+          declaration == other.declaration &&
+          const ListEquality<Expression>().equals(this.body, other.body);
+
+  @override
+  int get hashCode => declaration.hashCode ^ body.hashCode;
+}
