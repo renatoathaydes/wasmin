@@ -14,31 +14,30 @@ abstract class AstNode {
   }
 }
 
-enum ValueType { i32, i64, f32, f64 }
+class ValueType {
+  static const ValueType i32 = ValueType('i32');
+  static const ValueType i64 = ValueType('i64');
+  static const ValueType f32 = ValueType('f32');
+  static const ValueType f64 = ValueType('f64');
+  static const ValueType empty = ValueType('empty');
+  static const ValueType anyFun = ValueType('anyfunc');
 
-extension ValueTypeMethods on ValueType {
-  T match<T>({
-    T Function() i32,
-    T Function() i64,
-    T Function() f32,
-    T Function() f64,
-  }) {
-    if (this == null) return null;
-    switch (this) {
-      case ValueType.i32:
-        return i32();
-      case ValueType.i64:
-        return i64();
-      case ValueType.f32:
-        return f32();
-      case ValueType.f64:
-        return f64();
-    }
-    throw 'Uncovered: $this';
-  }
+  final String name;
 
-  String name() => match(
-      i32: () => 'i32', i64: () => 'i64', f32: () => 'f32', f64: () => 'f64');
+  const ValueType(this.name);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ValueType &&
+          runtimeType == other.runtimeType &&
+          name == other.name;
+
+  @override
+  int get hashCode => name.hashCode;
+
+  @override
+  String toString() => 'ValueType{name: $name}';
 }
 
 /// The no-op node can be used when a source code construct
@@ -83,7 +82,7 @@ class Expression extends AstNode {
   }
 
   @override
-  String toString() => '($op ${type.name()})';
+  String toString() => '($op ${type.name})';
 
   @override
   bool operator ==(Object other) =>
@@ -113,9 +112,8 @@ class _FunCall extends Expression {
   void foo() {}
 
   @override
-  String toString() => args.isEmpty
-      ? super.toString()
-      : '($op ${args.join(' ')} ${type.name()})';
+  String toString() =>
+      args.isEmpty ? super.toString() : '($op ${args.join(' ')} ${type.name})';
 
   @override
   bool operator ==(Object other) =>

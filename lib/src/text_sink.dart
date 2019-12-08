@@ -25,7 +25,7 @@ class TextSink with Sink<AstNode> {
   }
 
   void _letDeclaration(Let let) {
-    _textSink.writeln('(local \$${let.id} ${let.type.name()})');
+    _textSink.writeln('(local \$${let.id} ${let.type.name})');
   }
 
   void _letAssignment(Let let) {
@@ -43,7 +43,7 @@ class TextSink with Sink<AstNode> {
   }
 
   void _writeConst(String cons, ValueType type) {
-    return _textSink.write('(${type.name()}.const $cons)');
+    return _textSink.write('(${type.name}.const $cons)');
   }
 
   void _writeVariable(String name, ValueType type) {
@@ -51,7 +51,7 @@ class TextSink with Sink<AstNode> {
   }
 
   void _writeFunctionCall(String name, List<Expression> args, ValueType type) {
-    final prefix = operators.contains(name) ? '${type.name()}.' : r'call $';
+    final prefix = operators.contains(name) ? '${type.name}.' : r'call $';
     _textSink.write('($prefix${name} ');
     var index = 0;
     for (final arg in args) {

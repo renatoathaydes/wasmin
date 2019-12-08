@@ -1,7 +1,6 @@
 import 'package:wasmin/src/parse/expression.dart';
 
 import '../ast.dart';
-import '../type_check.dart';
 import '../type_context.dart';
 import 'base.dart';
 
@@ -46,7 +45,7 @@ class LetParser with WordBasedParser {
       // success!! Remember defined variable
       if (_typeContext is MutableTypeContext) {
         (_typeContext as MutableTypeContext)
-            .addFun(_id, FunctionType(_expression.type, const []));
+            .addFun(FunDeclaration.variable(_expression.type, _id));
       }
     }
     return result;
