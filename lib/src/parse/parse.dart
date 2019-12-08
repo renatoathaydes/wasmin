@@ -4,11 +4,32 @@ import 'base.dart';
 import 'expression.dart';
 import 'let.dart';
 
+class WasminUnit {
+  final List<Declaration> declarations = [];
+  final List<AstNode> nodes = [];
+
+  WasminUnit();
+}
+
 class WasminParser {
   final _wordParser = WordParser();
   final _context = ParsingContext();
 
-  Stream<AstNode> parse(RuneIterator runes) async* {
+  Future<WasminUnit> parse(RuneIterator runes) async {
+    final unit = WasminUnit();
+    await for (final node in _parse(runes)) {
+      if (node is Declaration) {
+        unit.declarations.add(node);
+      } else if (node is AstNode) {
+        unit.nodes.add(node);
+      } else {
+        throw 'Parser emitted unknown node type: $node';
+      }
+    }
+    return unit;
+  }
+
+  Stream _parse(RuneIterator runes) async* {
     final expr = ExpressionParser(_wordParser, _context);
     final let = LetParser(expr, _context);
     ParseResult result = ParseResult.CONTINUE;
@@ -18,7 +39,7 @@ class WasminParser {
       Parser currentParser;
       switch (result) {
         case ParseResult.CONTINUE:
-          final word = _wordParser.consumeWord();
+          final word = _wordParser.consume();
 //          print("Word: '$word'");
           if (word == 'let') {
             currentParser = let;

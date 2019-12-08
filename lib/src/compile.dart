@@ -2,44 +2,37 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'ast.dart';
 import 'iterator.dart';
 import 'parse/parse.dart';
 import 'text_sink.dart';
 
 enum TargetFormat { wat, wasm }
 
+typedef Future<void> WasminSink(Stream<WasminUnit> programUnits);
+
 Future<void> compile(String inputFile, String outputFile,
     [TargetFormat targetFormat = TargetFormat.wasm]) async {
-  final lines = await File(inputFile)
-      .openRead()
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .toList();
+  final chunks =
+      await File(inputFile).openRead().transform(utf8.decoder).toList();
 
   final out = File(outputFile);
 
   out.openWrite().use((writer) async {
-    final sink = TextSink(writer);
-    final source = compileWasmin(inputFile, lines);
-    await for (final node in source) {
-      sink.add(node);
-    }
-    sink.close();
+    final WasminSink sink = WasmTextSink(writer);
+    final programUnits = compileWasmin(inputFile, chunks);
+    await sink(programUnits);
   });
 }
 
-Stream<AstNode> compileWasmin(
-    String inputName, Iterable<String> inputLines) async* {
+Stream<WasminUnit> compileWasmin(
+    String inputName, Iterable<String> chunks) async* {
   final parser = WasminParser();
 
-  final iterator = ParserIterator.fromLines(inputLines);
-  Stream<AstNode> ast = parser.parse(iterator);
+  final iterator = ParserIterator.fromChunks(chunks);
 
   try {
-    await for (final node in ast) {
-      yield node;
-    }
+    final program = await parser.parse(iterator);
+    yield program;
   } on Exception catch (e) {
     print("[ERROR] ${inputName}:${iterator.position} - $e");
   }
