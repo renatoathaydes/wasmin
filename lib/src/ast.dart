@@ -1,214 +1,73 @@
 import 'package:collection/collection.dart';
 
-abstract class AstNode {
-  const AstNode._();
+import 'expression.dart';
+import 'type.dart';
 
-  T match<T>(T Function(Let) onLet, T Function(Expression) onExpression) {
+/// Top-level Wasmin program implementation unit.
+abstract class Implementation {
+  const Implementation._();
+
+  T match<T>({T Function(Let) onLet, T Function(Fun) onFun}) {
     if (this is Let) {
       return onLet(this as Let);
     }
-    if (this is Expression) {
-      return onExpression(this as Expression);
+    if (this is Fun) {
+      return onFun(this as Fun);
     }
     throw 'unreachable';
   }
 }
 
-class ValueType {
-  static const ValueType i32 = ValueType('i32');
-  static const ValueType i64 = ValueType('i64');
-  static const ValueType f32 = ValueType('f32');
-  static const ValueType f64 = ValueType('f64');
-  static const ValueType empty = ValueType('empty');
-  static const ValueType anyFun = ValueType('anyfunc');
+/// Wasmin program declaration unit.
+abstract class Declaration {
+  final bool isExported;
 
-  final String name;
+  const Declaration._(this.isExported);
 
-  const ValueType(this.name);
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ValueType &&
-          runtimeType == other.runtimeType &&
-          name == other.name;
-
-  @override
-  int get hashCode => name.hashCode;
-
-  @override
-  String toString() => 'ValueType{name: $name}';
+  T match<T>(
+      {T Function(FunDeclaration) onFun, T Function(LetDeclaration) onLet}) {
+    if (this is LetDeclaration) {
+      return onLet(this as LetDeclaration);
+    }
+    if (this is FunDeclaration) {
+      return onFun(this as FunDeclaration);
+    }
+    throw 'unreachable';
+  }
 }
 
 /// The no-op node can be used when a source code construct
 /// performs no operation (e.g. whitespace).
-class Noop extends AstNode {
+class Noop extends Implementation {
   const Noop() : super._();
 }
 
-/// An Expression is an arrangement, or combination, of function calls,
-/// constants and variables.
-class Expression extends AstNode {
-  final String op;
-  final ValueType type;
+/// Top-level Let expression.
+class Let extends Implementation {
+  final Expression body;
+  final LetDeclaration declaration;
 
-  const Expression._create(this.op, this.type) : super._();
+  const Let(this.declaration, this.body) : super._();
 
-  factory Expression.constant(String value, ValueType type) {
-    return _Const(value, type);
-  }
-
-  factory Expression.variable(String name, ValueType type) {
-    return _Var(name, type);
-  }
-
-  factory Expression.funCall(
-      String name, List<Expression> args, ValueType type) {
-    return _FunCall(name, args, type);
-  }
-
-  T matchExpr<T>({
-    T Function(String value, ValueType type) onConst,
-    T Function(String value, ValueType type) onVariable,
-    T Function(String name, List<Expression> args, ValueType type) onFunCall,
-  }) {
-    if (this is _Const) return onConst(op, type);
-    if (this is _Var) return onVariable(op, type);
-    if (this is _FunCall) {
-      final f = this as _FunCall;
-      return onFunCall(op, f.args, type);
-    }
-    throw 'unreachable';
-  }
+  ValueType get type => body.type;
 
   @override
-  String toString() => '($op ${type.name})';
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Expression &&
-          runtimeType == other.runtimeType &&
-          op == other.op &&
-          type == other.type;
-
-  @override
-  int get hashCode => op.hashCode ^ type.hashCode;
-}
-
-class _Const extends Expression {
-  const _Const(String value, ValueType type) : super._create(value, type);
-}
-
-class _Var extends Expression {
-  const _Var(String name, ValueType type) : super._create(name, type);
-}
-
-class _FunCall extends Expression {
-  final List<Expression> args;
-
-  _FunCall(String name, this.args, ValueType type) : super._create(name, type);
-
-  void foo() {}
-
-  @override
-  String toString() =>
-      args.isEmpty ? super.toString() : '($op ${args.join(' ')} ${type.name})';
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      super == other &&
-          other is _FunCall &&
-          const ListEquality<Expression>().equals(this.args, other.args);
-
-  @override
-  int get hashCode => super.hashCode ^ args.hashCode;
-}
-
-/// Let expressions are simple assignments of expressions to an identifier.
-class Let extends AstNode {
-  final String id;
-  final Expression expr;
-
-  const Let(this.id, this.expr) : super._();
-
-  ValueType get type => expr.type;
-
-  @override
-  String toString() => '(let $id $expr)';
+  String toString() => '(let ${declaration.name} $body)';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is Let &&
           runtimeType == other.runtimeType &&
-          id == other.id &&
-          expr == other.expr;
+          declaration == other.declaration &&
+          body == other.body;
 
   @override
-  int get hashCode => id.hashCode ^ expr.hashCode;
-}
-
-/// The type of a function.
-class FunctionType {
-  final ValueType returns;
-  final List<ValueType> takes;
-
-  const FunctionType(this.returns, this.takes);
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is FunctionType &&
-          runtimeType == other.runtimeType &&
-          returns == other.returns &&
-          takes == other.takes;
-
-  @override
-  int get hashCode => returns.hashCode ^ takes.hashCode;
-
-  @override
-  String toString() {
-    return 'FunctionType{returns: $returns, takes: $takes}';
-  }
-}
-
-class FunDeclaration extends AstNode {
-  final FunctionType type;
-  final String id;
-  final bool isExported;
-
-  const FunDeclaration(this.type, this.id, [this.isExported = false])
-      : super._();
-
-  FunDeclaration.variable(ValueType type, String id)
-      : this(FunctionType(type, const []), id, false);
-
-  FunDeclaration toExported(FunDeclaration funDeclaration) {
-    return isExported ? this : FunDeclaration(type, id, true);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is FunDeclaration &&
-          runtimeType == other.runtimeType &&
-          type == other.type &&
-          id == other.id &&
-          isExported == other.isExported;
-
-  @override
-  int get hashCode => type.hashCode ^ id.hashCode ^ isExported.hashCode;
-
-  @override
-  String toString() {
-    return 'FunDeclaration{type: $type, id: $id, isExported: $isExported}';
-  }
+  int get hashCode => declaration.hashCode ^ body.hashCode;
 }
 
 /// Fun represents a function implementation.
-class Fun extends AstNode {
+class Fun extends Implementation {
   final List<Expression> body;
   final FunDeclaration declaration;
 
@@ -237,4 +96,65 @@ class Fun extends AstNode {
 
   @override
   int get hashCode => declaration.hashCode ^ body.hashCode;
+}
+
+class FunDeclaration extends Declaration {
+  final FunType type;
+  final String id;
+
+  const FunDeclaration(this.type, this.id, [bool isExported = false])
+      : super._(isExported);
+
+  FunDeclaration.variable(ValueType type, String id)
+      : this(FunType(type, const []), id, false);
+
+  FunDeclaration asExported() {
+    return isExported ? this : FunDeclaration(type, id, true);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FunDeclaration &&
+          runtimeType == other.runtimeType &&
+          type == other.type &&
+          id == other.id &&
+          isExported == other.isExported;
+
+  @override
+  int get hashCode => type.hashCode ^ id.hashCode ^ isExported.hashCode;
+
+  @override
+  String toString() {
+    return 'FunDeclaration{type: $type, id: $id, isExported: $isExported}';
+  }
+}
+
+class LetDeclaration extends Declaration {
+  final String name;
+  final ValueType type;
+
+  LetDeclaration(this.name, this.type, [bool isExported = false])
+      : super._(isExported);
+
+  LetDeclaration asExported() {
+    return isExported ? this : LetDeclaration(name, type, true);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LetDeclaration &&
+          runtimeType == other.runtimeType &&
+          type == other.type &&
+          name == other.name &&
+          isExported == other.isExported;
+
+  @override
+  int get hashCode => name.hashCode ^ type.hashCode ^ isExported.hashCode;
+
+  @override
+  String toString() {
+    return 'LetDeclaration{type: $type, name: $name, isExported: $isExported}';
+  }
 }

@@ -1,4 +1,4 @@
-import '../_expression.dart';
+import '../expression.dart';
 import '../type_check.dart';
 import '../type_context.dart';
 import 'base.dart';

@@ -1,6 +1,8 @@
 import 'package:wasmin/src/parse/expression.dart';
+import 'package:wasmin/src/type_check.dart';
 
 import '../ast.dart';
+import '../expression.dart';
 import '../type_context.dart';
 import 'base.dart';
 
@@ -12,8 +14,11 @@ class LetParser with WordBasedParser<Let> {
   final _whitespaces = const SkipWhitespaces();
   final WordParser words;
   final TypeContext _typeContext;
+  final Map<String, Declaration> declarations;
 
-  LetParser(this._expr, [this._typeContext = const WasmDefaultTypeContext()])
+  LetParser(this._expr,
+      [this._typeContext = const WasmDefaultTypeContext(),
+      this.declarations = const {}])
       : words = _expr.words;
 
   @override
@@ -62,7 +67,16 @@ class LetParser with WordBasedParser<Let> {
   Let consume() {
     if (_id.isEmpty) throw Exception('Let identifier has not been set');
     if (_expression == null) throw Exception('Let expression has not been set');
-    final let = Let(_id, _expression);
+    Declaration decl = declarations[_id];
+    if (decl != null) {
+      decl.match(
+          onFun: (_) => throw TypeCheckException(
+              "'$_id' is declared as a function, but implemented as a let expression."),
+          onLet: (_) {});
+    } else {
+      decl = LetDeclaration(_id, _expression.type);
+    }
+    final let = Let(decl as LetDeclaration, _expression);
     reset();
     return let;
   }

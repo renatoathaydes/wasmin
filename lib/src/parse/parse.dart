@@ -6,7 +6,7 @@ import 'let.dart';
 
 class WasminUnit {
   final List<Declaration> declarations = [];
-  final List<AstNode> nodes = [];
+  final List<Implementation> implementations = [];
 
   WasminUnit();
 }
@@ -20,8 +20,8 @@ class WasminParser {
     await for (final node in _parse(runes)) {
       if (node is Declaration) {
         unit.declarations.add(node);
-      } else if (node is AstNode) {
-        unit.nodes.add(node);
+      } else if (node is Implementation) {
+        unit.implementations.add(node);
       } else {
         throw 'Parser emitted unknown node type: $node';
       }
@@ -30,8 +30,9 @@ class WasminParser {
   }
 
   Stream _parse(RuneIterator runes) async* {
+    final declarations = <String, Declaration>{};
     final expr = ExpressionParser(_wordParser, _context);
-    final let = LetParser(expr, _context);
+    final let = LetParser(expr, _context, declarations);
     ParseResult result = ParseResult.CONTINUE;
 
     while (result == ParseResult.CONTINUE) {

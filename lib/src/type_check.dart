@@ -1,5 +1,6 @@
-import 'ast.dart';
+import 'expression.dart';
 import 'parse/expression.dart';
+import 'type.dart';
 import 'type_context.dart';
 
 const operators = {

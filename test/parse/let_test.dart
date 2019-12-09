@@ -4,8 +4,6 @@ import 'package:wasmin/src/parse/expression.dart';
 import 'package:wasmin/src/parse/let.dart';
 import 'package:wasmin/wasmin.dart';
 
-import '../test_helper.dart';
-
 void main() {
   LetParser parser;
   setUp(() => parser = LetParser(ExpressionParser(WordParser())));
@@ -18,9 +16,8 @@ void main() {
 
       final let = parser.consume();
 
-      expect(let.id, equals('x'));
-      expect(let.expr.op, equals('0'));
-      expect(let.expr, isConstant);
+      expect(let.declaration.name, equals('x'));
+      expect(let.body, equals(Expression.constant('0', ValueType.i64)));
     });
 
     test('can parse let expression with whitespace', () {
@@ -31,9 +28,8 @@ void main() {
 
       final let = parser.consume();
 
-      expect(let.id, equals('one_thousand'));
-      expect(let.expr.op, equals('1000'));
-      expect(let.expr, isConstant);
+      expect(let.declaration.name, equals('one_thousand'));
+      expect(let.body, equals(Expression.constant('1000', ValueType.i64)));
     });
 
     test('can parse let expression with function call', () {
@@ -45,12 +41,16 @@ void main() {
 
       final let = parser.consume();
 
-      expect(let.id, equals('abc'));
-      expect(let.expr.op, equals('mul'));
+      expect(let.declaration.name, equals('abc'));
       expect(
-          argsOfFunCall(let.expr),
-          equals(
-              ['30', '50'].map((i) => Expression.constant(i, ValueType.i64))));
+          let.body,
+          equals(Expression.funCall(
+              'mul',
+              [
+                Expression.constant('30', ValueType.i64),
+                Expression.constant('50', ValueType.i64),
+              ],
+              ValueType.i64)));
     });
 
     test('can parse let expression with complex expression', () {
@@ -61,32 +61,35 @@ void main() {
 
       final let = parser.consume();
 
-      expect(let.id, equals('complex'));
-      expect(let.expr.op, equals('div_s'));
+      expect(let.declaration.name, equals('complex'));
+
       expect(
-          argsOfFunCall(let.expr),
-          equals([
-            Expression.funCall(
-                'add',
-                [
-                  Expression.constant('2', ValueType.i64),
-                  Expression.constant('3', ValueType.i64),
-                ],
-                ValueType.i64),
-            Expression.funCall(
-                'mul',
-                [
-                  Expression.constant('30', ValueType.i64),
-                  Expression.funCall(
-                      'sub',
-                      [
-                        Expression.constant('32', ValueType.i64),
-                        Expression.constant('21', ValueType.i64),
-                      ],
-                      ValueType.i64),
-                ],
-                ValueType.i64),
-          ]));
+          let.body,
+          equals(Expression.funCall(
+              'div_s',
+              [
+                Expression.funCall(
+                    'add',
+                    [
+                      Expression.constant('2', ValueType.i64),
+                      Expression.constant('3', ValueType.i64),
+                    ],
+                    ValueType.i64),
+                Expression.funCall(
+                    'mul',
+                    [
+                      Expression.constant('30', ValueType.i64),
+                      Expression.funCall(
+                          'sub',
+                          [
+                            Expression.constant('32', ValueType.i64),
+                            Expression.constant('21', ValueType.i64),
+                          ],
+                          ValueType.i64),
+                    ],
+                    ValueType.i64),
+              ],
+              ValueType.i64)));
     });
   });
 
