@@ -30,6 +30,9 @@ class WasminParser {
   }
 
   Stream _parse(RuneIterator runes) async* {
+    // TODO parse fun and let type declarations
+    // TODO parse fun implementation
+
     final declarations = <String, Declaration>{};
     final expr = ExpressionParser(_wordParser, _context);
     final let = LetParser(expr, _context, declarations);
@@ -48,6 +51,7 @@ class WasminParser {
 //            print("Got empty word, skipping separator");
             runes.moveNext();
           } else {
+
             throw "top-level element not allowed: '$word'";
           }
           break;

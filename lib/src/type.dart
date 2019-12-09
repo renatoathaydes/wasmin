@@ -1,5 +1,17 @@
+import 'package:collection/collection.dart';
+
+abstract class WasminType {
+  const WasminType._();
+
+  T match<T>({T onValueType(ValueType t), T onFunType(FunType t)}) {
+    if (this is ValueType) return onValueType(this as ValueType);
+    if (this is FunType) return onFunType(this as FunType);
+    throw 'unreachable';
+  }
+}
+
 /// A type that refers to a concrete value.
-class ValueType {
+class ValueType extends WasminType {
   static const ValueType i32 = ValueType('i32');
   static const ValueType i64 = ValueType('i64');
   static const ValueType f32 = ValueType('f32');
@@ -9,7 +21,7 @@ class ValueType {
 
   final String name;
 
-  const ValueType(this.name);
+  const ValueType(this.name) : super._();
 
   @override
   bool operator ==(Object other) =>
@@ -26,11 +38,11 @@ class ValueType {
 }
 
 /// The type of a function.
-class FunType {
+class FunType extends WasminType {
   final ValueType returns;
   final List<ValueType> takes;
 
-  const FunType(this.returns, this.takes);
+  const FunType(this.returns, this.takes) : super._();
 
   @override
   bool operator ==(Object other) =>
@@ -38,7 +50,7 @@ class FunType {
       other is FunType &&
           runtimeType == other.runtimeType &&
           returns == other.returns &&
-          takes == other.takes;
+          const IterableEquality<ValueType>().equals(takes, other.takes);
 
   @override
   int get hashCode => returns.hashCode ^ takes.hashCode;
