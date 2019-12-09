@@ -1,0 +1,4 @@
+log [string];
+import "log" from "console"
+
+fun main = log "hello world";

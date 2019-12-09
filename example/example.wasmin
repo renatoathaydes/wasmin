@@ -1,3 +1,17 @@
-let a = 10;
-let b = 20;
-let result = add a b;
+// declarations
+export main [] i64;
+use-stack [] i64;
+do-add [i64, i64] i64;
+
+// C-like function
+fun main = (
+    let a = 10;
+    let b = 20;
+    let result = add a b;
+    do-add result 1
+)
+
+// stack-based function
+fun use-stack = 10 > 20 > add > do-add 1;
+
+fun do-add a b = add a b;

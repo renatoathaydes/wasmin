@@ -9,10 +9,12 @@ void main() async {
   await compile('example.wasmin', 'output.wat', TargetFormat.wat);
 
   // compile only to the AST, then print the AST to stdout
-  final astNodes = compileWasmin(
+  final programUnit = await compileWasmin(
     'input-source-name',
     ['let x = 10;', 'let y = 20;'],
   );
 
-  await astNodes.forEach((node) => print(node));
+  programUnit.declarations.forEach(print);
+  print(';; implementation ;;');
+  programUnit.implementations.forEach(print);
 }
