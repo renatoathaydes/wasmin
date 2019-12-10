@@ -56,12 +56,18 @@ class Const extends Expression {
   final String value;
 
   const Const(this.value, ValueType type) : super._create(value, type);
+
+  @override
+  String toString() => 'Const{value: $value, type: ${type.name}}';
 }
 
 class Var extends Expression {
   final String name;
 
   const Var(this.name, ValueType type) : super._create(name, type);
+
+  @override
+  String toString() => 'Var{name: $name}';
 }
 
 class FunCall extends Expression {

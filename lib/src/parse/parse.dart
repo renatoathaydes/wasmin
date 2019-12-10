@@ -1,3 +1,5 @@
+import 'package:wasmin/src/parse/declaration.dart';
+
 import '../ast.dart';
 import '../type_context.dart';
 import 'base.dart';
@@ -35,6 +37,7 @@ class WasminParser {
 
     final declarations = <String, Declaration>{};
     final expr = ExpressionParser(_wordParser, _context);
+    final declaration = DeclarationParser(_wordParser);
     final let = LetParser(expr, _context, declarations);
     ParseResult result = ParseResult.CONTINUE;
 
@@ -51,8 +54,7 @@ class WasminParser {
 //            print("Got empty word, skipping separator");
             runes.moveNext();
           } else {
-
-            throw "top-level element not allowed: '$word'";
+            currentParser = declaration..firstWord = word;
           }
           break;
         case ParseResult.DONE:

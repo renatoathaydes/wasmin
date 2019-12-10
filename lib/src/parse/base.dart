@@ -50,8 +50,9 @@ mixin RuneBasedParser<N> implements Parser<N> {
 
 mixin WordBasedParser<N> implements Parser<N> {
   final whitespaces = const SkipWhitespaces();
-  WordParser words;
   String failure;
+
+  WordParser get words;
 
   String nextWord(RuneIterator runes) {
     whitespaces.parse(runes);
@@ -93,5 +94,14 @@ class WordParser with RuneBasedParser<String> {
     if (isSeparator(rune)) return ParseResult.DONE;
     _buffer.write(rune);
     return ParseResult.CONTINUE;
+  }
+}
+
+extension ParserErrors on String {
+  String quote() => "'${this}'";
+
+  String wasExpected(RuneIterator actual, bool quoteExpected) {
+    return "Expected ${quoteExpected ? this.quote() : this}, "
+        "got ${actual.currentAsString?.quote() ?? 'EOF'}";
   }
 }

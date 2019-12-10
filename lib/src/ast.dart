@@ -52,7 +52,7 @@ class Let extends Implementation {
   ValueType get type => body.type;
 
   @override
-  String toString() => '(let ${declaration.name} $body)';
+  String toString() => 'Let{${declaration} $body}';
 
   @override
   bool operator ==(Object other) =>
@@ -64,6 +64,7 @@ class Let extends Implementation {
 
   @override
   int get hashCode => declaration.hashCode ^ body.hashCode;
+
 }
 
 /// Fun represents a function implementation.
@@ -84,7 +85,7 @@ class Fun extends Implementation {
         super._();
 
   @override
-  String toString() => '(fun ${declaration.id} (${body.join(' ')}))';
+  String toString() => '(Fun ${declaration.id} (${body.join(' ')}))';
 
   @override
   bool operator ==(Object other) =>
@@ -134,7 +135,7 @@ class LetDeclaration extends Declaration {
   final String name;
   final ValueType type;
 
-  LetDeclaration(this.name, this.type, [bool isExported = false])
+  const LetDeclaration(this.name, this.type, [bool isExported = false])
       : super._(isExported);
 
   LetDeclaration asExported() {

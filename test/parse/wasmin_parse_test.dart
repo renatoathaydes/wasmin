@@ -51,6 +51,32 @@ void main() {
                     ValueType.i64))));
   });
 
+  test('can parse let declaration followed by its implementation', () async {
+    final unit =
+        await compileWasmin('source', ['my-value i64;let my-value = 20']);
+
+    expect(unit.declarations.length, equals(1));
+    expect(unit.implementations.length, equals(1));
+
+    final letDecl = const LetDeclaration('my-value', ValueType.i64);
+    expect(unit.declarations[0], equals(letDecl));
+    expect(unit.implementations[0],
+        equals(Let(letDecl, Const('20', ValueType.i64))));
+  });
+
+  test('can parse fun declaration followed by its implementation', () async {
+    final unit =
+        await compileWasmin('source', ['foo[f64] i64 ; fun foo n = convert_i64 n']);
+
+    expect(unit.declarations.length, equals(1));
+    expect(unit.implementations.length, equals(1));
+
+    final letDecl = const LetDeclaration('my-value', ValueType.i64);
+    expect(unit.declarations[0], equals(letDecl));
+    expect(unit.implementations[0],
+        equals(Let(letDecl, Const('20', ValueType.i64))));
+  }, skip: true); // FIXME implement function impl declaration
+
   // FIXME top-level let expression not implemented yet
   /*
   test('can parse function call using local variable', () async {

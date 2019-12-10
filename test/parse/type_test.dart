@@ -71,7 +71,7 @@ void main() {
     test('cannot parse empty string', () {
       final result = parser.parse("".runes.iterator);
       expect(result, equals(ParseResult.FAIL));
-      expect(parser.failure, equals('Expected type declaration. Reached EOF'));
+      expect(parser.failure, equals('Expected type declaration, got EOF'));
     });
 
     test('must close function arguments list', () {
@@ -80,14 +80,14 @@ void main() {
       expect(
           parser.failure,
           equals(
-              "Unterminated function parameter list, expected ']', got EOF"));
+              "Unterminated function parameter list. Expected ']', got EOF"));
 
       final result2 = parser.parse("[i32; ]i64".runes.iterator);
       expect(result2, equals(ParseResult.FAIL));
       expect(
           parser.failure,
           equals(
-              "Unterminated function parameter list, expected ']', got ';'"));
+              "Unterminated function parameter list. Expected ']', got ';'"));
     });
 
     test('must provide return type of functions', () {
