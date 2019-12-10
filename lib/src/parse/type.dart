@@ -27,18 +27,20 @@ class TypeParser with WordBasedParser<WasminType> {
           runes.moveNext();
           final returns = nextWord(runes);
           if (returns.isEmpty) {
-            failure = 'Expected function return type declaration';
+            failure = 'Expected function return type declaration, '
+                "got ${runes.currentAsString?.quote() ?? 'EOF'}";;
             return ParseResult.FAIL;
           } else {
             _type = FunType(ValueType(returns),
                 args.map((a) => ValueType(a)).toList(growable: false));
           }
         } else {
-          failure = "Unterminated function parameter list, expected ']'";
+          failure = "Unterminated function parameter list, expected ']', "
+              "got ${runes.currentAsString?.quote() ?? 'EOF'}";
           return ParseResult.FAIL;
         }
       } else {
-        failure = 'Expected type declaration';
+        failure = 'Expected type declaration. Reached EOF';
         return ParseResult.FAIL;
       }
     } else {
@@ -62,4 +64,8 @@ class TypeParser with WordBasedParser<WasminType> {
     _type = null;
     failure = null;
   }
+}
+
+extension on String {
+  String quote() => "'${this}'";
 }

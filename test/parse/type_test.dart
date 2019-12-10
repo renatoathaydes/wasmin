@@ -29,5 +29,82 @@ void main() {
       final type = parser.consume();
       expect(type, equals(FunType(ValueType.i32, const [])));
     });
+
+    test('can parse simple function type with whitespaces', () {
+      final result = parser.parse("[  ]  i32 ".runes.iterator);
+      expect(result, equals(ParseResult.CONTINUE));
+      final type = parser.consume();
+      expect(type, equals(FunType(ValueType.i32, const [])));
+    });
+
+    test('can parse function type with single arg', () {
+      final result = parser.parse("[f64]i32".runes.iterator);
+      expect(result, equals(ParseResult.DONE));
+      final type = parser.consume();
+      expect(type, equals(FunType(ValueType.i32, const [ValueType.f64])));
+    });
+
+    test('can parse function type with many args', () {
+      final result = parser.parse("[f64, i32,f32  , i64 ] i32".runes.iterator);
+      expect(result, equals(ParseResult.DONE));
+      final type = parser.consume();
+      expect(
+          type,
+          equals(FunType(ValueType.i32, const [
+            ValueType.f64,
+            ValueType.i32,
+            ValueType.f32,
+            ValueType.i64
+          ])));
+    });
+
+    test('can parse function type with two args and trailing comma', () {
+      final result = parser.parse("[f64, i32, ] \ni64".runes.iterator);
+      expect(result, equals(ParseResult.DONE));
+      final type = parser.consume();
+      expect(type,
+          equals(FunType(ValueType.i64, const [ValueType.f64, ValueType.i32])));
+    });
+  });
+
+  group('failures', () {
+    test('cannot parse empty string', () {
+      final result = parser.parse("".runes.iterator);
+      expect(result, equals(ParseResult.FAIL));
+      expect(parser.failure, equals('Expected type declaration. Reached EOF'));
+    });
+
+    test('must close function arguments list', () {
+      final result = parser.parse("[i32".runes.iterator);
+      expect(result, equals(ParseResult.FAIL));
+      expect(
+          parser.failure,
+          equals(
+              "Unterminated function parameter list, expected ']', got EOF"));
+
+      final result2 = parser.parse("[i32; ]i64".runes.iterator);
+      expect(result2, equals(ParseResult.FAIL));
+      expect(
+          parser.failure,
+          equals(
+              "Unterminated function parameter list, expected ']', got ';'"));
+    });
+
+    test('must provide return type of functions', () {
+      final result = parser.parse("[]".runes.iterator);
+      expect(result, equals(ParseResult.FAIL));
+      expect(parser.failure,
+          equals('Expected function return type declaration, got EOF'));
+
+      final result2 = parser.parse("[i64];f32".runes.iterator);
+      expect(result2, equals(ParseResult.FAIL));
+      expect(parser.failure,
+          equals("Expected function return type declaration, got ';'"));
+
+      final result3 = parser.parse("[i64, \tf32,];f32".runes.iterator);
+      expect(result3, equals(ParseResult.FAIL));
+      expect(parser.failure,
+          equals("Expected function return type declaration, got ';'"));
+    });
   });
 }
