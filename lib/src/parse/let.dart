@@ -10,6 +10,7 @@ class LetParser with WordBasedParser<Let> {
   final ExpressionParser _expr;
 
   final _whitespaces = const SkipWhitespaces();
+  @override
   final WordParser words;
   final MutableTypeContext _typeContext;
 
@@ -22,7 +23,7 @@ class LetParser with WordBasedParser<Let> {
     reset();
     var word = nextWord(runes);
     if (word.isEmpty) {
-      failure = "Incomplete let expresion. Expected identifier!";
+      failure = 'Incomplete let expresion. Expected identifier!';
       return ParseResult.FAIL;
     }
     final id = word;
@@ -39,12 +40,12 @@ class LetParser with WordBasedParser<Let> {
 
     final result = _expr.parse(runes);
     if (result == ParseResult.FAIL) {
-      failure = "Let expression error: ${_expr.failure}";
+      failure = 'Let expression error: ${_expr.failure}';
     } else {
       final expression = _expr.consume();
 
       // success!! Remember defined variable
-      Declaration decl = _typeContext.declarationOf(id);
+      var decl = _typeContext.declarationOf(id);
       if (decl != null) {
         decl.match(
             onFun: (_) => throw TypeCheckException(
@@ -54,7 +55,7 @@ class LetParser with WordBasedParser<Let> {
         decl = LetDeclaration(id, expression.type);
         _typeContext.add(LetDeclaration(id, expression.type));
       }
-      _let = Let(decl, expression);
+      _let = Let(decl as LetDeclaration, expression);
     }
     return result;
   }
@@ -68,8 +69,9 @@ class LetParser with WordBasedParser<Let> {
   @override
   Let consume() {
     final result = _let;
-    if (result == null)
+    if (result == null) {
       throw Exception('Let expression has not been parsed yet');
+    }
     reset();
     return result;
   }

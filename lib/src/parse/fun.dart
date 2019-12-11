@@ -9,6 +9,7 @@ import 'base.dart';
 
 class FunParser with WordBasedParser<Fun> {
   final _whitespaces = const SkipWhitespaces();
+  @override
   final WordParser words;
   final ParsingContext _typeContext;
 
@@ -21,7 +22,7 @@ class FunParser with WordBasedParser<Fun> {
     reset();
     var word = nextWord(runes);
     if (word.isEmpty) {
-      failure = "Incomplete fun. Expected identifier!";
+      failure = 'Incomplete fun. Expected identifier!';
       return ParseResult.FAIL;
     }
 
@@ -46,7 +47,7 @@ class FunParser with WordBasedParser<Fun> {
     Expression expression;
     ParseResult result;
 
-    Declaration decl = _typeContext.declarationOf(id);
+    var decl = _typeContext.declarationOf(id);
     if (decl != null) {
       expression = decl.match(
           onLet: (_) => throw TypeCheckException(
@@ -64,7 +65,7 @@ class FunParser with WordBasedParser<Fun> {
               result = funExpression.parse(runes);
 
               if (result == ParseResult.FAIL) {
-                failure = "fun error: ${funExpression.failure}";
+                failure = 'fun error: ${funExpression.failure}';
                 return null;
               }
               return funExpression.consume();
@@ -76,24 +77,25 @@ class FunParser with WordBasedParser<Fun> {
           });
     } else {
       if (args.isNotEmpty) {
-        throw Exception("Functions with arguments require "
+        throw Exception('Functions with arguments require '
             "a type declaration, but '$id' is missing one. "
-            "This is a requirement because argument types cannot be inferred.");
+            'This is a requirement because argument types cannot be inferred.');
       }
       decl = FunDeclaration(id, FunType(expression.type, const []));
       _typeContext.add(decl);
       final funExpression = ExpressionParser(words, _typeContext.createChild());
       result = funExpression.parse(runes);
       if (result == ParseResult.FAIL) {
-        failure = "fun error: ${funExpression.failure}";
+        failure = 'fun error: ${funExpression.failure}';
       } else {
         expression = funExpression.consume();
       }
     }
 
     if (result != ParseResult.FAIL) {
-      _verifyType(decl, expression);
-      _fun = Fun(decl as FunDeclaration, expression);
+      final funDecl = decl as FunDeclaration;
+      _verifyType(funDecl, expression);
+      _fun = Fun(funDecl, expression);
     }
 
     return result;
