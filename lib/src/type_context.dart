@@ -8,11 +8,11 @@ import 'type_check.dart';
 mixin TypeContext {
   FunType typeOfFun(String funName, Iterable<Expression> args);
 
-  FunDeclaration declarationOf(String funName);
+  Declaration declarationOf(String id);
 }
 
 mixin MutableTypeContext implements TypeContext {
-  void addFun(FunDeclaration funDeclaration);
+  void add(Declaration declaration);
 }
 
 class WasmDefaultTypeContext with TypeContext {
@@ -27,34 +27,40 @@ class WasmDefaultTypeContext with TypeContext {
     return null;
   }
 
-  FunDeclaration declarationOf(String funName) {
+  Declaration declarationOf(String id) {
     return null;
   }
 }
 
-class ParsingContext extends WasmDefaultTypeContext with MutableTypeContext {
-  final _declaredFunctions = <String, FunDeclaration>{};
+class ParsingContext with MutableTypeContext {
+  final _declarations = <String, Declaration>{};
+
+  TypeContext _parent;
+
+  ParsingContext([this._parent = const WasmDefaultTypeContext()]);
 
   @override
   FunType typeOfFun(String funName, Iterable<Expression> args) {
-    var type = super.typeOfFun(funName, args);
-    if (type != null) return type;
-    final decl = _declaredFunctions[funName];
-    if (decl == null) return null;
-    if (const IterableEquality<ValueType>()
-        .equals(decl.type.takes, args.map((a) => a.type))) {
-      return decl.type;
+    final decl = _declarations[funName];
+    if (decl is FunDeclaration) {
+      if (const IterableEquality<ValueType>()
+          .equals(decl.type.takes, args.map((a) => a.type))) {
+        return decl.type;
+      }
     }
-    return null;
+    return _parent.typeOfFun(funName, args);
   }
 
   @override
-  FunDeclaration declarationOf(String funName) {
-    return _declaredFunctions[funName];
+  Declaration declarationOf(String id) {
+    return _declarations[id] ?? _parent.declarationOf(id);
   }
 
   @override
-  void addFun(FunDeclaration funDeclaration) {
-    _declaredFunctions[funDeclaration.id] = funDeclaration;
+  void add(Declaration declaration) {
+    _declarations[declaration.match(
+        onLet: (let) => let.name, onFun: (fun) => fun.id)] = declaration;
   }
+
+  ParsingContext createChild() => ParsingContext(this);
 }

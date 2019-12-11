@@ -21,14 +21,18 @@ class TypeCheckException implements Exception {
 
 Expression exprWithInferredType(ParsedGroup group, TypeContext context) {
   if (group.length == 1) {
-    // groups of length 1 must be either a constant or a variable
+    // groups of length 1 must be a constant, a no args fun or a variable
     return group.match(
         onMember: (member) {
           final funType = context.typeOfFun(member, const []);
           if (funType != null) {
             return Expression.variable(member, funType.returns);
           }
-          return Expression.constant(member, inferValueType(member, context));
+          final varType = context
+              .declarationOf(member)
+              ?.match(onLet: (let) => let.type, onFun: (fun) => null);
+          if (varType != null) return Expression.variable(member, varType);
+          return Expression.constant(member, inferValueType(member));
         },
         onGroup: (gr) => exprWithInferredType(gr[0], context));
   }
@@ -57,7 +61,7 @@ Expression exprWithInferredType(ParsedGroup group, TypeContext context) {
   throw Exception('Empty expression');
 }
 
-ValueType inferValueType(String value, TypeContext context) {
+ValueType inferValueType(String value) {
   int i = int.tryParse(value);
   if (i != null) return ValueType.i64;
   double d = double.tryParse(value);

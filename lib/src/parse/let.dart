@@ -7,19 +7,15 @@ import '../type_context.dart';
 import 'base.dart';
 
 class LetParser with WordBasedParser<Let> {
-  String _id = '';
-  Expression _expression;
   final ExpressionParser _expr;
 
   final _whitespaces = const SkipWhitespaces();
   final WordParser words;
-  final TypeContext _typeContext;
-  final Map<String, Declaration> declarations;
+  final MutableTypeContext _typeContext;
 
-  LetParser(this._expr,
-      [this._typeContext = const WasmDefaultTypeContext(),
-      this.declarations = const {}])
-      : words = _expr.words;
+  Let _let;
+
+  LetParser(this._expr, this._typeContext) : words = _expr.words;
 
   @override
   ParseResult parse(RuneIterator runes) {
@@ -29,7 +25,7 @@ class LetParser with WordBasedParser<Let> {
       failure = "Incomplete let expresion. Expected identifier!";
       return ParseResult.FAIL;
     }
-    _id = word;
+    final id = word;
 
     _whitespaces.parse(runes);
 
@@ -45,39 +41,44 @@ class LetParser with WordBasedParser<Let> {
     if (result == ParseResult.FAIL) {
       failure = "Let expression error: ${_expr.failure}";
     } else {
-      _expression = _expr.consume();
+      final expression = _expr.consume();
 
       // success!! Remember defined variable
-      if (_typeContext is MutableTypeContext) {
-        (_typeContext as MutableTypeContext)
-            .addFun(FunDeclaration.variable(_expression.type, _id));
+      Declaration decl = _typeContext.declarationOf(id);
+      if (decl != null) {
+        decl.match(
+            onFun: (_) => throw TypeCheckException(
+                "'$id' is declared as a function, but implemented as a let expression."),
+            onLet: (let) => _verifyType(let, expression));
+      } else {
+        decl = LetDeclaration(id, expression.type);
+        _typeContext.add(LetDeclaration(id, expression.type));
       }
+      _let = Let(decl, expression);
     }
     return result;
   }
 
   void reset() {
-    _id = '';
-    _expression = null;
+    _let = null;
     _expr.reset();
     failure = null;
   }
 
   @override
   Let consume() {
-    if (_id.isEmpty) throw Exception('Let identifier has not been set');
-    if (_expression == null) throw Exception('Let expression has not been set');
-    Declaration decl = declarations[_id];
-    if (decl != null) {
-      decl.match(
-          onFun: (_) => throw TypeCheckException(
-              "'$_id' is declared as a function, but implemented as a let expression."),
-          onLet: (_) {});
-    } else {
-      decl = LetDeclaration(_id, _expression.type);
-    }
-    final let = Let(decl as LetDeclaration, _expression);
+    final result = _let;
+    if (result == null)
+      throw Exception('Let expression has not been parsed yet');
     reset();
-    return let;
+    return result;
+  }
+
+  void _verifyType(LetDeclaration decl, Expression body) {
+    if (decl.type != body.type) {
+      throw TypeCheckException(
+          "'${decl.name}' type should be '${decl.type.name}', but its "
+          "implementation has type '${body.type.name}'");
+    }
   }
 }

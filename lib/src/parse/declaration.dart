@@ -1,17 +1,19 @@
 import 'package:wasmin/src/ast.dart';
 import 'package:wasmin/src/parse/type.dart';
+import 'package:wasmin/src/type_context.dart';
 
 import 'base.dart';
 
 class DeclarationParser with WordBasedParser<Declaration> {
   final WordParser words;
   final TypeParser type;
+  final ParsingContext context;
 
   Declaration _declaration;
   String failure;
   String firstWord;
 
-  DeclarationParser(this.words) : type = TypeParser(words);
+  DeclarationParser(this.words, this.context) : type = TypeParser(words);
 
   @override
   ParseResult parse(RuneIterator runes) {
@@ -45,8 +47,10 @@ class DeclarationParser with WordBasedParser<Declaration> {
     }
 
     _declaration = type.consume().match(
-        onFunType: (type) => FunDeclaration(type, id, isExported),
+        onFunType: (type) => FunDeclaration(id, type, isExported),
         onValueType: (type) => LetDeclaration(id, type, isExported));
+
+    context.add(_declaration);
 
     return result;
   }

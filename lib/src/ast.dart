@@ -1,5 +1,3 @@
-import 'package:collection/collection.dart';
-
 import 'expression.dart';
 import 'type.dart';
 
@@ -64,28 +62,17 @@ class Let extends Implementation {
 
   @override
   int get hashCode => declaration.hashCode ^ body.hashCode;
-
 }
 
 /// Fun represents a function implementation.
 class Fun extends Implementation {
-  final List<Expression> body;
+  final Expression body;
   final FunDeclaration declaration;
 
-  static List<Expression> _nonEmpty(List<Expression> body) {
-    if (body.isEmpty) {
-      throw ArgumentError.value(
-          body, 'body', 'Function body must not be empty');
-    }
-    return body;
-  }
-
-  Fun(this.declaration, List<Expression> body)
-      : this.body = _nonEmpty(body),
-        super._();
+  Fun(this.declaration, this.body) : super._();
 
   @override
-  String toString() => '(Fun ${declaration.id} (${body.join(' ')}))';
+  String toString() => 'Fun{id=${declaration.id}, body=$body}';
 
   @override
   bool operator ==(Object other) =>
@@ -93,7 +80,7 @@ class Fun extends Implementation {
       other is Fun &&
           runtimeType == other.runtimeType &&
           declaration == other.declaration &&
-          const ListEquality<Expression>().equals(this.body, other.body);
+          this.body == other.body;
 
   @override
   int get hashCode => declaration.hashCode ^ body.hashCode;
@@ -103,14 +90,11 @@ class FunDeclaration extends Declaration {
   final FunType type;
   final String id;
 
-  const FunDeclaration(this.type, this.id, [bool isExported = false])
+  const FunDeclaration(this.id, this.type, [bool isExported = false])
       : super._(isExported);
 
-  FunDeclaration.variable(ValueType type, String id)
-      : this(FunType(type, const []), id, false);
-
   FunDeclaration asExported() {
-    return isExported ? this : FunDeclaration(type, id, true);
+    return isExported ? this : FunDeclaration(id, type, true);
   }
 
   @override

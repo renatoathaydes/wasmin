@@ -2,11 +2,16 @@ import 'package:test/test.dart';
 import 'package:wasmin/src/parse/base.dart';
 import 'package:wasmin/src/parse/expression.dart';
 import 'package:wasmin/src/parse/let.dart';
+import 'package:wasmin/src/type_context.dart';
 import 'package:wasmin/wasmin.dart';
 
 void main() {
   LetParser parser;
-  setUp(() => parser = LetParser(ExpressionParser(WordParser())));
+  MutableTypeContext context;
+  setUp(() {
+    context = ParsingContext();
+    parser = LetParser(ExpressionParser(WordParser()), context);
+  });
 
   group('success cases', () {
     test('can parse let expression', () {
@@ -18,6 +23,8 @@ void main() {
 
       expect(let.declaration.name, equals('x'));
       expect(let.body, equals(Expression.constant('0', ValueType.i64)));
+      expect(context.declarationOf('x'),
+          equals(LetDeclaration('x', ValueType.i64)));
     });
 
     test('can parse let expression with whitespace', () {

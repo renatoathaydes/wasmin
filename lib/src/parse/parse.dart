@@ -1,4 +1,5 @@
 import 'package:wasmin/src/parse/declaration.dart';
+import 'package:wasmin/src/parse/fun.dart';
 
 import '../ast.dart';
 import '../type_context.dart';
@@ -32,13 +33,10 @@ class WasminParser {
   }
 
   Stream _parse(RuneIterator runes) async* {
-    // TODO parse fun and let type declarations
-    // TODO parse fun implementation
-
-    final declarations = <String, Declaration>{};
     final expr = ExpressionParser(_wordParser, _context);
-    final declaration = DeclarationParser(_wordParser);
-    final let = LetParser(expr, _context, declarations);
+    final declaration = DeclarationParser(_wordParser, _context);
+    final let = LetParser(expr, _context);
+    final fun = FunParser(_wordParser, _context);
     ParseResult result = ParseResult.CONTINUE;
 
     while (result == ParseResult.CONTINUE) {
@@ -50,6 +48,8 @@ class WasminParser {
 //          print("Word: '$word'");
           if (word == 'let') {
             currentParser = let;
+          } else if (word == 'fun') {
+            currentParser = fun;
           } else if (word.isEmpty) {
 //            print("Got empty word, skipping separator");
             runes.moveNext();

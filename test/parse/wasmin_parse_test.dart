@@ -66,16 +66,26 @@ void main() {
 
   test('can parse fun declaration followed by its implementation', () async {
     final unit =
-        await compileWasmin('source', ['foo[f64] i64 ; fun foo n = convert_i64 n']);
+        await compileWasmin('source', ['foo[f64] f64 ; fun foo n = add n 1.0']);
 
     expect(unit.declarations.length, equals(1));
     expect(unit.implementations.length, equals(1));
 
-    final letDecl = const LetDeclaration('my-value', ValueType.i64);
-    expect(unit.declarations[0], equals(letDecl));
-    expect(unit.implementations[0],
-        equals(Let(letDecl, Const('20', ValueType.i64))));
-  }, skip: true); // FIXME implement function impl declaration
+    final funDecl =
+        const FunDeclaration('foo', FunType(ValueType.f64, [ValueType.f64]));
+    expect(unit.declarations[0], equals(funDecl));
+    expect(
+        unit.implementations[0],
+        equals(Fun(
+            funDecl,
+            Expression.funCall(
+                'add',
+                [
+                  Expression.variable('n', ValueType.f64),
+                  Expression.constant('1.0', ValueType.f64)
+                ],
+                ValueType.f64))));
+  });
 
   // FIXME top-level let expression not implemented yet
   /*
