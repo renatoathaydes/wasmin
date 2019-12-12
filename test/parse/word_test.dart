@@ -6,7 +6,7 @@ void main() {
   setUp(() => parser = WordParser());
 
   test('can parse a word', () {
-    final result = parser.parse("hello".runes.iterator);
+    final result = parser.parse('hello'.runes.iterator);
     expect(result, equals(ParseResult.DONE));
     expect(parser.consume(), equals('hello'));
     expect(parser.consume(), equals(''));
@@ -44,7 +44,7 @@ void main() {
   });
 
   test('can parse many words with separators and multi-lines', () {
-    final iter = "abc\ndef;;ghi,jkl\nmno pqr\n".runes.iterator;
+    final iter = 'abc\ndef;;ghi,jkl\nmno pqr\n'.runes.iterator;
 
     var result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));

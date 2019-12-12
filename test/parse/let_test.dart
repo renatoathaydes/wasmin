@@ -15,7 +15,7 @@ void main() {
 
   group('success cases', () {
     test('can parse let expression', () {
-      final result = parser.parse("x=0".runes.iterator);
+      final result = parser.parse('x=0'.runes.iterator);
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
 
@@ -29,7 +29,7 @@ void main() {
 
     test('can parse let expression with whitespace', () {
       final result =
-          parser.parse(" one_thousand  =     1000   ".runes.iterator);
+          parser.parse(' one_thousand  =     1000   '.runes.iterator);
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
 
@@ -40,7 +40,7 @@ void main() {
     });
 
     test('can parse let expression with function call', () {
-      final iter = "abc = mul 30 50;X".runes.iterator;
+      final iter = 'abc = mul 30 50;X'.runes.iterator;
       final result = parser.parse(iter);
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.CONTINUE));
@@ -62,7 +62,7 @@ void main() {
 
     test('can parse let expression with complex expression', () {
       final result = parser.parse(
-          "complex = div_s (add 2 3) (mul 30 (sub 32 21))".runes.iterator);
+          'complex = div_s (add 2 3) (mul 30 (sub 32 21))'.runes.iterator);
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
 
@@ -102,33 +102,33 @@ void main() {
 
   group('failures', () {
     test('cannot parse let expression with no assignment', () {
-      final result = parser.parse("one".runes.iterator);
+      final result = parser.parse('one'.runes.iterator);
       expect(parser.failure, equals("Incomplete let expresion. Expected '='!"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no =', () {
-      final result = parser.parse("one 1".runes.iterator);
+      final result = parser.parse('one 1'.runes.iterator);
       expect(parser.failure, equals("Incomplete let expresion. Expected '='!"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no value', () {
-      final result = parser.parse("one = ".runes.iterator);
-      expect(parser.failure, equals("Let expression error: Empty expression"));
+      final result = parser.parse('one = '.runes.iterator);
+      expect(parser.failure, equals('Let expression error: Empty expression'));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no = (end with separator)', () {
-      final result = parser.parse("one; = foo".runes.iterator);
+      final result = parser.parse('one; = foo'.runes.iterator);
       expect(parser.failure, equals("Incomplete let expresion. Expected '='!"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no value (end with separator)', () {
-      final result = parser.parse("one=; foo".runes.iterator);
+      final result = parser.parse('one=; foo'.runes.iterator);
       expect(parser.failure,
-          equals("Let expression error: Unterminated expression"));
+          equals('Let expression error: Unterminated expression'));
       expect(result, equals(ParseResult.FAIL));
     });
   });
