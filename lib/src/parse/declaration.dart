@@ -5,12 +5,16 @@ import 'package:wasmin/src/type_context.dart';
 import 'base.dart';
 
 class DeclarationParser with WordBasedParser<Declaration> {
+  @override
   final WordParser words;
+
+  @override
+  String failure;
+
   final TypeParser type;
   final ParsingContext context;
 
   Declaration _declaration;
-  String failure;
   String firstWord;
 
   DeclarationParser(this.words, this.context) : type = TypeParser(words);
@@ -23,9 +27,7 @@ class DeclarationParser with WordBasedParser<Declaration> {
     String id;
     bool isExported;
 
-    if (word == null) {
-      word = nextWord(runes);
-    }
+    word ??= nextWord(runes);
 
     if (word == 'export') {
       id = nextWord(runes);
@@ -36,7 +38,7 @@ class DeclarationParser with WordBasedParser<Declaration> {
     }
 
     if (id.isEmpty) {
-      failure = "variable of function declaration".wasExpected(runes, false);
+      failure = 'variable of function declaration'.wasExpected(runes, false);
       return ParseResult.FAIL;
     }
 

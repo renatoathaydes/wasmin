@@ -34,7 +34,7 @@ Future<WasminUnit> compileWasmin(
     final program = await parser.parse(iterator);
     return program;
   } on Exception catch (e) {
-    print("[ERROR] ${inputName}:${iterator.position} - $e");
+    print('[ERROR] ${inputName}:${iterator.position} - $e');
     // FIXME emit compilation error elements instead of rethrowing
     rethrow;
   }

@@ -2,8 +2,12 @@ import '../type.dart';
 import 'base.dart';
 
 class TypeParser with WordBasedParser<WasminType> {
+  @override
   String failure;
+
   WasminType _type;
+
+  @override
   final WordParser words;
 
   TypeParser(this.words);
@@ -35,8 +39,8 @@ class TypeParser with WordBasedParser<WasminType> {
                 args.map((a) => ValueType(a)).toList(growable: false));
           }
         } else {
-          failure = "Unterminated function parameter list. " +
-              "]".wasExpected(runes, true);
+          failure = 'Unterminated function parameter list. ' +
+              ']'.wasExpected(runes, true);
           return ParseResult.FAIL;
         }
       } else {

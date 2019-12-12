@@ -35,6 +35,7 @@ class _UnterminatedExpression implements Exception {
 }
 
 class ExpressionParser with WordBasedParser<Expression> {
+  @override
   final WordParser words;
   final TypeContext _typeContext;
   Expression _expr;
@@ -104,7 +105,7 @@ class ExpressionParser with WordBasedParser<Expression> {
   }
 
   ParseResult _unterminatedExpression() {
-    failure = "Unterminated expression";
+    failure = 'Unterminated expression';
     return ParseResult.FAIL;
   }
 

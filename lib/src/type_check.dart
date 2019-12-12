@@ -40,14 +40,14 @@ Expression exprWithInferredType(ParsedGroup group, TypeContext context) {
     // groups of length > 1 must be a function call
     return group.match(onGroup: (members) {
       final opGroup = members[0];
-      String op = opGroup.match(
+      var op = opGroup.match(
         onGroup: (_) =>
             throw Exception('Expression must start with function or operator'),
         onMember: (member) => member,
       );
       if (operators.contains(op) && members.length != 3) {
         throw TypeCheckException("Operator '$op' expects 2 arguments, "
-            "but was given ${members.length - 1}");
+            'but was given ${members.length - 1}');
       }
       final exprArgs =
           members.skip(1).map((arg) => exprWithInferredType(arg, context));
@@ -62,9 +62,9 @@ Expression exprWithInferredType(ParsedGroup group, TypeContext context) {
 }
 
 ValueType inferValueType(String value) {
-  int i = int.tryParse(value);
+  final i = int.tryParse(value);
   if (i != null) return ValueType.i64;
-  double d = double.tryParse(value);
+  final d = double.tryParse(value);
   if (d != null) return ValueType.f64;
   throw TypeCheckException("unknown variable: '$value'");
 }

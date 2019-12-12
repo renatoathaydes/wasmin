@@ -37,7 +37,7 @@ class WasminParser {
     final declaration = DeclarationParser(_wordParser, _context);
     final let = LetParser(expr, _context);
     final fun = FunParser(_wordParser, _context);
-    ParseResult result = ParseResult.CONTINUE;
+    var result = ParseResult.CONTINUE;
 
     while (result == ParseResult.CONTINUE) {
       result = _wordParser.parse(runes);
@@ -65,7 +65,7 @@ class WasminParser {
       if (currentParser != null) {
         result = currentParser.parse(runes);
         if (result == ParseResult.FAIL) {
-          throw currentParser.failure;
+          throw Exception(currentParser.failure);
         } else {
           yield currentParser.consume();
         }

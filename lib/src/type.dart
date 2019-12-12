@@ -3,7 +3,10 @@ import 'package:collection/collection.dart';
 abstract class WasminType {
   const WasminType._();
 
-  T match<T>({T onValueType(ValueType t), T onFunType(FunType t)}) {
+  T match<T>({
+    T Function(ValueType) onValueType,
+    T Function(FunType) onFunType,
+  }) {
     if (this is ValueType) return onValueType(this as ValueType);
     if (this is FunType) return onFunType(this as FunType);
     throw 'unreachable';

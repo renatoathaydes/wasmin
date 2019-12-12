@@ -86,7 +86,7 @@ class FunCall extends Expression {
       identical(this, other) ||
       super == other &&
           other is FunCall &&
-          const ListEquality<Expression>().equals(this.args, other.args);
+          const ListEquality<Expression>().equals(args, other.args);
 
   @override
   int get hashCode => super.hashCode ^ args.hashCode;

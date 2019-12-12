@@ -9,7 +9,7 @@ class ParserIterator implements RuneIterator {
   ParserIterator.fromChunks(Iterable<String> chunks)
       : _delegate = _ChunkedRunes(chunks.iterator);
 
-  String get position => "$_line:$_col";
+  String get position => '$_line:$_col';
 
   @override
   int get rawIndex => _delegate.rawIndex;
@@ -44,7 +44,7 @@ class ParserIterator implements RuneIterator {
 
   @override
   bool movePrevious() {
-    throw UnsupportedError("movePrevious");
+    throw UnsupportedError('movePrevious');
   }
 
   @override
@@ -53,7 +53,7 @@ class ParserIterator implements RuneIterator {
   }
 
   @override
-  String get string => "ParserIterator{line=$_line,col=$_col}";
+  String get string => 'ParserIterator{line=$_line,col=$_col}';
 }
 
 class _ChunkedRunes implements RuneIterator {
@@ -98,7 +98,7 @@ class _ChunkedRunes implements RuneIterator {
   }
 
   @override
-  String get string => "_ChunkedRunes";
+  String get string => '_ChunkedRunes';
 
   RuneIterator _next() {
     if (_chunks.moveNext()) {

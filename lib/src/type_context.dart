@@ -27,15 +27,13 @@ class WasmDefaultTypeContext with TypeContext {
     return null;
   }
 
-  Declaration declarationOf(String id) {
-    return null;
-  }
+  @override
+  Declaration declarationOf(String id) => null;
 }
 
 class ParsingContext with MutableTypeContext {
   final _declarations = <String, Declaration>{};
-
-  TypeContext _parent;
+  final TypeContext _parent;
 
   ParsingContext([this._parent = const WasmDefaultTypeContext()]);
 

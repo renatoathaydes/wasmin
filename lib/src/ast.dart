@@ -80,7 +80,7 @@ class Fun extends Implementation {
       other is Fun &&
           runtimeType == other.runtimeType &&
           declaration == other.declaration &&
-          this.body == other.body;
+          body == other.body;
 
   @override
   int get hashCode => declaration.hashCode ^ body.hashCode;

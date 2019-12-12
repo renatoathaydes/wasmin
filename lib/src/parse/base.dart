@@ -27,8 +27,9 @@ mixin Parser<N> {
 }
 
 mixin RuneBasedParser<N> implements Parser<N> {
+  @override
   ParseResult parse(RuneIterator runes) {
-    bool firstRune = runes.currentAsString != null;
+    var firstRune = runes.currentAsString != null;
     while (firstRune || runes.moveNext()) {
       firstRune = false;
       final rune = runes.currentAsString;
@@ -50,6 +51,7 @@ mixin RuneBasedParser<N> implements Parser<N> {
 
 mixin WordBasedParser<N> implements Parser<N> {
   final whitespaces = const SkipWhitespaces();
+  @override
   String failure;
 
   WordParser get words;
@@ -64,6 +66,7 @@ mixin WordBasedParser<N> implements Parser<N> {
 class SkipWhitespaces with RuneBasedParser<Noop> {
   const SkipWhitespaces();
 
+  @override
   final String failure = null;
 
   bool _whitespace(String rune) => whitespace.contains(rune);
@@ -81,8 +84,10 @@ class SkipWhitespaces with RuneBasedParser<Noop> {
 class WordParser with RuneBasedParser<String> {
   final _buffer = StringBuffer();
 
+  @override
   final String failure = null;
 
+  @override
   String consume() {
     final word = _buffer.toString();
     _buffer.clear();
@@ -101,7 +106,7 @@ extension ParserErrors on String {
   String quote() => "'${this}'";
 
   String wasExpected(RuneIterator actual, bool quoteExpected) {
-    return "Expected ${quoteExpected ? this.quote() : this}, "
+    return 'Expected ${quoteExpected ? quote() : this}, '
         "got ${actual.currentAsString?.quote() ?? 'EOF'}";
   }
 }
