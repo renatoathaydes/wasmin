@@ -30,11 +30,12 @@ Feature Checklist:
 - [x] primitive values.
 - [x] parenthesis-grouped expressions.
 - [x] ungrouped expressions.
+- [ ] multi-expressions.
 - [x] let assignments.
 - [ ] mut assignments.
 - [x] math operators.
 - [x] function calls.
-- [ ] function declarations.
+- [x] function declarations.
 - [ ] single-line comments.
 - [ ] multi-line comments.
 - [ ] import external functions.
@@ -121,6 +122,8 @@ Invalid identifiers:
 - `let`, `fun`, `mut`, `export` (these are the only keywords in Wasmin).
 - `get`, `set`, `remove`, `size`, `copy`, `typeof` (special functions).
 
+#### Footnotes
+
 <div id="footnote-1">
 <small>[1] expressions with more than one entry are evaluated as functions, with the first entry being the name of the function, and the rest as its arguments.</small>
 </div>
@@ -172,18 +175,22 @@ This is mostly useful when exporting an identifier, as we'll see later.
 Mut expressions are almost exactly like `let` expressions, but allow the declared variable
 to be both re-assigned and mutated (in the case of arrays and record types, as we'll see later).
 
-The special `set` function is used to mutate values.
-
 For example:
 
 ```rust
 mut counter = 0;
 
 // increment the counter
-set counter (add counter 1);
+counter = counter > add 1;
 ```
 
-Unlike `let`, `mut` can only be used to declare local variables, i.e. global variables are immutable. 
+To make Wasmin code memory-safe and easier to reason about, `mut` variables have a few restrictions:
+
+- They can only be used to declare local variables, which implies that global variables are immutable.
+- When a `mut` variable is passed on to another function, it will be seen as immutable because:
+    * function parameters cannot be declared `mut`.
+    * due to the linear type system of Wasmin, the current, `mut` reference to the variable is destroyed and can
+    no longer be used.
 
 ### Functions
 
@@ -207,7 +214,7 @@ fun <identifier> <args> = <expression>
 For example:
 
 ```rust
-square [f64] f64
+square [f64] f64;
 fun square n = mul n n;
 
 // Lisp/functional style
@@ -222,7 +229,7 @@ fun pythagoras2 a b = (
     sqrt (add sa sb)
 )
 
-// using the concatenative style
+// using the concatenative style, which is the cleanest, usually!
 pythagoras3 [f64, f64] f64;
 fun pythagoras3 a b = square a > square b > add > sqrt;
 ```
@@ -265,14 +272,6 @@ The above should be read as _some-fun takes two arguments of type I and F respec
 As we'll see in the arrays section, some operations do not even need to limit the types they can
 work with, in which case it is not necessary to provide the types a function can accept.
 
-For now, this is a silly example demonstrating a function which can accept any type (leveraging
-the built-in `typeof`, which returns the name of the type of its argument):
-
-```rust
-to-string [T] string;
-to-string value = typeof value;
-```
-
 A generic function can only pass its arguments to other generic functions with the same, or lower, bounds.
 
 ```rust
@@ -293,8 +292,6 @@ do-something [f32] f32;
 fun do-something n = ...;
 ```
 
-> TODO introduce pattern matching, or simple type checks, to allow branching depending on type?
-
 ### Stack operator
 
 WASM is a stack-based virtual machine, which means that it uses a stack data structure to keep
@@ -304,15 +301,15 @@ Wasmin exposes the stack to the programmer in a limited form to make it possible
 concise expressions in the [concatenative programming](https://en.wikipedia.org/wiki/Concatenative_programming_language)
 style.
 
-In a high level overview, the stack operator, `>`, uses the result of the previous expression(s) as the
-first argument(s) of the next (if it takes any, otherwise the result is simply passed along):
+As a high level description, we can say that the stack operator, `>`, uses the result of the previous 
+expression(s) as the first argument(s) of the next (if it takes any, otherwise the result is simply passed along):
 
 ```rust
 let y = mul 2 3 > add 1;
 ```
 
-> The `>` operator can be read as `then`, so in the above example, one should read
-> _mutiply 2 and 3, then add 1 to the result_.
+> The `>` operator can be read as `then`, so the above example could be read as
+> _let y be the result of multiplying 2 and 3, then adding 1_.
 
 In this example, `mul 2 3` returns `6`, which is then passed to `add 1` via the stack,
 resulting in the function invocation `add 6 1`, so `7` is assigned to `y`.
@@ -396,11 +393,14 @@ log [string] empty;
 import log from "console";
 
 // use log
-main [] empty;
 fun main = log "hello world";
 ```
 
-If the host environment or another module does not provide the imported definition, the module will not be loaded.
+> Notice that a type declaration for a non-exported function without arguments is optional,
+> as its return type can be inferred.
+
+If the host environment or another module does not provide the imported definition, are error will occur when loading
+the WASM module.
 
 ### Built-in functions
 
@@ -464,15 +464,13 @@ let my-string = "hello world";
 Wasmin source code is encoded as UTF-8, and Wasmin Strings are stored in memory exactly as the bytes
 encoded in the String source (prefixed with some header information which is not defined yet).
 
-As Strings are not a core WASM type, no functions that work on Strings are defined yet.
+> TODO How should Wasmin provide string operations to programs without incurring a runtime?
 
-> TODO Wasmin should create a module exposing common string manipulating functions in the future.
-
-Supposing there were a function `toUpper [string] string`, we could use that as follows:
+Supposing a module defined a function `toUpper [string] string`, we could use that as follows:
 
 ```rust
 let str = "hello world";
-let upper = toUpper str;
+let upper = str > toUpper;
 
 // notice that `str` cannot be used here anymore!
 ```
@@ -481,7 +479,7 @@ If the original string is still required, pass a copy of it to the function to a
 
 ```rust
 let str = "hello world";
-let upper = toUpper (copy str);
+let upper = copy str > toUpper;
 
 // `str` can still be used here!
 ```
@@ -516,7 +514,7 @@ let joe = {name "Joe", age 35i32};
 let joesAge = get joe age;
 ```
 
-If a record is declared as mutable, its fields can be modified with the `set` operation:
+If a record is declared as mutable, its fields can be modified with the `set` function:
 
 ```rust
 joe Person;
@@ -560,8 +558,8 @@ Array types are declared as follows:
 array(<type>)[(<size>)]
 ```
 
-If the size is omitted, it means the array can be of any size
-(but if it is initialized with a literal, its size will be that of the literal value).
+If the size is omitted, it means the array can be of any size,
+but if it is initialized with a literal, its size will be that of the literal value.
 
 For example:
 
@@ -572,6 +570,10 @@ let i64-array = [1 2 3];
 // create an array of size 100, initializing items with their zeroth values
 large-array array(i32)(100);
 let large-array = [];
+
+// function that requires an array of length 100
+use-array [i64(i32)(100)];
+use-array a = ...
 ```
 
 To be able to mutate an array with the `set` function, it must be declared as mutable:
@@ -733,15 +735,12 @@ You may be asking yourself: how does it do that?
 
 Simple: Wasmin uses a [linear type](https://wiki.c2.com/?LinearTypes) system for everything except WASM primitives (number types).
 
-Another small restriction is that no global state may be mutable, which is why only `let` can declare globals, but
-not `mut`.
-
 The fact that a linear type system is used, which means that there must only be a single reference to a value at
 any given time, allows Wasmin to know that once a variable goes out of scope locally, its value can be immediately
 de-allocated, together with everything it itself refers to (as everything else is also subject to this rule).
 
 Wasmin only needs to insert some instructions at compile time to make sure that this happens, without having to
-include a runtime to do anything more complicated, like a garbage collector or even a reference-count manager. 
+include a runtime to do anything more complicated like a garbage collector or even a reference-count manager. 
 
 The observation that linear types allow a programming language to completely avoid garbage collection and manual 
 memory management is based on a short paper by [Henry G. Baker](http://home.pipeline.com/~hbaker1/ForthStack.html).
