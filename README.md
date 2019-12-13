@@ -199,7 +199,7 @@ Wasmin functions are similar to `let` expressions, with the following difference
 - functions are evaluated every time they are used, or called.
 - they can take any number of arguments (0 to many, limited only by WASM itself).
 - they return the value of the expression assigned to them.
-- it is mandatory to declare their type.
+- it is mandatory to declare their type if they take one or more arguments.
 
 Functions have the form:
 
