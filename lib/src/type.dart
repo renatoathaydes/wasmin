@@ -6,11 +6,7 @@ abstract class WasminType {
   T match<T>({
     T Function(ValueType) onValueType,
     T Function(FunType) onFunType,
-  }) {
-    if (this is ValueType) return onValueType(this as ValueType);
-    if (this is FunType) return onFunType(this as FunType);
-    throw 'unreachable';
-  }
+  });
 }
 
 /// A type that refers to a concrete value.
@@ -38,6 +34,14 @@ class ValueType extends WasminType {
 
   @override
   String toString() => 'ValueType{name: $name}';
+
+  @override
+  T match<T>({
+    T Function(ValueType) onValueType,
+    T Function(FunType) onFunType,
+  }) {
+    return onValueType(this);
+  }
 }
 
 /// The type of a function.
@@ -61,5 +65,13 @@ class FunType extends WasminType {
   @override
   String toString() {
     return 'FunType{returns: $returns, takes: $takes}';
+  }
+
+  @override
+  T match<T>({
+    T Function(ValueType) onValueType,
+    T Function(FunType) onFunType,
+  }) {
+    return onFunType(this);
   }
 }

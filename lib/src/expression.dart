@@ -4,7 +4,7 @@ import 'type.dart';
 
 /// An Expression is an arrangement, or combination, of function calls,
 /// constants and variables.
-class Expression {
+abstract class Expression {
   final String _id;
   final ValueType type;
 
@@ -37,13 +37,7 @@ class Expression {
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
     T Function(Group) onGroup,
-  }) {
-    if (this is Const) return onConst(this as Const);
-    if (this is Var) return onVariable(this as Var);
-    if (this is FunCall) return onFunCall(this as FunCall);
-    if (this is LetExpression) return onLet(this as LetExpression);
-    throw 'unreachable';
-  }
+  });
 
   @override
   bool operator ==(Object other) =>
@@ -72,6 +66,17 @@ class Const extends Expression {
 
   @override
   String toString() => 'Const{value: $value, type: ${type.name}}';
+
+  @override
+  T matchExpr<T>({
+    T Function(Const) onConst,
+    T Function(Var) onVariable,
+    T Function(FunCall) onFunCall,
+    T Function(LetExpression) onLet,
+    T Function(Group) onGroup,
+  }) {
+    return onConst(this);
+  }
 }
 
 class Var extends Expression {
@@ -81,6 +86,17 @@ class Var extends Expression {
 
   @override
   String toString() => 'Var{name: $name, type: $type}';
+
+  @override
+  T matchExpr<T>({
+    T Function(Const) onConst,
+    T Function(Var) onVariable,
+    T Function(FunCall) onFunCall,
+    T Function(LetExpression) onLet,
+    T Function(Group) onGroup,
+  }) {
+    return onVariable(this);
+  }
 }
 
 class FunCall extends Expression {
@@ -103,6 +119,17 @@ class FunCall extends Expression {
 
   @override
   int get hashCode => super.hashCode ^ args.hashCode;
+
+  @override
+  T matchExpr<T>({
+    T Function(Const) onConst,
+    T Function(Var) onVariable,
+    T Function(FunCall) onFunCall,
+    T Function(LetExpression) onLet,
+    T Function(Group) onGroup,
+  }) {
+    return onFunCall(this);
+  }
 }
 
 class LetExpression extends Expression with AssignmentExpression {
@@ -127,6 +154,17 @@ class LetExpression extends Expression with AssignmentExpression {
 
   @override
   int get hashCode => super.hashCode ^ body.hashCode;
+
+  @override
+  T matchExpr<T>({
+    T Function(Const) onConst,
+    T Function(Var) onVariable,
+    T Function(FunCall) onFunCall,
+    T Function(LetExpression) onLet,
+    T Function(Group) onGroup,
+  }) {
+    return onLet(this);
+  }
 }
 
 class Group extends Expression {
@@ -147,4 +185,15 @@ class Group extends Expression {
 
   @override
   String toString() => 'Group{$body}';
+
+  @override
+  T matchExpr<T>({
+    T Function(Const) onConst,
+    T Function(Var) onVariable,
+    T Function(FunCall) onFunCall,
+    T Function(LetExpression) onLet,
+    T Function(Group) onGroup,
+  }) {
+    return onGroup(this);
+  }
 }
