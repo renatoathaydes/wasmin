@@ -78,14 +78,14 @@ which do not generate garbage) and supports the procedural, functional and conca
 
 The basic constructs of a Wasmin program are **expressions**.
 
-Expressions are simply arrangements of constants and identifiers which evaluate to a value.
+Expressions are simply arrangements of constants and identifiers which evaluate to a value or, in the case of `let`,
+evaluate to nothing, but bind an identifier to an expression.
 
 These are all expressions:
 
 - `0` (the constant `0`, of type `i64`, or 64-bit integer).
 - `(0)` (same as previous).
 - `10i32` (the constant `10`, of type `i32`).
-- `()` (the empty expression, of type `empty`).
 - `add 1 2` (calls function<sup><a href="#footnote-1">[1]</a></sup> `add` with arguments `1` and `2`).
 - `(let n = 1; add n 3)` (one expression grouping two others<sup><a href="#footnote-2">[2]</a></sup> - evaluates to the result of the last one).
 - `((let n = 1) (add n 3))` (same as previous).
@@ -95,6 +95,7 @@ Because Wasmin gives special meaning to only a few special symbols, identifiers 
 except control characters and the following special symbols:
 
 - ` `, `\n`, `\r`, `\t` (whitespace symbols).
+- `#` (starts a line-comment).
 - `,` (used to separate record elements and types in type signatures).
 - `=` (assignment operator).
 - `>` (stack operator).
@@ -180,7 +181,7 @@ For example:
 ```rust
 mut counter = 0;
 
-// increment the counter
+# increment the counter
 counter = counter > add 1;
 ```
 
@@ -217,11 +218,11 @@ For example:
 square [f64] f64;
 fun square n = mul n n;
 
-// Lisp/functional style
+# Lisp/functional style
 pythagoras [f64, f64] f64;
 fun pythagoras a b = (sqrt (add (square a) (square b)))
 
-// using a more C-like syntax
+# using a more C-like syntax
 pythagoras2 [f64, f64] f64;
 fun pythagoras2 a b = (
     let sa = square a;
@@ -229,7 +230,7 @@ fun pythagoras2 a b = (
     sqrt (add sa sb)
 )
 
-// using the concatenative style, which is the cleanest, usually!
+# using the concatenative style, which is the cleanest, usually!
 pythagoras3 [f64, f64] f64;
 fun pythagoras3 a b = square a > square b > add > sqrt;
 ```
@@ -372,11 +373,11 @@ values with the expected types on top of the stack when it returns.
 Variables and functions may be exported by adding the `export` keyword before their type declarations:
 
 ```rust
-// export the main function, which does not take any arguments
-// and returns an i64
+# export the main function, which does not take any arguments
+# and returns an i64
 export main [] i64;
 
-// export the variable `ten` of type `i64`
+# export the variable `ten` of type `i64`
 export ten i64;
 let ten = 10;
 
@@ -389,10 +390,10 @@ The function or variable's type must be declared as usual, but instead of provid
 for them, an `import` statement can be used instead.
 
 ```rust
-log [string] empty;
+log [string];
 import log from "console";
 
-// use log
+# use log
 fun main = log "hello world";
 ```
 
@@ -472,7 +473,7 @@ Supposing a module defined a function `toUpper [string] string`, we could use th
 let str = "hello world";
 let upper = str > toUpper;
 
-// notice that `str` cannot be used here anymore!
+# notice that `str` cannot be used here anymore!
 ```
 
 If the original string is still required, pass a copy of it to the function to avoid destroying the original one:
@@ -481,7 +482,7 @@ If the original string is still required, pass a copy of it to the function to a
 let str = "hello world";
 let upper = copy str > toUpper;
 
-// `str` can still be used here!
+# `str` can still be used here!
 ```
 
 ### Record types 
@@ -564,14 +565,14 @@ but if it is initialized with a literal, its size will be that of the literal va
 For example:
 
 ```rust
-// no type declaration required for literal arrays
+# no type declaration required for literal arrays
 let i64-array = [1 2 3];
 
-// create an array of size 100, initializing items with their zeroth values
+# create an array of size 100, initializing items with their zeroth values
 large-array array(i32)(100);
 let large-array = [];
 
-// function that requires an array of length 100
+# function that requires an array of length 100
 use-array [i64(i32)(100)];
 use-array a = ...
 ```
@@ -585,7 +586,7 @@ mut large-array = [];
 set large-array 0 1i32;
 set large-array 1 2i32;
 
-// large-array now looks like [1 2 0 0 ... ]
+# large-array now looks like [1 2 0 0 ... ]
 ```
 
 To read elements from an array, use the special `get` function:
@@ -602,7 +603,7 @@ in the zeroth-value for the array's type being returned:
 ```rust
 let my-array = [1];
 
-// element is assigned 0i64 as that's the zero-value for this array's type
+# element is assigned 0i64 as that's the zero-value for this array's type
 let element = get my-array 22;
 ```
 
@@ -611,7 +612,7 @@ To avoid this situation, use `get-or-default`:
 ```rust
 let my-array = [1];
 
-// element is assigned the default value, 1
+# element is assigned the default value, 1
 let element = get-or-default my-array 22 1;
 ```
 
@@ -630,7 +631,7 @@ Examples:
 ```rust
 let cond = 1;
 
-// if cond is non-zero, y is assigned "true", otherwise, "false".
+# if cond is non-zero, y is assigned "true", otherwise, "false".
 let y = if cond "true" else "false";
 ```
 
@@ -662,8 +663,8 @@ The `expression` will be repeatedly evaluated until either:
 Example:
 
 ```rust
-// implementing the traditional `map` function in Wasmin
-// with the `loop-if` construct
+# implementing the traditional `map` function in Wasmin
+# with the `loop-if` construct
 map [[T] V, array(T)] array(V);
 fun map function list = (
     mut index = 0;
@@ -718,7 +719,7 @@ mut rec = {name "the record"};
 
 let current-name = remove rec name;
 
-// `get rec name` would now return the empty String!
+# `get rec name` would now return the empty String!
 ```
 
 Notice that these _special functions_ never consume their first argument (i.e. the receiver of the call), so that the

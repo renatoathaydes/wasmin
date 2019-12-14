@@ -1,9 +1,12 @@
-// declarations
+# type declaration
 export main [] i64;
+
+# functions without args do not need a type declaration
 use-stack [] i64;
+
 do-add [i64, i64] i64;
 
-// C-like function
+# C-like function implementation
 fun main = (
     let a = 10;
     let b = 20;
@@ -11,7 +14,7 @@ fun main = (
     do-add result 1
 )
 
-// stack-based function
+# concatenative style
 fun use-stack = 10 > 20 > add > do-add 1;
 
 fun do-add a b = add a b;
