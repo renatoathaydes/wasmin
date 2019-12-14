@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'iterator.dart';
+import 'parse/iterator.dart';
 import 'parse/parse.dart';
 import 'text_sink.dart';
 
