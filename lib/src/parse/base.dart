@@ -1,5 +1,3 @@
-import '../ast.dart';
-
 const whitespace = {
   ' ', '\r', '\n', '\t', //
 };
@@ -74,7 +72,7 @@ mixin AssignmentParser {
   String get keyword;
 }
 
-class SkipWhitespaces with RuneBasedParser<Noop> {
+class SkipWhitespaces with RuneBasedParser<void> {
   const SkipWhitespaces();
 
   @override
@@ -87,7 +85,7 @@ class SkipWhitespaces with RuneBasedParser<Noop> {
   }
 
   @override
-  Noop consume() => const Noop();
+  void consume() => null;
 }
 
 class WordParser with RuneBasedParser<String> {

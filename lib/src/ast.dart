@@ -5,15 +5,10 @@ import 'type.dart';
 abstract class Implementation {
   const Implementation._();
 
-  T match<T>({T Function(Let) onLet, T Function(Fun) onFun}) {
-    if (this is Let) {
-      return onLet(this as Let);
-    }
-    if (this is Fun) {
-      return onFun(this as Fun);
-    }
-    throw 'unreachable';
-  }
+  T match<T>({
+    T Function(Let) onLet,
+    T Function(Fun) onFun,
+  });
 }
 
 /// Wasmin program declaration unit.
@@ -22,27 +17,14 @@ abstract class Declaration {
 
   const Declaration._(this.isExported);
 
-  T match<T>(
-      {T Function(FunDeclaration) onFun, T Function(LetDeclaration) onLet}) {
-    if (this is LetDeclaration) {
-      return onLet(this as LetDeclaration);
-    }
-    if (this is FunDeclaration) {
-      return onFun(this as FunDeclaration);
-    }
-    throw 'unreachable';
-  }
-}
-
-/// The no-op node can be used when a source code construct
-/// performs no operation (e.g. whitespace).
-class Noop extends Implementation {
-  const Noop() : super._();
+  T match<T>({
+    T Function(FunDeclaration) onFun,
+    T Function(LetDeclaration) onLet,
+  });
 }
 
 /// Top-level Let expression.
 class Let extends Implementation {
-  @override
   final Expression body;
   final LetDeclaration declaration;
 
@@ -50,7 +32,6 @@ class Let extends Implementation {
 
   ValueType get type => body.type;
 
-  @override
   String get id => declaration.name;
 
   @override
@@ -66,6 +47,11 @@ class Let extends Implementation {
 
   @override
   int get hashCode => declaration.hashCode ^ body.hashCode;
+
+  @override
+  T match<T>({T Function(Let) onLet, T Function(Fun) onFun}) {
+    return onLet(this);
+  }
 }
 
 /// Fun represents a function implementation.
@@ -88,6 +74,11 @@ class Fun extends Implementation {
 
   @override
   int get hashCode => declaration.hashCode ^ body.hashCode;
+
+  @override
+  T match<T>({T Function(Let) onLet, T Function(Fun) onFun}) {
+    return onFun(this);
+  }
 }
 
 class FunDeclaration extends Declaration {
@@ -117,6 +108,12 @@ class FunDeclaration extends Declaration {
   String toString() {
     return 'FunDeclaration{type: $type, id: $id, isExported: $isExported}';
   }
+
+  @override
+  T match<T>(
+      {T Function(FunDeclaration) onFun, T Function(LetDeclaration) onLet}) {
+    return onFun(this);
+  }
 }
 
 class LetDeclaration extends Declaration {
@@ -145,5 +142,11 @@ class LetDeclaration extends Declaration {
   @override
   String toString() {
     return 'LetDeclaration{type: $type, name: $name, isExported: $isExported}';
+  }
+
+  @override
+  T match<T>(
+      {T Function(FunDeclaration) onFun, T Function(LetDeclaration) onLet}) {
+    return onLet(this);
   }
 }
