@@ -10,6 +10,7 @@ import 'let.dart';
 class WasminUnit {
   final List<Declaration> declarations = [];
   final List<Implementation> implementations = [];
+  final List<WasminError> errors = [];
 
   WasminUnit();
 }
@@ -21,20 +22,15 @@ class WasminParser {
   Future<WasminUnit> parse(RuneIterator runes) async {
     final unit = WasminUnit();
     await for (final node in _parse(runes)) {
-      if (node is Declaration) {
-        unit.declarations.add(node);
-      } else if (node is Implementation) {
-        unit.implementations.add(node);
-      } else {
-        throw 'Parser emitted unknown node type: $node';
-      }
+      node.matchNode(
+          onDeclaration: unit.declarations.add,
+          onImpl: unit.implementations.add,
+          onError: unit.errors.add);
     }
     return unit;
   }
 
-  // TODO this implementation should be recursive, so all levels of the program
-  //      are basically treated as expressions.
-  Stream _parse(RuneIterator runes) async* {
+  Stream<WasminNode> _parse(RuneIterator runes) async* {
     final expr = ExpressionParser(_wordParser, _context);
     final declaration = DeclarationParser(_wordParser, _context);
     final let = LetParser(expr, _context);
@@ -43,7 +39,7 @@ class WasminParser {
 
     while (result == ParseResult.CONTINUE) {
       result = _wordParser.parse(runes);
-      Parser currentParser;
+      Parser<WasminNode> currentParser;
       switch (result) {
         case ParseResult.CONTINUE:
           final word = _wordParser.consume();

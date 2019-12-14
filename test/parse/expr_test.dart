@@ -113,8 +113,66 @@ void main() {
             Expression.funCall(
               'mul',
               [
-                Expression.constant('1', ValueType.i64),
+                Expression.variable('n', ValueType.i64),
                 Expression.constant('2', ValueType.i64),
+              ],
+              ValueType.i64,
+            )
+          ])));
+    });
+
+    test('can parse complex grouped expressions', () {
+      final result = parser
+          .parse('(let x = 1; (let y = (add 1 2) )(add x y))X'.runes.iterator);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.CONTINUE));
+      expect(
+          parser.consume(),
+          equals(Expression.group([
+            Expression.let('x', Expression.constant('1', ValueType.i64)),
+            Expression.let(
+                'y',
+                Expression.funCall(
+                    'add',
+                    [
+                      Expression.constant('1', ValueType.i64),
+                      Expression.constant('2', ValueType.i64),
+                    ],
+                    ValueType.i64)),
+            Expression.funCall(
+              'add',
+              [
+                Expression.variable('x', ValueType.i64),
+                Expression.variable('y', ValueType.i64),
+              ],
+              ValueType.i64,
+            )
+          ])));
+    });
+
+    test('can parse complex grouped expressions (no parenthesis)', () {
+      final result = parser
+          .parse('(let x = 1;\nlet y = add 1 2\n;add x y\n)X'.runes.iterator);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.CONTINUE));
+      expect(
+          parser.consume(),
+          equals(Expression.group([
+            Expression.let('x', Expression.constant('1', ValueType.i64)),
+            Expression.let(
+                'y',
+                Expression.funCall(
+                    'add',
+                    [
+                      Expression.constant('1', ValueType.i64),
+                      Expression.constant('2', ValueType.i64),
+                    ],
+                    ValueType.i64)),
+            Expression.funCall(
+              'add',
+              [
+                Expression.variable('x', ValueType.i64),
+                Expression.variable('y', ValueType.i64),
               ],
               ValueType.i64,
             )

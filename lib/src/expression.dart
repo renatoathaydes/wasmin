@@ -133,4 +133,18 @@ class Group extends Expression {
   final List<Expression> body;
 
   Group(this.body) : super._create('', body.last.type);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other &&
+          other is Group &&
+          runtimeType == other.runtimeType &&
+          const IterableEquality<Expression>().equals(body, other.body);
+
+  @override
+  int get hashCode => super.hashCode ^ body.hashCode;
+
+  @override
+  String toString() => 'Group{$body}';
 }

@@ -146,10 +146,13 @@ class ExpressionParser with WordBasedParser<Expression> {
         members.add(_parseToGroupEnd(runes, _isCloseBracket));
       } else if (nextSymbol == '=') {
         _done = !runes.moveNext();
+        whitespaces.parse(runes);
         members.add(_parseToAssignmentEnd(runes, members));
       } else if (word.isEmpty) {
         if (nextSymbol == null) {
           throw const _UnterminatedExpression();
+        } else if (isEnd(runes)) {
+          break;
         } else {
           return _Error(['expression to be closed'.wasExpected(runes, false)]);
         }
@@ -201,31 +204,31 @@ class ExpressionParser with WordBasedParser<Expression> {
     if (_done) {
       return _Error(['assignment expression'.wasExpected(runes, false)]);
     }
-    if (members.isEmpty || members.length > 2) {
+    if (members.length < 2) {
       return _Error(["Unexpected '='"]);
     }
-    final keywordExpr = members.removeAt(0);
-    final idExpr = members.isNotEmpty ? members.removeAt(0) : null;
+    final prevExpr = members.removeLast();
+    final prev2Expr = members.removeLast();
     final value = _parseToGroupEnd(runes, _endGroupFunction(runes));
     final errors = <String>[];
     String keyword;
     String id;
-    if (keywordExpr is _SingleMember && keywordExpr.name.isAssignmentKeyword) {
-      keyword = keywordExpr.name;
+    if (prev2Expr is _SingleMember && prev2Expr.name.isAssignmentKeyword) {
+      keyword = prev2Expr.name;
     } else {
       errors.add('Malformed assignment: '
-          "'let' or 'mut' keywords were expected, but got ${keywordExpr.match(
+          "'let' or 'mut' keywords were expected, but got ${prevExpr.match(
         onGroup: (_) => 'a multi-expression',
         onMember: (m) => "'$m' instead",
         onAssignment: (k, i, v) => 'a nested assignment',
         onErrors: (err) => 'an invalid expression: $err',
       )}");
     }
-    if (idExpr is _SingleMember && idExpr.name.isValidIdentifier) {
-      id = idExpr.name;
+    if (prevExpr is _SingleMember && prevExpr.name.isValidIdentifier) {
+      id = prevExpr.name;
     } else {
       errors.add('Malformed assignment: '
-          "expected an identifier, but got ${keywordExpr.match(
+          "expected an identifier, but got ${prevExpr.match(
         onGroup: (_) => 'a multi-expression',
         onMember: (m) => "an invalid identifier: '$m'",
         onAssignment: (k, i, v) => 'a nested assignment',

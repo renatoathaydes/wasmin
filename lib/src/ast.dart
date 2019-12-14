@@ -1,18 +1,38 @@
+import 'package:wasmin/wasmin.dart';
+
 import 'expression.dart';
 import 'type.dart';
 
+/// Top-level node in a Wasmin program.
+mixin WasminNode {
+  T matchNode<T>({
+    T Function(Implementation) onImpl,
+    T Function(Declaration) onDeclaration,
+    T Function(WasminError) onError,
+  });
+}
+
 /// Top-level Wasmin program implementation unit.
-abstract class Implementation {
+abstract class Implementation with WasminNode {
   const Implementation._();
 
   T match<T>({
     T Function(Let) onLet,
     T Function(Fun) onFun,
   });
+
+  @override
+  T matchNode<T>({
+    T Function(Implementation) onImpl,
+    T Function(Declaration) onDeclaration,
+    T Function(WasminError) onError,
+  }) {
+    return onImpl(this);
+  }
 }
 
 /// Wasmin program declaration unit.
-abstract class Declaration {
+abstract class Declaration with WasminNode {
   final bool isExported;
 
   const Declaration._(this.isExported);
@@ -21,6 +41,32 @@ abstract class Declaration {
     T Function(FunDeclaration) onFun,
     T Function(LetDeclaration) onLet,
   });
+
+  @override
+  T matchNode<T>({
+    T Function(Implementation) onImpl,
+    T Function(Declaration) onDeclaration,
+    T Function(WasminError) onError,
+  }) {
+    return onDeclaration(this);
+  }
+}
+
+/// An instance of this type is emitted when a Wasmin program is found to
+/// contain errors.
+class WasminError with WasminNode {
+  final List<String> errors;
+
+  const WasminError(this.errors);
+
+  @override
+  T matchNode<T>({
+    T Function(Implementation) onImpl,
+    T Function(Declaration) onDeclaration,
+    T Function(WasminError) onError,
+  }) {
+    return onError(this);
+  }
 }
 
 /// Top-level Let expression.

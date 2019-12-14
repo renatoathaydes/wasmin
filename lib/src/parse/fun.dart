@@ -22,8 +22,8 @@ class FunParser with WordBasedParser<Fun> {
     reset();
     var word = nextWord(runes);
     if (word.isEmpty) {
-      failure =
-          'Incomplete fun. ' + 'function identifier'.wasExpected(runes, false);
+      failure = 'Incomplete fun declaration. ' +
+          'function identifier'.wasExpected(runes, false);
       return ParseResult.FAIL;
     }
 
