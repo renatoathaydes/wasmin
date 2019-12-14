@@ -10,7 +10,7 @@ void main() {
   MutableTypeContext context;
   setUp(() {
     context = ParsingContext();
-    parser = LetParser(ExpressionParser(WordParser()), context);
+    parser = LetParser(ExpressionParser(WordParser(), ParsingContext()), context);
   });
 
   group('success cases', () {

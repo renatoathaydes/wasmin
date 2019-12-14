@@ -53,6 +53,7 @@ class WasmTextSink {
       onVariable: _variable,
       onFunCall: _funCall,
       onLet: _let,
+      onGroup: _group,
     );
   }
 
@@ -83,5 +84,9 @@ class WasmTextSink {
     _textSink.write('(local.set \$${let.id} ');
     _writeExpression(let.body);
     _textSink.writeln(')');
+  }
+
+  void _group(Group group) {
+    // TODO
   }
 }

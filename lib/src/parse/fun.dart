@@ -22,7 +22,8 @@ class FunParser with WordBasedParser<Fun> {
     reset();
     var word = nextWord(runes);
     if (word.isEmpty) {
-      failure = 'Incomplete fun. Expected identifier!';
+      failure =
+          'Incomplete fun. ' + 'function identifier'.wasExpected(runes, false);
       return ParseResult.FAIL;
     }
 
@@ -37,7 +38,7 @@ class FunParser with WordBasedParser<Fun> {
     _whitespaces.parse(runes);
 
     if (runes.currentAsString != '=') {
-      failure = "Incomplete fun. Expected '='!";
+      failure = 'Incomplete fun declaration. ' + '='.wasExpected(runes, true);
       return ParseResult.FAIL;
     }
 
@@ -50,8 +51,9 @@ class FunParser with WordBasedParser<Fun> {
     var decl = _typeContext.declarationOf(id);
     if (decl != null) {
       expression = decl.match(
-          onLet: (_) => throw TypeCheckException(
-              "'$id' is declared as a let expression, but implemented as a fun expression."),
+          onLet: (_) =>
+              throw TypeCheckException("'$id' is declared as a variable, "
+                  'but implemented as a function.'),
           onFun: (fun) {
             if (fun.type.takes.length == args.length) {
               final types = fun.type.takes.iterator;
@@ -76,19 +78,21 @@ class FunParser with WordBasedParser<Fun> {
             }
           });
     } else {
+      // undeclared function
       if (args.isNotEmpty) {
         throw Exception('Functions with arguments require '
-            "a type declaration, but '$id' is missing one. "
-            'This is a requirement because argument types cannot be inferred.');
+            "a type declaration, but the '$id' function is missing one. "
+            'This is a requirement because function argument types '
+            'cannot be inferred.');
       }
-      decl = FunDeclaration(id, FunType(expression.type, const []));
-      _typeContext.add(decl);
       final funExpression = ExpressionParser(words, _typeContext.createChild());
       result = funExpression.parse(runes);
       if (result == ParseResult.FAIL) {
-        failure = 'fun error: ${funExpression.failure}';
+        failure = 'Function implementation error: ${funExpression.failure}';
       } else {
         expression = funExpression.consume();
+        decl = FunDeclaration(id, FunType(expression.type, const []));
+        _typeContext.add(decl);
       }
     }
 

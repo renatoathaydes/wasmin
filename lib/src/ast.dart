@@ -42,12 +42,16 @@ class Noop extends Implementation {
 
 /// Top-level Let expression.
 class Let extends Implementation {
+  @override
   final Expression body;
   final LetDeclaration declaration;
 
   const Let(this.declaration, this.body) : super._();
 
   ValueType get type => body.type;
+
+  @override
+  String get id => declaration.name;
 
   @override
   String toString() => 'Let{${declaration} $body}';

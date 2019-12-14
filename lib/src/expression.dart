@@ -27,11 +27,16 @@ class Expression {
     return LetExpression(name, body);
   }
 
+  factory Expression.group(Iterable<Expression> body) {
+    return Group(body.toList(growable: false));
+  }
+
   T matchExpr<T>({
     T Function(Const) onConst,
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
+    T Function(Group) onGroup,
   }) {
     if (this is Const) return onConst(this as Const);
     if (this is Var) return onVariable(this as Var);
@@ -50,6 +55,14 @@ class Expression {
 
   @override
   int get hashCode => type.hashCode;
+}
+
+mixin AssignmentExpression on Expression {
+  String get keyword;
+
+  String get id;
+
+  Expression get body;
 }
 
 class Const extends Expression {
@@ -92,13 +105,17 @@ class FunCall extends Expression {
   int get hashCode => super.hashCode ^ args.hashCode;
 }
 
-class LetExpression extends Expression {
+class LetExpression extends Expression with AssignmentExpression {
+  @override
+  String get keyword => 'let';
+
+  @override
   final Expression body;
 
-  const LetExpression(String name, this.body)
-      : super._create(name, ValueType.empty);
-
+  @override
   String get id => _id;
+
+  LetExpression(String name, this.body) : super._create(name, ValueType.empty);
 
   @override
   String toString() => '(let $_id = $body)';
@@ -110,4 +127,10 @@ class LetExpression extends Expression {
 
   @override
   int get hashCode => super.hashCode ^ body.hashCode;
+}
+
+class Group extends Expression {
+  final List<Expression> body;
+
+  Group(this.body) : super._create('', body.last.type);
 }

@@ -32,6 +32,8 @@ class WasminParser {
     return unit;
   }
 
+  // TODO this implementation should be recursive, so all levels of the program
+  //      are basically treated as expressions.
   Stream _parse(RuneIterator runes) async* {
     final expr = ExpressionParser(_wordParser, _context);
     final declaration = DeclarationParser(_wordParser, _context);

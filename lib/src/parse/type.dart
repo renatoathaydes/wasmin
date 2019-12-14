@@ -16,8 +16,9 @@ class TypeParser with WordBasedParser<WasminType> {
   ParseResult parse(RuneIterator runes) {
     reset();
     final word = nextWord(runes);
+    whitespaces.parse(runes);
+
     if (word.isEmpty) {
-      whitespaces.parse(runes);
       if (runes.currentAsString == '[') {
         final args = <String>[];
         do {
@@ -30,14 +31,10 @@ class TypeParser with WordBasedParser<WasminType> {
         if (runes.currentAsString == ']') {
           runes.moveNext();
           final returns = nextWord(runes);
-          if (returns.isEmpty) {
-            failure =
-                'function return type declaration'.wasExpected(runes, false);
-            return ParseResult.FAIL;
-          } else {
-            _type = FunType(ValueType(returns),
-                args.map((a) => ValueType(a)).toList(growable: false));
-          }
+          final returnType =
+              returns.isEmpty ? ValueType.empty : ValueType(returns);
+          _type = FunType(returnType,
+              args.map((a) => ValueType(a)).toList(growable: false));
         } else {
           failure = 'Unterminated function parameter list. ' +
               ']'.wasExpected(runes, true);
@@ -48,7 +45,13 @@ class TypeParser with WordBasedParser<WasminType> {
         return ParseResult.FAIL;
       }
     } else {
-      _type = ValueType(word);
+      if (runes.currentAsString == null || runes.currentAsString == ';') {
+        _type = ValueType(word);
+      } else {
+        failure = 'Unexpected character in '
+            "type declaration: '${runes.currentAsString}'";
+        return ParseResult.FAIL;
+      }
     }
 
     return runes.currentAsString == null

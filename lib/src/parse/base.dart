@@ -9,9 +9,16 @@ const separators = {
   '=', '!', '<', '>', //
 };
 
-enum ParseResult { CONTINUE, DONE, FAIL }
+const assignmentKeywords = {'let', 'mut'};
 
-bool isSeparator(String rune) => separators.contains(rune);
+const keywords = {
+  ...assignmentKeywords,
+  'set',
+  'get',
+  'copy',
+};
+
+enum ParseResult { CONTINUE, DONE, FAIL }
 
 mixin Parser<N> {
   /// The last failure seem by this parser.
@@ -63,17 +70,19 @@ mixin WordBasedParser<N> implements Parser<N> {
   }
 }
 
+mixin AssignmentParser {
+  String get keyword;
+}
+
 class SkipWhitespaces with RuneBasedParser<Noop> {
   const SkipWhitespaces();
 
   @override
   final String failure = null;
 
-  bool _whitespace(String rune) => whitespace.contains(rune);
-
   @override
   ParseResult accept(String rune) {
-    if (_whitespace(rune)) return ParseResult.CONTINUE;
+    if (rune.isWhitespace) return ParseResult.CONTINUE;
     return ParseResult.DONE;
   }
 
@@ -96,17 +105,35 @@ class WordParser with RuneBasedParser<String> {
 
   @override
   ParseResult accept(String rune) {
-    if (isSeparator(rune)) return ParseResult.DONE;
+    if (rune.isSeparator) return ParseResult.DONE;
     _buffer.write(rune);
     return ParseResult.CONTINUE;
   }
 }
 
-extension ParserErrors on String {
+extension ParserStringExtensions on String {
+  bool get isWhitespace => whitespace.contains(this);
+
+  bool get isNotWhitespace => !isWhitespace;
+
+  bool get isSeparator => separators.contains(this);
+
+  bool get isValidIdentifier =>
+      !keywords.contains(this) && _allValidIdentifierRunes(runes);
+
+  bool get isAssignmentKeyword => assignmentKeywords.contains(this);
+
   String quote() => "'${this}'";
 
   String wasExpected(RuneIterator actual, bool quoteExpected) {
     return 'Expected ${quoteExpected ? quote() : this}, '
         "got ${actual.currentAsString?.quote() ?? 'EOF'}";
   }
+}
+
+bool _allValidIdentifierRunes(Runes runes) {
+  for (final rune in runes) {
+    if (separators.contains(rune)) return false;
+  }
+  return true;
 }

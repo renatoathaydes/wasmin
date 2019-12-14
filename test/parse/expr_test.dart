@@ -1,12 +1,13 @@
 import 'package:test/test.dart';
 import 'package:wasmin/src/parse/base.dart';
 import 'package:wasmin/src/parse/expression.dart';
+import 'package:wasmin/src/type_context.dart';
 import 'package:wasmin/wasmin.dart';
 
 void main() {
   ExpressionParser parser;
 
-  setUp(() => parser = ExpressionParser(WordParser()));
+  setUp(() => parser = ExpressionParser(WordParser(), ParsingContext()));
 
   group('success', () {
     test('can parse constant', () {
@@ -100,6 +101,25 @@ void main() {
             ValueType.i64,
           )));
     });
+
+    test('can parse grouped expressions', () {
+      final result = parser.parse('(let n = 1;mul n 2)'.runes.iterator);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.DONE));
+      expect(
+          parser.consume(),
+          equals(Expression.group([
+            Expression.let('n', Expression.constant('1', ValueType.i64)),
+            Expression.funCall(
+              'mul',
+              [
+                Expression.constant('1', ValueType.i64),
+                Expression.constant('2', ValueType.i64),
+              ],
+              ValueType.i64,
+            )
+          ])));
+    });
   });
 
   group('failures', () {
@@ -119,7 +139,8 @@ void main() {
 
     test('cannot parse function call that was terminated in the middle', () {
       final result = parser.parse('add (1; 2)'.runes.iterator);
-      expect(parser.failure, equals('Unterminated expression'));
+      expect(parser.failure,
+          equals("Exception: Expected expression to be closed, got ';'"));
       expect(result, equals(ParseResult.FAIL));
     });
 
@@ -131,7 +152,8 @@ void main() {
 
     test('cannot parse nested function call that was not terminated', () {
       final result = parser.parse('(mul (add 3 2);'.runes.iterator);
-      expect(parser.failure, equals('Unterminated expression'));
+      expect(parser.failure,
+          equals("Exception: Expected expression to be closed, got ';'"));
       expect(result, equals(ParseResult.FAIL));
     });
   });
