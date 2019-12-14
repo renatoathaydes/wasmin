@@ -38,7 +38,7 @@ class DeclarationParser with WordBasedParser<Declaration> {
     }
 
     if (id.isEmpty) {
-      failure = 'variable of function declaration'.wasExpected(runes, false);
+      failure = 'identifier'.wasExpected(runes, false);
       return ParseResult.FAIL;
     }
 
