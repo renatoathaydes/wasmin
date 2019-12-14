@@ -2,9 +2,11 @@ const whitespace = {
   ' ', '\r', '\n', '\t', //
 };
 
+const startLineComment = '#';
+
 const separators = {
   ...whitespace, ',', ';', '[', ']', '(', ')', '{', '}', //
-  '=', '!', '<', '>', //
+  '=', '!', '<', '>', startLineComment, //
 };
 
 const assignmentKeywords = {'let', 'mut'};
@@ -34,10 +36,15 @@ mixin Parser<N> {
 mixin RuneBasedParser<N> implements Parser<N> {
   @override
   ParseResult parse(RuneIterator runes) {
-    var firstRune = runes.currentAsString != null;
-    while (firstRune || runes.moveNext()) {
-      firstRune = false;
-      final rune = runes.currentAsString;
+    var firstRun = true;
+    do {
+      var rune = runes.currentAsString;
+      if (firstRun && rune == null) {
+        runes.moveNext();
+        rune = runes.currentAsString;
+        if (rune == null) return ParseResult.DONE;
+      }
+      firstRun = false;
       final result = accept(rune);
       switch (result) {
         case ParseResult.FAIL:
@@ -47,7 +54,7 @@ mixin RuneBasedParser<N> implements Parser<N> {
         case ParseResult.CONTINUE:
         // keep going
       }
-    }
+    } while (runes.moveNext());
     return ParseResult.DONE;
   }
 
@@ -55,7 +62,7 @@ mixin RuneBasedParser<N> implements Parser<N> {
 }
 
 mixin WordBasedParser<N> implements Parser<N> {
-  final whitespaces = const SkipWhitespaces();
+  final whitespaces = SkipWhitespaces();
   @override
   String failure;
 
@@ -68,19 +75,30 @@ mixin WordBasedParser<N> implements Parser<N> {
   }
 }
 
-mixin AssignmentParser {
-  String get keyword;
-}
-
 class SkipWhitespaces with RuneBasedParser<void> {
-  const SkipWhitespaces();
+  bool parsingComment = false;
+
+  SkipWhitespaces();
 
   @override
   final String failure = null;
 
   @override
+  ParseResult parse(RuneIterator runes) {
+    final result = super.parse(runes);
+    if (result != ParseResult.CONTINUE) parsingComment = false;
+    return result;
+  }
+
+  @override
   ParseResult accept(String rune) {
-    if (rune.isWhitespace) return ParseResult.CONTINUE;
+    if (parsingComment) {
+      if (rune == '\n') parsingComment = false;
+      return ParseResult.CONTINUE;
+    } else if (rune == startLineComment) {
+      parsingComment = true;
+      return ParseResult.CONTINUE;
+    } else if (rune.isWhitespace) return ParseResult.CONTINUE;
     return ParseResult.DONE;
   }
 

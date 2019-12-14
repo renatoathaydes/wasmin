@@ -9,7 +9,7 @@ import 'base.dart';
 class LetParser with WordBasedParser<Let> {
   final ExpressionParser _expr;
 
-  final _whitespaces = const SkipWhitespaces();
+  final _whitespaces = SkipWhitespaces();
   @override
   final WordParser words;
   final MutableTypeContext _typeContext;

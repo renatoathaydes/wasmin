@@ -8,7 +8,7 @@ import '../type_context.dart';
 import 'base.dart';
 
 class FunParser with WordBasedParser<Fun> {
-  final _whitespaces = const SkipWhitespaces();
+  final _whitespaces = SkipWhitespaces();
   @override
   final WordParser words;
   final ParsingContext _typeContext;

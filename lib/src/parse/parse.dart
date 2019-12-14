@@ -35,9 +35,10 @@ class WasminParser {
     final declaration = DeclarationParser(_wordParser, _context);
     final let = LetParser(expr, _context);
     final fun = FunParser(_wordParser, _context);
-    var result = ParseResult.CONTINUE;
+    var result = expr.whitespaces.parse(runes);
 
     while (result == ParseResult.CONTINUE) {
+      expr.whitespaces.parse(runes);
       result = _wordParser.parse(runes);
       Parser<WasminNode> currentParser;
       switch (result) {
