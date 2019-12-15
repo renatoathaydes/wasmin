@@ -18,7 +18,7 @@ void main() {
       expect(
           parser.consume(),
           equals(Fun(FunDeclaration('main', FunType(ValueType.i64, const [])),
-              Expression.constant('10', ValueType.i64))));
+              const [], Expression.constant('10', ValueType.i64))));
     });
 
     test('can parse function with no args returning single expression', () {
@@ -30,6 +30,7 @@ void main() {
           parser.consume(),
           equals(Fun(
               FunDeclaration('foo', FunType(ValueType.f64, const [])),
+              const [],
               Expression.funCall(
                   'add',
                   [
@@ -49,6 +50,7 @@ void main() {
           parser.consume(),
           equals(Fun(
               const FunDeclaration('n', FunType(ValueType.f64, [])),
+              const [],
               Expression.group([
                 Expression.let('x', Expression.constant('2.0', ValueType.f64)),
                 Expression.let('y', Expression.constant('3.3', ValueType.f64)),

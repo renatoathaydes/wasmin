@@ -77,9 +77,9 @@ class LetParser with WordBasedParser<Let> {
   }
 
   void _verifyType(LetDeclaration decl, Expression body) {
-    if (decl.type != body.type) {
+    if (decl.varType != body.type) {
       throw TypeCheckException(
-          "'${decl.name}' type should be '${decl.type.name}', but its "
+          "'${decl.id}' type should be '${decl.varType.name}', but its "
           "implementation has type '${body.type.name}'");
     }
   }

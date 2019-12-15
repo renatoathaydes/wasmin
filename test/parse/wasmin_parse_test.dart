@@ -13,14 +13,14 @@ void main() {
     expect(
         nodes[0],
         isA<Let>()
-            .having((let) => let.declaration.name, 'id', equals('x'))
+            .having((let) => let.declaration.id, 'id', equals('x'))
             .having((let) => let.type, 'type', equals(ValueType.i64))
             .having((let) => let.body, 'body',
                 equals(Expression.constant('0', ValueType.i64))));
     expect(
         nodes[1],
         isA<Let>()
-            .having((let) => let.declaration.name, 'id', equals('y'))
+            .having((let) => let.declaration.id, 'id', equals('y'))
             .having((let) => let.type, 'type', equals(ValueType.i64))
             .having((let) => let.body, 'body',
                 equals(Expression.constant('10', ValueType.i64))));
@@ -37,7 +37,7 @@ void main() {
     expect(
         nodes[0],
         isA<Let>()
-            .having((let) => let.declaration.name, 'id', equals('my-value'))
+            .having((let) => let.declaration.id, 'id', equals('my-value'))
             .having((let) => let.type, 'type', equals(ValueType.i64))
             .having(
                 (let) => let.body,
@@ -58,7 +58,7 @@ void main() {
     expect(unit.declarations.length, equals(1));
     expect(unit.implementations.length, equals(1));
 
-    final letDecl = const LetDeclaration('my-value', ValueType.i64);
+    final letDecl = LetDeclaration('my-value', ValueType.i64);
     expect(unit.declarations[0], equals(letDecl));
     expect(unit.implementations[0],
         equals(Let(letDecl, Const('20', ValueType.i64))));
@@ -78,6 +78,7 @@ void main() {
         unit.implementations[0],
         equals(Fun(
             funDecl,
+            const ['foo'],
             Expression.funCall(
                 'add',
                 [

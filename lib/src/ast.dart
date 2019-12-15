@@ -78,7 +78,7 @@ class Let extends Implementation {
 
   ValueType get type => body.type;
 
-  String get id => declaration.name;
+  String get id => declaration.id;
 
   @override
   String toString() => 'Let{${declaration} $body}';
@@ -102,13 +102,14 @@ class Let extends Implementation {
 
 /// Fun represents a function implementation.
 class Fun extends Implementation {
-  final Expression body;
   final FunDeclaration declaration;
+  final List<String> args;
+  final Expression body;
 
-  Fun(this.declaration, this.body) : super._();
+  Fun(this.declaration, this.args, this.body) : super._();
 
   @override
-  String toString() => 'Fun{id=${declaration.id}, body=$body}';
+  String toString() => 'Fun{id=${declaration.id}, args=$args, body=$body}';
 
   @override
   bool operator ==(Object other) =>
@@ -162,15 +163,19 @@ class FunDeclaration extends Declaration {
   }
 }
 
-class LetDeclaration extends Declaration {
-  final String name;
-  final ValueType type;
+class LetDeclaration extends Declaration with Assignment {
+  @override
+  final String keyword = 'let';
+  @override
+  final String id;
+  @override
+  final ValueType varType;
 
-  const LetDeclaration(this.name, this.type, [bool isExported = false])
+  LetDeclaration(this.id, this.varType, [bool isExported = false])
       : super._(isExported);
 
   LetDeclaration asExported() {
-    return isExported ? this : LetDeclaration(name, type, true);
+    return isExported ? this : LetDeclaration(id, varType, true);
   }
 
   @override
@@ -178,16 +183,16 @@ class LetDeclaration extends Declaration {
       identical(this, other) ||
       other is LetDeclaration &&
           runtimeType == other.runtimeType &&
-          type == other.type &&
-          name == other.name &&
+          varType == other.varType &&
+          id == other.id &&
           isExported == other.isExported;
 
   @override
-  int get hashCode => name.hashCode ^ type.hashCode ^ isExported.hashCode;
+  int get hashCode => id.hashCode ^ varType.hashCode ^ isExported.hashCode;
 
   @override
   String toString() {
-    return 'LetDeclaration{type: $type, name: $name, isExported: $isExported}';
+    return 'LetDeclaration{type: $varType, name: $id, isExported: $isExported}';
   }
 
   @override

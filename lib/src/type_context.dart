@@ -57,7 +57,7 @@ class ParsingContext with MutableTypeContext {
   @override
   void add(Declaration declaration) {
     _declarations[declaration.match(
-        onLet: (let) => let.name, onFun: (fun) => fun.id)] = declaration;
+        onLet: (let) => let.id, onFun: (fun) => fun.id)] = declaration;
   }
 
   ParsingContext createChild() => ParsingContext(this);

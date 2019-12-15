@@ -55,7 +55,7 @@ Expression _singleMemberExpression(String member, ParsingContext context) {
   }
   final varType = context
       .declarationOf(member)
-      ?.match(onLet: (let) => let.type, onFun: (fun) => null);
+      ?.match(onLet: (let) => let.varType, onFun: (fun) => null);
   if (varType != null) return Expression.variable(member, varType);
   return Expression.constant(member, inferValueType(member));
 }

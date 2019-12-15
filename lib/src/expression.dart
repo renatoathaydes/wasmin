@@ -51,12 +51,12 @@ abstract class Expression {
   int get hashCode => type.hashCode;
 }
 
-mixin AssignmentExpression on Expression {
+mixin Assignment {
   String get keyword;
 
   String get id;
 
-  Expression get body;
+  ValueType get varType;
 }
 
 class Const extends Expression {
@@ -132,17 +132,19 @@ class FunCall extends Expression {
   }
 }
 
-class LetExpression extends Expression with AssignmentExpression {
+class LetExpression extends Expression with Assignment {
   @override
   String get keyword => 'let';
 
   @override
+  String get id => _id;
+
   final Expression body;
 
   @override
-  String get id => _id;
+  ValueType get varType => body.type;
 
-  LetExpression(String name, this.body) : super._create(name, ValueType.empty);
+  LetExpression(String id, this.body) : super._create(id, ValueType.empty);
 
   @override
   String toString() => '(let $_id = $body)';

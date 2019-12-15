@@ -99,7 +99,7 @@ class FunParser with WordBasedParser<Fun> {
     if (result != ParseResult.FAIL) {
       final funDecl = decl as FunDeclaration;
       _verifyType(funDecl, expression);
-      _fun = Fun(funDecl, expression);
+      _fun = Fun(funDecl, args, expression);
     }
 
     return result;

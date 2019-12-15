@@ -12,7 +12,17 @@ void main() {
     readText = () => sink.toString();
   });
 
-  test('Can write simple math expression', () {
+  test('Can write constant', () {
+    textSink.add(Expression.constant('10', ValueType.i32));
+    expect(readText(), equals('(i32.const 10)'));
+  });
+
+  test('Can write variable use', () {
+    textSink.add(Expression.variable('foo', ValueType.i32));
+    expect(readText(), equals(r'(local.get $foo)'));
+  });
+
+  test('Can write simple function call', () {
     textSink.add(Expression.funCall(
         'add',
         [
@@ -21,23 +31,27 @@ void main() {
         ],
         ValueType.i64));
 
-    expect(
-        readText(),
-        equals(r'(i64.add (i64.const 10) (i64.const 20))'
-            '\n'));
+    expect(readText(),
+        equals('(i64.add\n  (i64.const 10)\n  (i64.const 20)\n)\n'));
+  });
+
+  test('Can write no-args function call', () {
+    textSink.add(Expression.funCall('report', const [], ValueType.i64));
+
+    expect(readText(), equals(r'(call $report)' '\n'));
+  });
+
+  test('Can write simple let declaration', () {
+    textSink.add(LetDeclaration('variable', ValueType.i64));
+
+    expect(readText(), equals(r'(local $variable i64)' '\n'));
   });
 
   test('Can write simple let expression', () {
     textSink.add(
         LetExpression('variable', Expression.constant('10', ValueType.i64)));
 
-    expect(
-        readText(),
-        equals(
-            //r'(local $variable i64)'
-            //'\n'
-            r'(local.set $variable (i64.const 10))'
-            '\n'));
+    expect(readText(), equals(r'(local.set $variable (i64.const 10))' '\n'));
   });
 
   test('Can write many let expressions', () {
@@ -48,15 +62,7 @@ void main() {
 
     expect(
         readText(),
-        // FIXME variables should be declared at the beginning of a function
-        equals(
-            // r'(local $a1 i64)'
-            // '\n'
-            // r'(local $b2 f32)'
-            // '\n'
-            // r'(local $c3 i64)'
-            // '\n'
-            r'(local.set $a1 (i64.const 10))'
+        equals(r'(local.set $a1 (i64.const 10))'
             '\n'
             r'(local.set $b2 (f32.const 0.22))'
             '\n'
@@ -73,9 +79,45 @@ void main() {
         ],
         ValueType.i64));
 
+    expect(readText(),
+        equals('(i64.add\n  (local.get \$a)\n  (local.get \$b)\n)\n'));
+  });
+
+  test('Can write group of expressions', () {
+    textSink.add(Expression.group([
+      Expression.let('x', Expression.constant('2', ValueType.i64)),
+      Expression.let('y', Expression.constant('4', ValueType.i64)),
+      Expression.funCall(
+          'add',
+          [
+            Expression.variable('x', ValueType.i64),
+            Expression.variable('y', ValueType.i64),
+          ],
+          ValueType.i64)
+    ]));
+
     expect(
         readText(),
-        equals(r'(i64.add (local.get $a) (local.get $b))'
-            '\n'));
+        equals(r'(local $x i64)'
+            '\n'
+            r'(local $y i64)'
+            '\n'
+            r'(local.set $x (i64.const 2))'
+            '\n'
+            r'(local.set $y (i64.const 4))'
+            '\n'
+            '(i64.add\n  (local.get \$x)\n  (local.get \$y)\n)\n'));
+  });
+
+  test('Can write simple function implementation', () {
+    textSink.add(Fun(FunDeclaration('do-it', FunType(ValueType.i32, const [])),
+        const [], Expression.constant('12', ValueType.i32)));
+
+    expect(
+        readText(),
+        equals(r'(func $do-it (result i32)'
+            '\n'
+            r'  (i32.const 12)'
+            '\n)'));
   });
 }

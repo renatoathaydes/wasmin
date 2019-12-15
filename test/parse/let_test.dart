@@ -21,7 +21,7 @@ void main() {
 
       final let = parser.consume();
 
-      expect(let.declaration.name, equals('x'));
+      expect(let.declaration.id, equals('x'));
       expect(let.body, equals(Expression.constant('0', ValueType.i64)));
       expect(context.declarationOf('x'),
           equals(LetDeclaration('x', ValueType.i64)));
@@ -35,7 +35,7 @@ void main() {
 
       final let = parser.consume();
 
-      expect(let.declaration.name, equals('one_thousand'));
+      expect(let.declaration.id, equals('one_thousand'));
       expect(let.body, equals(Expression.constant('1000', ValueType.i64)));
     });
 
@@ -48,7 +48,7 @@ void main() {
 
       final let = parser.consume();
 
-      expect(let.declaration.name, equals('abc'));
+      expect(let.declaration.id, equals('abc'));
       expect(
           let.body,
           equals(Expression.funCall(
@@ -68,7 +68,7 @@ void main() {
 
       final let = parser.consume();
 
-      expect(let.declaration.name, equals('complex'));
+      expect(let.declaration.id, equals('complex'));
 
       expect(
           let.body,
