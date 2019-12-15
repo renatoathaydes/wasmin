@@ -21,13 +21,11 @@ class DeclarationParser with WordBasedParser<Declaration> {
 
   @override
   ParseResult parse(RuneIterator runes) {
-    var word = firstWord;
+    final word = firstWord ?? nextWord(runes);;
     reset();
 
     String id;
     bool isExported;
-
-    word ??= nextWord(runes);
 
     if (word == 'export') {
       id = nextWord(runes);
