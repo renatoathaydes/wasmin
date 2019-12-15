@@ -31,27 +31,27 @@ void main() {
         ],
         ValueType.i64));
 
-    expect(readText(),
-        equals('(i64.add\n  (i64.const 10)\n  (i64.const 20)\n)\n'));
+    expect(
+        readText(), equals('(i64.add\n  (i64.const 10)\n  (i64.const 20)\n)'));
   });
 
   test('Can write no-args function call', () {
     textSink.add(Expression.funCall('report', const [], ValueType.i64));
 
-    expect(readText(), equals(r'(call $report)' '\n'));
+    expect(readText(), equals(r'(call $report)'));
   });
 
   test('Can write simple let declaration', () {
     textSink.add(LetDeclaration('variable', ValueType.i64));
 
-    expect(readText(), equals(r'(local $variable i64)' '\n'));
+    expect(readText(), equals(r'(local $variable i64)'));
   });
 
   test('Can write simple let expression', () {
     textSink.add(
         LetExpression('variable', Expression.constant('10', ValueType.i64)));
 
-    expect(readText(), equals(r'(local.set $variable (i64.const 10))' '\n'));
+    expect(readText(), equals('(local.set \$variable\n  (i64.const 10)\n)'));
   });
 
   test('Can write many let expressions', () {
@@ -62,12 +62,9 @@ void main() {
 
     expect(
         readText(),
-        equals(r'(local.set $a1 (i64.const 10))'
-            '\n'
-            r'(local.set $b2 (f32.const 0.22))'
-            '\n'
-            r'(local.set $c3 (i64.const 55))'
-            '\n'));
+        equals('(local.set \$a1\n  (i64.const 10)\n)'
+            '(local.set \$b2\n  (f32.const 0.22)\n)'
+            '(local.set \$c3\n  (i64.const 55)\n)'));
   });
 
   test('Can write expression of variables', () {
@@ -80,7 +77,7 @@ void main() {
         ValueType.i64));
 
     expect(readText(),
-        equals('(i64.add\n  (local.get \$a)\n  (local.get \$b)\n)\n'));
+        equals('(i64.add\n  (local.get \$a)\n  (local.get \$b)\n)'));
   });
 
   test('Can write group of expressions', () {
@@ -98,15 +95,11 @@ void main() {
 
     expect(
         readText(),
-        equals(r'(local $x i64)'
-            '\n'
-            r'(local $y i64)'
-            '\n'
-            r'(local.set $x (i64.const 2))'
-            '\n'
-            r'(local.set $y (i64.const 4))'
-            '\n'
-            '(i64.add\n  (local.get \$x)\n  (local.get \$y)\n)\n'));
+        equals('(local \$x i64)\n'
+            '(local \$y i64)\n'
+            '(local.set \$x\n  (i64.const 2)\n)\n'
+            '(local.set \$y\n  (i64.const 4)\n)\n'
+            '(i64.add\n  (local.get \$x)\n  (local.get \$y)\n)'));
   });
 
   test('Can write simple function implementation', () {
@@ -115,9 +108,8 @@ void main() {
 
     expect(
         readText(),
-        equals(r'(func $do-it (result i32)'
-            '\n'
-            r'  (i32.const 12)'
-            '\n)'));
+        equals('(func \$do-it (result i32)\n'
+            '  (i32.const 12)\n'
+            ')'));
   });
 }

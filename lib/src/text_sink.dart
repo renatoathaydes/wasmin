@@ -13,15 +13,24 @@ class WasmTextSink {
 
   Future<void> call(Future<WasminUnit> programUnit) async {
     final unit = await programUnit;
+    _textSink.writeln('(module');
+    _increaseIndent();
+
     // write declarations first to the top of the file
     for (final declaration in unit.declarations) {
+      _textSink.write(_indent);
       declaration.match(onFun: _funDeclaration, onLet: _assignment);
+      _textSink.writeln();
     }
 
     // write all the implementation
     for (final impl in unit.implementations) {
       impl.match(onFun: _fun, onLet: _topLevelLet);
+      _textSink.writeln();
     }
+
+    _decreaseIndent();
+    _textSink.writeln(')');
   }
 
   /// Debug method to write any node without validating anything.
@@ -39,14 +48,14 @@ class WasmTextSink {
   }
 
   void _funDeclaration(FunDeclaration fun) {
+    // only write a declaration if it needs to be exported
     if (fun.isExported) {
-      _textSink.writeln('$_indent(export "${fun.id}" (func \$${fun.id})');
+      _textSink.write('(export "${fun.id}" (func \$${fun.id}))');
     }
   }
 
   void _assignment(Assignment assignment) {
-    _textSink.writeln(
-        '$_indent(local \$${assignment.id} ${assignment.varType.name})');
+    _textSink.write('(local \$${assignment.id} ${assignment.varType.name})');
   }
 
   void _fun(Fun fun) {
@@ -69,9 +78,10 @@ class WasmTextSink {
     }
     _textSink.writeln();
     _increaseIndent();
+    _textSink.write(_indent);
     _writeExpression(fun.body);
     _decreaseIndent();
-    _textSink.write('\n)');
+    _textSink.write('\n$_indent)');
   }
 
   void _topLevelLet(Let let) {
@@ -89,43 +99,65 @@ class WasmTextSink {
   }
 
   void _const(Const constant) {
-    _textSink.write('$_indent(${constant.type.name}.const ${constant.value})');
+    _textSink.write('(${constant.type.name}.const ${constant.value})');
   }
 
   void _variable(Var variable) {
-    _textSink.write('$_indent(local.get \$${variable.name})');
+    _textSink.write('(local.get \$${variable.name})');
   }
 
   void _funCall(FunCall funCall) {
     final prefix =
         operators.contains(funCall.name) ? '${funCall.type.name}.' : r'call $';
-    _textSink.write('$_indent($prefix${funCall.name}');
+    _textSink.write('($prefix${funCall.name}');
     if (funCall.args.isNotEmpty) {
       _textSink.writeln();
       _increaseIndent();
       for (final arg in funCall.args) {
+        _textSink.write(_indent);
         _writeExpression(arg);
         _textSink.writeln();
       }
       _decreaseIndent();
+      _textSink.write('$_indent)');
+    } else {
+      _textSink.write(')');
     }
-    _textSink.writeln(')');
   }
 
   void _let(LetExpression let) {
-    _textSink.write('$_indent(local.set \$${let.id} ');
+    _textSink.write('(local.set \$${let.id}\n');
+    _increaseIndent();
+    _textSink.write(_indent);
     _writeExpression(let.body);
-    _textSink.writeln(')');
+    _decreaseIndent();
+    _textSink.write('\n$_indent)');
   }
 
   void _group(Group group) {
     final newVarAssignments = group.body.whereType<LetExpression>();
 
     // first, write all new assignments declarations
-    newVarAssignments.forEach(_assignment);
+    var i = 0;
+    for (final assignment in newVarAssignments) {
+      if (i != 0) {
+        _textSink.write(_indent);
+      }
+      _assignment(assignment);
+      i++;
+      _textSink.writeln();
+    }
 
     // then, write the expressions themselves
-    group.body.forEach(_writeExpression);
+    i = 0;
+    for (final expr in group.body) {
+      _textSink.write(_indent);
+      _writeExpression(expr);
+      i++;
+      if (i < group.body.length) {
+        _textSink.writeln();
+      }
+    }
   }
 
   void _increaseIndent() {
