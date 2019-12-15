@@ -7,7 +7,13 @@ void main(List<String> args) async {
   final argParser = ArgParser();
   argParser
     ..addOption('output', abbr: 'o', help: 'output file')
-    ..addFlag('help', abbr: 'h', help: 'show help message');
+    ..addOption('runtime',
+        allowed: {'wasmtime', 'wasmer'},
+        defaultsTo: 'wasmtime',
+        abbr: 't',
+        help: 'the runtime to use to run programs')
+    ..addFlag('help', abbr: 'h', help: 'show help message')
+    ..addFlag('run', abbr: 'r', help: 'run the program after compilation');
 
   ArgResults parsedArgs;
   try {
@@ -34,5 +40,15 @@ void main(List<String> args) async {
     exit(1);
   }
 
-  await compile(parsedArgs.rest.first, parsedArgs['output'].toString());
+  final output = parsedArgs['output'].toString();
+
+  await compile(parsedArgs.rest.first, output);
+
+  if (parsedArgs.wasParsed('run')) {
+    final runtime = parsedArgs['runtime'].toString();
+    final result = await Process.run(runtime, [output]);
+    stdout.write(result.stdout);
+    stderr.write(result.stderr);
+    exit(result.exitCode);
+  }
 }

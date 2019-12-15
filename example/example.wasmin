@@ -1,8 +1,11 @@
 # type declaration
 export main [] i64;
 
+# _start is the main function in wasmtime
+export _start [] i64;
+
 # functions without args do not need a type declaration
-use-stack [] i64;
+#use-stack [] i64;
 
 do-add [i64, i64] i64;
 
@@ -14,7 +17,9 @@ fun main = (
     do-add result 1
 )
 
+fun _start = main;
+
 # concatenative style
-fun use-stack = 10 > 20 > add > do-add 1;
+#fun use-stack = 10 > 20 > add > do-add 1;
 
 fun do-add a b = add a b;

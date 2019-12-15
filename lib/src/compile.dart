@@ -17,7 +17,7 @@ Future<void> compile(String inputFile, String outputFile,
 
   final out = File(outputFile);
 
-  out.openWrite().use((writer) async {
+  await out.openWrite().use((writer) async {
     final WasminSink sink = WasmTextSink(writer);
     final programUnit = compileWasmin(inputFile, chunks);
     await sink(programUnit);
