@@ -12,6 +12,9 @@ abstract class ParsedExpression {
     T Function(List<ParsedExpression>) onGroup,
     T Function(String) onMember,
     T Function(String keyword, String id, ParsedExpression value) onAssignment,
+    T Function(ParsedExpression cond, ParsedExpression thenExpr,
+            [ParsedExpression elseExpr])
+        onIf,
     T Function(List<String>) onErrors,
   });
 }
@@ -26,6 +29,9 @@ class _SingleMember extends ParsedExpression {
     T Function(List<ParsedExpression> members) onGroup,
     T Function(String value) onMember,
     T Function(String keyword, String id, ParsedExpression value) onAssignment,
+    T Function(ParsedExpression cond, ParsedExpression thenExpr,
+            [ParsedExpression elseExpr])
+        onIf,
     T Function(List<String>) onErrors,
   }) {
     return onMember(name);
@@ -42,6 +48,9 @@ class _Error extends ParsedExpression {
     T Function(List<ParsedExpression> members) onGroup,
     T Function(String value) onMember,
     T Function(String keyword, String id, ParsedExpression value) onAssignment,
+    T Function(ParsedExpression cond, ParsedExpression thenExpr,
+            [ParsedExpression elseExpr])
+        onIf,
     T Function(List<String>) onErrors,
   }) {
     return onErrors(messages);
@@ -58,6 +67,9 @@ class _GroupedExpression extends ParsedExpression {
     T Function(List<ParsedExpression>) onGroup,
     T Function(String) onMember,
     T Function(String keyword, String id, ParsedExpression value) onAssignment,
+    T Function(ParsedExpression cond, ParsedExpression thenExpr,
+            [ParsedExpression elseExpr])
+        onIf,
     T Function(List<String>) onErrors,
   }) {
     return onGroup(members);
@@ -78,11 +90,40 @@ class _Assignment extends ParsedExpression {
     T Function(List<ParsedExpression>) onGroup,
     T Function(String) onMember,
     T Function(String keyword, String id, ParsedExpression value) onAssignment,
+    T Function(ParsedExpression cond, ParsedExpression thenExpr,
+            [ParsedExpression elseExpr])
+        onIf,
     T Function(List<String>) onErrors,
   }) {
     return onAssignment(keyword, id, value);
   }
 }
+
+class _If extends ParsedExpression {
+  final ParsedExpression condition;
+  final ParsedExpression thenExpression;
+  final ParsedExpression elseExpression;
+
+  const _If(this.condition, this.thenExpression, [this.elseExpression])
+      : super._();
+
+  @override
+  T match<T>({
+    T Function(List<ParsedExpression>) onGroup,
+    T Function(String) onMember,
+    T Function(String keyword, String id, ParsedExpression value) onAssignment,
+    T Function(ParsedExpression cond, ParsedExpression thenExpr,
+            [ParsedExpression elseExpr])
+        onIf,
+    T Function(List<String>) onErrors,
+  }) {
+    return onIf(condition, thenExpression, elseExpression);
+  }
+}
+
+//class _If extends ParsedExpression {
+//
+//}
 
 class _UnterminatedExpression implements Exception {
   const _UnterminatedExpression();
@@ -133,7 +174,9 @@ class ExpressionParser with WordBasedParser<Expression> {
     final members = <ParsedExpression>[];
     while (!isEnd(runes)) {
       var word = nextWord(runes);
-      if (word.isNotEmpty) {
+      if (word == 'if') {
+        return _parseIf(runes, isEnd);
+      } else if (word.isNotEmpty) {
         members.add(_SingleMember(word));
       }
 
@@ -221,6 +264,7 @@ class ExpressionParser with WordBasedParser<Expression> {
         onGroup: (_) => 'a multi-expression',
         onMember: (m) => "'$m' instead",
         onAssignment: (k, i, v) => 'a nested assignment',
+        onIf: (c, t, [e]) => 'an if expression',
         onErrors: (err) => 'an invalid expression: $err',
       )}");
     }
@@ -232,6 +276,7 @@ class ExpressionParser with WordBasedParser<Expression> {
         onGroup: (_) => 'a multi-expression',
         onMember: (m) => "an invalid identifier: '$m'",
         onAssignment: (k, i, v) => 'a nested assignment',
+        onIf: (c, t, [e]) => 'an if expression',
         onErrors: (err) => 'an invalid expression: $err',
       )}");
     }
@@ -243,5 +288,26 @@ class ExpressionParser with WordBasedParser<Expression> {
     } else {
       return _Assignment(keyword, id, value);
     }
+  }
+
+  ParsedExpression _parseIf(
+      RuneIterator runes, bool Function(RuneIterator) isEnd) {
+    whitespaces.parse(runes);
+    final condExpr = _parseToGroupEnd(runes, _endGroupFunction(runes));
+    whitespaces.parse(runes);
+    final thenEnd = _endGroupFunction(runes);
+    var noElse = false;
+    final thenExpr = _parseToGroupEnd(runes, (r) {
+      if (thenEnd(r)) return true;
+      noElse = isEnd(r);
+      return noElse;
+    });
+    if (noElse) {
+      return _If(condExpr, thenExpr);
+    }
+    whitespaces.parse(runes);
+    final elseExpr =
+        isEnd(runes) ? null : _parseToGroupEnd(runes, _endGroupFunction(runes));
+    return _If(condExpr, thenExpr, elseExpr);
   }
 }

@@ -178,6 +178,118 @@ void main() {
             )
           ])));
     });
+
+    test('can parse if expression without else', () {
+      final result = parser.parse('if (0) 1'.runes.iterator);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.DONE));
+      final ifExpr = parser.consume();
+      expect(
+          ifExpr,
+          IfExpression(Expression.constant('0', ValueType.i64),
+              Expression.constant('1', ValueType.i64)));
+      expect(ifExpr.type, equals(ValueType.empty));
+    });
+
+    test('can parse grouped if expression without else', () {
+      final iter = '(if (0) 1)X'.runes.iterator;
+      final result = parser.parse(iter);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.CONTINUE));
+      expect(iter.currentAsString, equals('X'));
+      final ifExpr = parser.consume();
+      expect(
+          ifExpr,
+          IfExpression(Expression.constant('0', ValueType.i64),
+              Expression.constant('1', ValueType.i64)));
+      expect(ifExpr.type, equals(ValueType.empty));
+    });
+
+    test('can parse if expression with else', () {
+      final result = parser.parse('if 1; 2; 3'.runes.iterator);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.DONE));
+      final ifExpr = parser.consume();
+      expect(
+          ifExpr,
+          IfExpression(
+              Expression.constant('1', ValueType.i64),
+              Expression.constant('2', ValueType.i64),
+              Expression.constant('3', ValueType.i64)));
+      expect(ifExpr.type, equals(ValueType.i64));
+    });
+
+    test('can parse if expression with complex expressions', () {
+      final iter = 'if gt_s 1 0; mul 2 3; add 10 20;X'.runes.iterator;
+      final result = parser.parse(iter);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.CONTINUE));
+      expect(iter.currentAsString, equals('X'));
+      final ifExpr = parser.consume();
+      expect(
+          ifExpr,
+          IfExpression(
+              Expression.funCall(
+                  'gt_s',
+                  [
+                    Expression.constant('1', ValueType.i64),
+                    Expression.constant('0', ValueType.i64)
+                  ],
+                  ValueType.i64),
+              Expression.funCall(
+                  'mul',
+                  [
+                    Expression.constant('2', ValueType.i64),
+                    Expression.constant('3', ValueType.i64)
+                  ],
+                  ValueType.i64),
+              Expression.funCall(
+                  'add',
+                  [
+                    Expression.constant('10', ValueType.i64),
+                    Expression.constant('20', ValueType.i64)
+                  ],
+                  ValueType.i64)));
+      expect(ifExpr.type, equals(ValueType.i64));
+    });
+
+    test('can parse if expression with complex grouped expressions', () {
+      final iter =
+          'if (let n = 1; gt_s n 0) (mul 2 3) (add 10 20)X'.runes.iterator;
+      final result = parser.parse(iter);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.CONTINUE));
+      expect(iter.currentAsString, equals('X'));
+      final ifExpr = parser.consume();
+      expect(
+          ifExpr,
+          IfExpression(
+              Expression.group([
+                Expression.let('n', Expression.constant('1', ValueType.i64)),
+                Expression.funCall(
+                    'gt_s',
+                    [
+                      Expression.variable('n', ValueType.i64),
+                      Expression.constant('0', ValueType.i64)
+                    ],
+                    ValueType.i64),
+              ]),
+              Expression.funCall(
+                  'mul',
+                  [
+                    Expression.constant('2', ValueType.i64),
+                    Expression.constant('3', ValueType.i64)
+                  ],
+                  ValueType.i64),
+              Expression.funCall(
+                  'add',
+                  [
+                    Expression.constant('10', ValueType.i64),
+                    Expression.constant('20', ValueType.i64)
+                  ],
+                  ValueType.i64)));
+      expect(ifExpr.type, equals(ValueType.i64));
+    });
   });
 
   group('failures', () {
@@ -212,6 +324,23 @@ void main() {
       final result = parser.parse('(mul (add 3 2);'.runes.iterator);
       expect(parser.failure,
           equals("Exception: Expected expression to be closed, got ';'"));
+      expect(result, equals(ParseResult.FAIL));
+    });
+
+    // FIXME need to return error expression instead of throw, to fix this
+    test('cannot parse if expression that was not terminated', () {
+      final result = parser.parse('if (add 3 2)'.runes.iterator);
+      expect(parser.failure,
+          equals('Exception: Expected then expression, got EOF'));
+      expect(result, equals(ParseResult.FAIL));
+    }, skip: true);
+
+    test('type check fails for if and else branches with different types', () {
+      final result = parser.parse('if 0; 0.1; 0'.runes.iterator);
+      expect(
+          parser.failure,
+          equals('type checking failed: if branches have different types '
+              '(then: f64, else: i64)'));
       expect(result, equals(ParseResult.FAIL));
     });
   });

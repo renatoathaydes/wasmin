@@ -23,29 +23,33 @@ class TypeCheckException implements Exception {
 
 Expression exprWithInferredType(
     ParsedExpression parsedExpr, ParsingContext context) {
-  return parsedExpr.match(onErrors: (errors) {
-    // TODO emit error expressions
-    throw Exception(errors.join('\n'));
-  }, onAssignment: (keyword, id, value) {
-    return _assignmentExpression(keyword, id, value, context);
-  }, onMember: (member) {
-    return _singleMemberExpression(member, context);
-  }, onGroup: (members) {
-    // there may be any number of assignments before the result expression starts
-    final assignments = members
-        .takeWhile((m) => m.isAssignment)
-        .map((m) => m.match(
-            onAssignment: (k, id, v) =>
-                _assignmentExpression(k, id, v, context)))
-        .toList(growable: false);
+  return parsedExpr.match(
+      onErrors: (errors) {
+        // TODO emit error expressions
+        throw Exception(errors.join('\n'));
+      },
+      onAssignment: (keyword, id, value) =>
+          _assignmentExpression(keyword, id, value, context),
+      onMember: (member) => _singleMemberExpression(member, context),
+      onIf: (cond, then, [els]) => _ifExpression(cond, then, els, context),
+      onGroup: (members) {
+        // there may be any number of assignments before the result expression starts
+        final assignments = members
+            .takeWhile((m) => m.isAssignment)
+            .map((m) => m.match(
+                  onAssignment: (k, id, v) =>
+                      _assignmentExpression(k, id, v, context),
+                  onIf: (c, t, [e]) => _ifExpression(c, t, e, context),
+                ))
+            .toList(growable: false);
 
-    if (assignments.isNotEmpty) {
-      final result =
-          _resultExpression(members.skip(assignments.length), context);
-      return Expression.group([...assignments, result]);
-    }
-    return _resultExpression(members, context);
-  });
+        if (assignments.isNotEmpty) {
+          final result =
+              _resultExpression(members.skip(assignments.length), context);
+          return Expression.group([...assignments, result]);
+        }
+        return _resultExpression(members, context);
+      });
 }
 
 Expression _singleMemberExpression(String member, ParsingContext context) {
@@ -83,6 +87,7 @@ Expression _resultExpression(
       onAssignment: (k, i, v) =>
           throw Exception('Assignment not allowed at this position'),
       onMember: (m) => _singleMemberExpression(m, context),
+      onIf: (cond, then, [els]) => _ifExpression(cond, then, els, context),
       onErrors: (errors) => throw Exception(errors.join('\n')),
     );
   }
@@ -94,6 +99,8 @@ Expression _resultExpression(
     onAssignment: (k, i, v) => throw Exception(
         'Expected function identifier, found assignment instead: $i'),
     onMember: (member) => member,
+    onIf: (cond, then, [els]) => throw Exception(
+        'Expected function identifier, founct if expression instead'),
     onErrors: (errors) => throw Exception(errors.join('\n')),
   );
 
@@ -108,6 +115,21 @@ Expression _resultExpression(
   if (type == null) throw TypeCheckException("unknown function: '$funName'");
   return Expression.funCall(
       funName, args.toList(growable: false), type.returns);
+}
+
+IfExpression _ifExpression(ParsedExpression cond, ParsedExpression then,
+    ParsedExpression els, ParsingContext context) {
+  final condExpr = exprWithInferredType(cond, context);
+  final thenExpr = exprWithInferredType(then, context.createChild());
+  final elseExpr =
+      els == null ? null : exprWithInferredType(els, context.createChild());
+  if (elseExpr != null) {
+    if (thenExpr.type != elseExpr.type) {
+      throw TypeCheckException('if branches have different types '
+          '(then: ${thenExpr.type.name}, else: ${elseExpr.type.name})');
+    }
+  }
+  return IfExpression(condExpr, thenExpr, elseExpr);
 }
 
 ValueType inferValueType(String value) {

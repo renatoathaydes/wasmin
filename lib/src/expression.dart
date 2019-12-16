@@ -36,6 +36,7 @@ abstract class Expression {
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
+    T Function(IfExpression) onIf,
     T Function(Group) onGroup,
   });
 
@@ -73,6 +74,7 @@ class Const extends Expression {
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
+    T Function(IfExpression) onIf,
     T Function(Group) onGroup,
   }) {
     return onConst(this);
@@ -93,6 +95,7 @@ class Var extends Expression {
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
+    T Function(IfExpression) onIf,
     T Function(Group) onGroup,
   }) {
     return onVariable(this);
@@ -126,6 +129,7 @@ class FunCall extends Expression {
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
+    T Function(IfExpression) onIf,
     T Function(Group) onGroup,
   }) {
     return onFunCall(this);
@@ -163,9 +167,48 @@ class LetExpression extends Expression with Assignment {
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
+    T Function(IfExpression) onIf,
     T Function(Group) onGroup,
   }) {
     return onLet(this);
+  }
+}
+
+class IfExpression extends Expression {
+  final Expression cond;
+  final Expression then;
+  final Expression els;
+
+  IfExpression(this.cond, this.then, [this.els])
+      : super._create('', els?.type ?? ValueType.empty);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other &&
+          other is IfExpression &&
+          runtimeType == other.runtimeType &&
+          cond == other.cond &&
+          then == other.then &&
+          els == other.els;
+
+  @override
+  int get hashCode =>
+      super.hashCode ^ cond.hashCode ^ then.hashCode ^ els.hashCode;
+
+  @override
+  String toString() => '(if $cond $then${els != null ? ' $els' : ''})';
+
+  @override
+  T matchExpr<T>({
+    T Function(Const) onConst,
+    T Function(Var) onVariable,
+    T Function(FunCall) onFunCall,
+    T Function(LetExpression) onLet,
+    T Function(IfExpression) onIf,
+    T Function(Group) onGroup,
+  }) {
+    return onIf(this);
   }
 }
 
@@ -194,6 +237,7 @@ class Group extends Expression {
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
+    T Function(IfExpression) onIf,
     T Function(Group) onGroup,
   }) {
     return onGroup(this);
