@@ -94,6 +94,7 @@ class WasmTextSink {
       onVariable: _variable,
       onFunCall: _funCall,
       onLet: _let,
+      onIf: _if,
       onGroup: _group,
     );
   }
@@ -130,6 +131,28 @@ class WasmTextSink {
     _increaseIndent();
     _textSink.write(_indent);
     _writeExpression(let.body);
+    _decreaseIndent();
+    _textSink.write('\n$_indent)');
+  }
+
+  void _if(IfExpression ifExpr) {
+    _textSink.write('(if');
+    if (ifExpr.type == ValueType.empty) {
+      _textSink.writeln();
+    } else {
+      _textSink.write(' (result ${ifExpr.type.name})\n');
+    }
+    _increaseIndent();
+    _textSink.write(_indent);
+    _writeExpression(ifExpr.cond);
+    _textSink.writeln();
+    _textSink.write(_indent);
+    _writeExpression(ifExpr.then);
+    if (ifExpr.els != null) {
+      _textSink.writeln();
+      _textSink.write(_indent);
+      _writeExpression(ifExpr.els);
+    }
     _decreaseIndent();
     _textSink.write('\n$_indent)');
   }

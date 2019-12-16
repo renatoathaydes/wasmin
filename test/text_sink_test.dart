@@ -112,4 +112,69 @@ void main() {
             '  (i32.const 12)\n'
             ')'));
   });
+
+  test('Can write if statement without else', () {
+    textSink.add(Expression.ifExpr(
+      Expression.funCall(
+          'gt_s',
+          [
+            Expression.variable('x', ValueType.i64),
+            Expression.constant('10', ValueType.i64)
+          ],
+          ValueType.i64),
+      Expression.funCall(
+          'add',
+          [
+            Expression.variable('x', ValueType.i64),
+            Expression.variable('x', ValueType.i64)
+          ],
+          ValueType.i64),
+    ));
+
+    expect(
+        readText(),
+        equals('(if\n'
+            '  (i64.gt_s\n'
+            '    (local.get \$x)\n'
+            '    (i64.const 10)\n'
+            '  )\n'
+            '  (i64.add\n'
+            '    (local.get \$x)\n'
+            '    (local.get \$x)\n'
+            '  )\n'
+            ')'));
+  });
+
+  test('Can write if expression', () {
+    textSink.add(Expression.ifExpr(
+        Expression.funCall(
+            'gt_s',
+            [
+              Expression.variable('x', ValueType.i64),
+              Expression.constant('10', ValueType.i64)
+            ],
+            ValueType.i64),
+        Expression.funCall(
+            'add',
+            [
+              Expression.variable('x', ValueType.i64),
+              Expression.variable('x', ValueType.i64)
+            ],
+            ValueType.i64),
+        Expression.constant('0', ValueType.i64)));
+
+    expect(
+        readText(),
+        equals('(if (result i64)\n'
+            '  (i64.gt_s\n'
+            '    (local.get \$x)\n'
+            '    (i64.const 10)\n'
+            '  )\n'
+            '  (i64.add\n'
+            '    (local.get \$x)\n'
+            '    (local.get \$x)\n'
+            '  )\n'
+            '  (i64.const 0)\n'
+            ')'));
+  });
 }

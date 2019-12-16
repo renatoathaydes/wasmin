@@ -27,6 +27,11 @@ abstract class Expression {
     return LetExpression(name, body);
   }
 
+  factory Expression.ifExpr(Expression cond, Expression then,
+      [Expression els]) {
+    return IfExpression(cond, then, els);
+  }
+
   factory Expression.group(Iterable<Expression> body) {
     return Group(body.toList(growable: false));
   }
