@@ -30,19 +30,18 @@ Feature Checklist:
 - [x] primitive values.
 - [x] parenthesis-grouped expressions.
 - [x] ungrouped expressions.
-- [ ] multi-expressions.
+- [x] multi-expressions.
 - [x] let assignments.
 - [ ] mut assignments.
 - [x] math operators.
 - [x] function calls.
 - [x] function declarations.
-- [ ] single-line comments.
+- [x] single-line comments.
 - [ ] multi-line comments.
-- [ ] import external functions.
-- [ ] export symbols.
-- [ ] module declarations.
 - [ ] global constants.
-- [ ] if/else blocks.
+- [ ] import external functions.
+- [x] export functions and constants.
+- [x] if/else blocks.
 - [ ] loops.
 - [ ] stack operator `>`.
 - [ ] string values.
@@ -118,9 +117,9 @@ Examples of valid identifiers:
 Invalid identifiers:
 
 - `1a` (cannot start with number<sup><a href="#footnote-3">[3]</a></sup>).
-- `foo=bar` (`=` is the assignment operator, which can only appear in a `let` expression).
+- `foo=bar` (`=` is the assignment operator, so this means _assign bar to foo_).
 - `big>small` (`>` is the stack operator, so this is valid, but is an expression, not an identifier).
-- `let`, `fun`, `mut`, `export` (these are the only keywords in Wasmin).
+- `let`, `fun`, `mut`, `export`, `if`, `loop` (these are the only keywords in Wasmin).
 - `get`, `set`, `remove`, `size`, `copy`, `typeof` (special functions).
 
 #### Footnotes
@@ -185,13 +184,7 @@ mut counter = 0;
 counter = counter > add 1;
 ```
 
-To make Wasmin code memory-safe and easier to reason about, `mut` variables have a few restrictions:
-
-- They can only be used to declare local variables, which implies that global variables are immutable.
-- When a `mut` variable is passed on to another function, it will be seen as immutable because:
-    * function parameters cannot be declared `mut`.
-    * due to the linear type system of Wasmin, the current, `mut` reference to the variable is destroyed and can
-    no longer be used.
+> Global variables cannot be declared with `mut`, they must be immutable, so they are declared with `let` only.
 
 ### Functions
 
@@ -230,7 +223,7 @@ fun pythagoras2 a b = (
     sqrt (add sa sb)
 )
 
-# using the concatenative style, which is the cleanest, usually!
+# using the concatenative style, which can be the cleanest sometimes!
 pythagoras3 [f64, f64] f64;
 fun pythagoras3 a b = square a > square b > add > sqrt;
 ```
@@ -384,21 +377,30 @@ let ten = 10;
 fun main = add ten 20;
 ```
 
-Definitions can be imported from other modules (or the host environment).
+Definitions can be imported from other modules (or the host environment) and from other Wasmin files.
 
-The function or variable's type must be declared as usual, but instead of providing an implementation
-for them, an `import` statement can be used instead.
+To import something from another Wasmin file, simply refer to the other file with a relative path:
 
 ```rust
-log [string];
+import factorial from "./factorial.wasmin";
+
+# use factorial
+fun main = factorial 10;
+```
+
+In case a symbol is external (i.e. not from another Wasmin file), its type must be declared as usual,
+but instead of providing an implementation for it, an `import` statement can be used instead.
+
+```rust
+log [any];
 import log from "console";
 
 # use log
 fun main = log "hello world";
 ```
 
-> Notice that a type declaration for a non-exported function without arguments is optional,
-> as its return type can be inferred.
+> Notice that a type declaration for a function without arguments is optional,
+> as its return type can be inferred by the compiler.
 
 If the host environment or another module does not provide the imported definition, are error will occur when loading
 the WASM module.
@@ -449,8 +451,7 @@ Besides the numeric types provided by WASM, Wasmin also has the following types:
 These are linear types, which means that instances of these types can only be _used up_ once.
 
 For this reason, operations that should not _consume_ the variable should operate on a copy of the original value,
-which can be obtained easily with the `copy` function (which is special in that it's the only function that can use
-a non-primitive value without consuming it).
+which can be obtained easily with the `copy` function.
 
 This will be explained for each type individually.
 
@@ -463,7 +464,7 @@ let my-string = "hello world";
 ```
 
 Wasmin source code is encoded as UTF-8, and Wasmin Strings are stored in memory exactly as the bytes
-encoded in the String source (prefixed with some header information which is not defined yet).
+encoded in the String source (prefixed with some type header information).
 
 > TODO How should Wasmin provide string operations to programs without incurring a runtime?
 
@@ -652,15 +653,22 @@ fun log-if-greater-than-0 x =
 Loops have the following form:
 
 ```
-loop-if <condition> <expression>
+loop <expression>
 ```
 
-The `expression` will be repeatedly evaluated until either:
+The `expression` will be repeatedly evaluated until `break` is called.
 
-* `condition` no longer holds, OR
-* `break` is called explicitly from within the `expression`.
+To avoid infinite loops, most `loop` expressions will start with a break check, as in this example:
 
-Example:
+```rust
+mut i = 0;
+loop (
+    (if i > gt 10; break)
+    # iterating from 0 to 10
+)
+```
+
+A more complex example:
 
 ```rust
 # implementing the traditional `map` function in Wasmin
@@ -670,7 +678,8 @@ fun map function list = (
     mut index = 0;
     result array(V)(list > size);
     mut result = [];
-    loop-if (list > size > lt index) (
+    loop (
+        (if index > ge_u (list > size); break)
         let item = get list index;
         set result index (function item);
         set index (add index 1)
