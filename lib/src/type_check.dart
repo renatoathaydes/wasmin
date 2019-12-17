@@ -106,7 +106,14 @@ Expression _resultExpression(
 
   final args = members.skip(1).map((e) => exprWithInferredType(e, context));
 
-  // TODO support more operators
+  if (funName == 'loop') {
+    if (args.length != 1) {
+      throw Exception('Parser error: loop has ${args.length} arguments');
+    }
+    return LoopExpression(args.first);
+  }
+
+  // TODO support more operators, move these to the context
   if (operators.contains(funName) && args.length != 2) {
     throw TypeCheckException("Operator '$funName' expects 2 arguments, "
         'but was given ${args.length}');

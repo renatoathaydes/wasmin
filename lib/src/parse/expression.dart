@@ -121,10 +121,6 @@ class _If extends ParsedExpression {
   }
 }
 
-//class _If extends ParsedExpression {
-//
-//}
-
 class _UnterminatedExpression implements Exception {
   const _UnterminatedExpression();
 }
@@ -176,6 +172,8 @@ class ExpressionParser with WordBasedParser<Expression> {
       var word = nextWord(runes);
       if (word == 'if') {
         return _parseIf(runes, isEnd);
+      } else if (word == 'loop') {
+        return _parseLoop(runes);
       } else if (word.isNotEmpty) {
         members.add(_SingleMember(word));
       }
@@ -309,5 +307,11 @@ class ExpressionParser with WordBasedParser<Expression> {
     final elseExpr =
         isEnd(runes) ? null : _parseToGroupEnd(runes, _endGroupFunction(runes));
     return _If(condExpr, thenExpr, elseExpr);
+  }
+
+  ParsedExpression _parseLoop(RuneIterator runes) {
+    whitespaces.parse(runes);
+    final expr = _parseToGroupEnd(runes, _endGroupFunction(runes));
+    return _GroupedExpression([_SingleMember('loop'), expr]);
   }
 }

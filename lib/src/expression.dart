@@ -32,6 +32,10 @@ abstract class Expression {
     return IfExpression(cond, then, els);
   }
 
+  factory Expression.loopExpr(Expression body) {
+    return LoopExpression(body);
+  }
+
   factory Expression.group(Iterable<Expression> body) {
     return Group(body.toList(growable: false));
   }
@@ -42,6 +46,7 @@ abstract class Expression {
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
+    T Function(LoopExpression) onLoop,
     T Function(Group) onGroup,
   });
 
@@ -80,6 +85,7 @@ class Const extends Expression {
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
+    T Function(LoopExpression) onLoop,
     T Function(Group) onGroup,
   }) {
     return onConst(this);
@@ -101,6 +107,7 @@ class Var extends Expression {
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
+    T Function(LoopExpression) onLoop,
     T Function(Group) onGroup,
   }) {
     return onVariable(this);
@@ -135,6 +142,7 @@ class FunCall extends Expression {
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
+    T Function(LoopExpression) onLoop,
     T Function(Group) onGroup,
   }) {
     return onFunCall(this);
@@ -173,6 +181,7 @@ class LetExpression extends Expression with Assignment {
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
+    T Function(LoopExpression) onLoop,
     T Function(Group) onGroup,
   }) {
     return onLet(this);
@@ -211,6 +220,7 @@ class IfExpression extends Expression {
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
+    T Function(LoopExpression) onLoop,
     T Function(Group) onGroup,
   }) {
     return onIf(this);
@@ -243,8 +253,39 @@ class Group extends Expression {
     T Function(FunCall) onFunCall,
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
+    T Function(LoopExpression) onLoop,
     T Function(Group) onGroup,
   }) {
     return onGroup(this);
+  }
+}
+
+class LoopExpression extends Expression {
+  final Expression body;
+
+  LoopExpression(this.body) : super._create('loop', ValueType.empty);
+
+  @override
+  String toString() => '(loop $body)';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          super == other && other is LoopExpression && body == other.body;
+
+  @override
+  int get hashCode => super.hashCode ^ body.hashCode;
+
+  @override
+  T matchExpr<T>({
+    T Function(Const) onConst,
+    T Function(Var) onVariable,
+    T Function(FunCall) onFunCall,
+    T Function(LetExpression) onLet,
+    T Function(IfExpression) onIf,
+    T Function(LoopExpression) onLoop,
+    T Function(Group) onGroup,
+  }) {
+    return onLoop(this);
   }
 }

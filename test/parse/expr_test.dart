@@ -290,6 +290,17 @@ void main() {
                   ValueType.i64)));
       expect(ifExpr.type, equals(ValueType.i64));
     });
+
+    test('can parse simple loop expression', () {
+      final iter = 'loop(0)X'.runes.iterator;
+      final result = parser.parse(iter);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.CONTINUE));
+      expect(iter.currentAsString, equals('X'));
+      final loopExpr = parser.consume();
+      expect(loopExpr, LoopExpression(Expression.constant('0', ValueType.i64)));
+      expect(loopExpr.type, equals(ValueType.empty));
+    });
   });
 
   group('failures', () {
