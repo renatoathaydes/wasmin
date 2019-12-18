@@ -80,7 +80,7 @@ Expression _singleMemberExpression(String member, ParsingContext context) {
 Expression _assignmentExpression(
     String keyword, String id, ParsedExpression body, ParsingContext context) {
   if (keyword == 'let') {
-    final value = exprWithInferredType(body, context.createChild());
+    final value = exprWithInferredType(body, context);
     context.add(LetDeclaration(id, value.type));
     return LetExpression(id, value);
   } else {
@@ -89,7 +89,7 @@ Expression _assignmentExpression(
 }
 
 Expression _loopExpression(ParsedExpression body, ParsingContext context) {
-  return LoopExpression(exprWithInferredType(body, context));
+  return LoopExpression(exprWithInferredType(body, context.createChild()));
 }
 
 Expression _intermediateExpression(
@@ -98,7 +98,7 @@ Expression _intermediateExpression(
     onGroup: (g) => g.length == 1
         ? exprWithInferredType(g[0], context)
         : Expression.group(g.map((m) => exprWithInferredType(m, context))),
-    onLoop: (loop) => Expression.loopExpr(exprWithInferredType(loop, context)),
+    onLoop: (loop) => _loopExpression(loop, context),
     onMember: (m) => _singleMemberExpression(m, context),
     onIf: (cond, then, [els]) => _ifExpression(cond, then, els, context),
     onAssignment: (keyword, id, body) =>
