@@ -6,10 +6,11 @@ import 'base.dart';
 abstract class ParsedExpression {
   const ParsedExpression._();
 
-  bool get isAssignment => false;
+  bool get isSingleMember => false;
 
   T match<T>({
     T Function(List<ParsedExpression>) onGroup,
+    T Function(ParsedExpression) onLoop,
     T Function(String) onMember,
     T Function(String keyword, String id, ParsedExpression value) onAssignment,
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
@@ -22,11 +23,15 @@ abstract class ParsedExpression {
 class _SingleMember extends ParsedExpression {
   final String name;
 
+  @override
+  final bool isSingleMember = true;
+
   const _SingleMember(this.name) : super._();
 
   @override
   T match<T>({
     T Function(List<ParsedExpression> members) onGroup,
+    T Function(ParsedExpression) onLoop,
     T Function(String value) onMember,
     T Function(String keyword, String id, ParsedExpression value) onAssignment,
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
@@ -46,6 +51,7 @@ class _Error extends ParsedExpression {
   @override
   T match<T>({
     T Function(List<ParsedExpression> members) onGroup,
+    T Function(ParsedExpression) onLoop,
     T Function(String value) onMember,
     T Function(String keyword, String id, ParsedExpression value) onAssignment,
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
@@ -65,6 +71,7 @@ class _GroupedExpression extends ParsedExpression {
   @override
   T match<T>({
     T Function(List<ParsedExpression>) onGroup,
+    T Function(ParsedExpression) onLoop,
     T Function(String) onMember,
     T Function(String keyword, String id, ParsedExpression value) onAssignment,
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
@@ -80,14 +87,13 @@ class _Assignment extends ParsedExpression {
   final String keyword;
   final String id;
   final ParsedExpression value;
-  @override
-  final isAssignment = true;
 
   const _Assignment(this.keyword, this.id, this.value) : super._();
 
   @override
   T match<T>({
     T Function(List<ParsedExpression>) onGroup,
+    T Function(ParsedExpression) onLoop,
     T Function(String) onMember,
     T Function(String keyword, String id, ParsedExpression value) onAssignment,
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
@@ -110,6 +116,7 @@ class _If extends ParsedExpression {
   @override
   T match<T>({
     T Function(List<ParsedExpression>) onGroup,
+    T Function(ParsedExpression) onLoop,
     T Function(String) onMember,
     T Function(String keyword, String id, ParsedExpression value) onAssignment,
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
@@ -118,6 +125,26 @@ class _If extends ParsedExpression {
     T Function(List<String>) onErrors,
   }) {
     return onIf(condition, thenExpression, elseExpression);
+  }
+}
+
+class _Loop extends ParsedExpression {
+  final ParsedExpression expression;
+
+  _Loop(this.expression) : super._();
+
+  @override
+  T match<T>({
+    T Function(List<ParsedExpression>) onGroup,
+    T Function(ParsedExpression) onLoop,
+    T Function(String) onMember,
+    T Function(String keyword, String id, ParsedExpression value) onAssignment,
+    T Function(ParsedExpression cond, ParsedExpression thenExpr,
+            [ParsedExpression elseExpr])
+        onIf,
+    T Function(List<String>) onErrors,
+  }) {
+    return onLoop(expression);
   }
 }
 
@@ -146,7 +173,8 @@ class ExpressionParser with WordBasedParser<Expression> {
 
     try {
       return _parseGroup(runes);
-    } catch (e) {
+    } catch (e, s) {
+      print(s);
       failure = e.toString();
       return ParseResult.FAIL;
     }
@@ -260,6 +288,7 @@ class ExpressionParser with WordBasedParser<Expression> {
       errors.add('Malformed assignment: '
           "'let' or 'mut' keywords were expected, but got ${prevExpr.match(
         onGroup: (_) => 'a multi-expression',
+        onLoop: (_) => 'a loop instead',
         onMember: (m) => "'$m' instead",
         onAssignment: (k, i, v) => 'a nested assignment',
         onIf: (c, t, [e]) => 'an if expression',
@@ -272,6 +301,7 @@ class ExpressionParser with WordBasedParser<Expression> {
       errors.add('Malformed assignment: '
           "expected an identifier, but got ${prevExpr.match(
         onGroup: (_) => 'a multi-expression',
+        onLoop: (_) => 'a loop instead',
         onMember: (m) => "an invalid identifier: '$m'",
         onAssignment: (k, i, v) => 'a nested assignment',
         onIf: (c, t, [e]) => 'an if expression',
@@ -312,6 +342,6 @@ class ExpressionParser with WordBasedParser<Expression> {
   ParsedExpression _parseLoop(RuneIterator runes) {
     whitespaces.parse(runes);
     final expr = _parseToGroupEnd(runes, _endGroupFunction(runes));
-    return _GroupedExpression([_SingleMember('loop'), expr]);
+    return _Loop(expr);
   }
 }

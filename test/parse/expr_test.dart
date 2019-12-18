@@ -301,6 +301,34 @@ void main() {
       expect(loopExpr, LoopExpression(Expression.constant('0', ValueType.i64)));
       expect(loopExpr.type, equals(ValueType.empty));
     });
+
+    test('can parse usual loop expression', () {
+      final iter = 'loop  (\n'
+              '  (if 1; break)\n'
+              '  add 2 2\n'
+              ')X'
+          .runes
+          .iterator;
+      final result = parser.parse(iter);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.CONTINUE));
+      expect(iter.currentAsString, equals('X'));
+      final loopExpr = parser.consume();
+      expect(
+          loopExpr,
+          Expression.loopExpr(Expression.group([
+            Expression.ifExpr(Expression.constant('1', ValueType.i64),
+                Expression.breakExpr()),
+            Expression.funCall(
+                'add',
+                [
+                  Expression.constant('2', ValueType.i64),
+                  Expression.constant('2', ValueType.i64)
+                ],
+                ValueType.i64)
+          ])));
+      expect(loopExpr.type, equals(ValueType.empty));
+    });
   });
 
   group('failures', () {

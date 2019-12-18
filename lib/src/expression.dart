@@ -36,6 +36,10 @@ abstract class Expression {
     return LoopExpression(body);
   }
 
+  factory Expression.breakExpr() {
+    return const _Break();
+  }
+
   factory Expression.group(Iterable<Expression> body) {
     return Group(body.toList(growable: false));
   }
@@ -47,6 +51,7 @@ abstract class Expression {
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
+    T Function() onBreak,
     T Function(Group) onGroup,
   });
 
@@ -86,6 +91,7 @@ class Const extends Expression {
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
+    T Function() onBreak,
     T Function(Group) onGroup,
   }) {
     return onConst(this);
@@ -108,6 +114,7 @@ class Var extends Expression {
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
+    T Function() onBreak,
     T Function(Group) onGroup,
   }) {
     return onVariable(this);
@@ -143,6 +150,7 @@ class FunCall extends Expression {
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
+    T Function() onBreak,
     T Function(Group) onGroup,
   }) {
     return onFunCall(this);
@@ -182,6 +190,7 @@ class LetExpression extends Expression with Assignment {
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
+    T Function() onBreak,
     T Function(Group) onGroup,
   }) {
     return onLet(this);
@@ -221,9 +230,28 @@ class IfExpression extends Expression {
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
+    T Function() onBreak,
     T Function(Group) onGroup,
   }) {
     return onIf(this);
+  }
+}
+
+class _Break extends Expression {
+  const _Break() : super._create('break', ValueType.empty);
+
+  @override
+  T matchExpr<T>({
+    T Function(Const) onConst,
+    T Function(Var) onVariable,
+    T Function(FunCall) onFunCall,
+    T Function(LetExpression) onLet,
+    T Function(IfExpression) onIf,
+    T Function(LoopExpression) onLoop,
+    T Function() onBreak,
+    T Function(Group) onGroup,
+  }) {
+    return onBreak();
   }
 }
 
@@ -254,6 +282,7 @@ class Group extends Expression {
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
+    T Function() onBreak,
     T Function(Group) onGroup,
   }) {
     return onGroup(this);
@@ -271,7 +300,7 @@ class LoopExpression extends Expression {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-          super == other && other is LoopExpression && body == other.body;
+      super == other && other is LoopExpression && body == other.body;
 
   @override
   int get hashCode => super.hashCode ^ body.hashCode;
@@ -284,6 +313,7 @@ class LoopExpression extends Expression {
     T Function(LetExpression) onLet,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
+    T Function() onBreak,
     T Function(Group) onGroup,
   }) {
     return onLoop(this);

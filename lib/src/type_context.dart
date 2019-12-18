@@ -20,7 +20,7 @@ class WasmDefaultTypeContext with TypeContext {
 
   @override
   FunType typeOfFun(String funName, Iterable<Expression> args) {
-    if (operators.contains(funName)) {
+    if (operators.contains(funName) && args.isNotEmpty) {
       final type = args.first.type;
       return FunType(type, [type, type]);
     }
