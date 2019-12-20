@@ -1,5 +1,15 @@
 export 'src/ast.dart';
 export 'src/compile.dart' show compile, compileWasmin;
 export 'src/expression.dart';
+export 'src/parse/base.dart';
+export 'src/parse/declaration.dart';
+export 'src/parse/expression.dart';
+export 'src/parse/fun.dart';
+export 'src/parse/iterator.dart';
+export 'src/parse/let.dart';
 export 'src/parse/parse.dart';
+export 'src/parse/type.dart';
+export 'src/text_sink.dart';
 export 'src/type.dart';
+export 'src/type_check.dart';
+export 'src/type_context.dart';
