@@ -195,6 +195,7 @@ class ExpressionParser with WordBasedParser<Expression> {
       RuneIterator runes, bool isOuterParensGroup) {
     whitespaces.parse(runes);
     final isParensGroup = runes.currentAsString == '(';
+    final withinParens = isParensGroup || isOuterParensGroup;
     if (isParensGroup) runes.moveNext();
     final isEnd = isParensGroup
         ? _isCloseParens
@@ -203,15 +204,15 @@ class ExpressionParser with WordBasedParser<Expression> {
     while (!isEnd(runes)) {
       final word = nextWord(runes);
       if (word == 'if') {
-        members.add(_parseIf(runes, isParensGroup));
+        members.add(_parseIf(runes, withinParens));
         // if this is not a parens group, we're completely done now with 1 if-expr
         if (!isParensGroup) return members[0];
-        // if it is a parens group, and it's ended, stop consuming symbols
-        if (isParensGroup && isEnd(runes)) break;
+        // if it is within parens, and it's ended, stop consuming symbols
+        if (withinParens && isEnd(runes)) break;
       } else if (word == 'loop') {
-        members.add(_parseLoop(runes, isParensGroup));
+        members.add(_parseLoop(runes, withinParens));
         if (!isParensGroup) return members[0];
-        if (isParensGroup && isEnd(runes)) break;
+        if (withinParens && isEnd(runes)) break;
       } else if (word.isNotEmpty) {
         members.add(_SingleMember(word));
       }
@@ -224,9 +225,9 @@ class ExpressionParser with WordBasedParser<Expression> {
         members.add(_parseToGroupEnd(runes, false));
       } else if (nextSymbol == '=') {
         _done = !runes.moveNext();
-        members.add(_parseToAssignmentEnd(runes, members, isParensGroup));
+        members.add(_parseToAssignmentEnd(runes, members, withinParens));
         if (!isParensGroup) return members[0];
-        if (isParensGroup && isEnd(runes)) break;
+        if (withinParens && isEnd(runes)) break;
       } else if (word.isEmpty) {
         if (nextSymbol == null) {
           throw const _UnterminatedExpression();
