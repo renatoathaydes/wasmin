@@ -174,18 +174,16 @@ class ExpressionParser with WordBasedParser<Expression> {
     try {
       return _parseGroup(runes);
     } catch (e, s) {
-      print(s);
       failure = e.toString();
       return ParseResult.FAIL;
     }
   }
 
   ParseResult _parseGroup(RuneIterator runes) {
-    final isEnd = _endGroupFunction(runes);
     if (_done) return _unterminatedExpression();
     ParsedExpression group;
     try {
-      group = _parseToGroupEnd(runes, isEnd);
+      group = _parseToGroupEnd(runes, false);
     } on _UnterminatedExpression {
       return _unterminatedExpression();
     }
@@ -194,14 +192,26 @@ class ExpressionParser with WordBasedParser<Expression> {
   }
 
   ParsedExpression _parseToGroupEnd(
-      RuneIterator runes, bool Function(RuneIterator) isEnd) {
+      RuneIterator runes, bool isOuterParensGroup) {
+    whitespaces.parse(runes);
+    final isParensGroup = runes.currentAsString == '(';
+    if (isParensGroup) runes.moveNext();
+    final isEnd = isParensGroup
+        ? _isCloseParens
+        : isOuterParensGroup ? _isAnyEnd : _isEndOfExpression;
     final members = <ParsedExpression>[];
     while (!isEnd(runes)) {
-      var word = nextWord(runes);
+      final word = nextWord(runes);
       if (word == 'if') {
-        return _parseIf(runes, isEnd);
+        members.add(_parseIf(runes, isParensGroup));
+        // if this is not a parens group, we're completely done now with 1 if-expr
+        if (!isParensGroup) return members[0];
+        // if it is a parens group, and it's ended, stop consuming symbols
+        if (isParensGroup && isEnd(runes)) break;
       } else if (word == 'loop') {
-        return _parseLoop(runes);
+        members.add(_parseLoop(runes, isParensGroup));
+        if (!isParensGroup) return members[0];
+        if (isParensGroup && isEnd(runes)) break;
       } else if (word.isNotEmpty) {
         members.add(_SingleMember(word));
       }
@@ -211,36 +221,32 @@ class ExpressionParser with WordBasedParser<Expression> {
       // check if the symbol after the word has special meaning
       final nextSymbol = runes.currentAsString;
       if (nextSymbol == '(') {
-        _done = !runes.moveNext();
-        members.add(_parseToGroupEnd(runes, _isCloseBracket));
+        members.add(_parseToGroupEnd(runes, false));
       } else if (nextSymbol == '=') {
         _done = !runes.moveNext();
-        whitespaces.parse(runes);
-        members.add(_parseToAssignmentEnd(runes, members));
+        members.add(_parseToAssignmentEnd(runes, members, isParensGroup));
+        if (!isParensGroup) return members[0];
+        if (isParensGroup && isEnd(runes)) break;
       } else if (word.isEmpty) {
         if (nextSymbol == null) {
           throw const _UnterminatedExpression();
-        } else if (isEnd(runes)) {
-          break;
-        } else {
+        } else if (!isEnd(runes)) {
           return _Error(['expression to be closed'.wasExpected(runes, false)]);
         }
       }
     }
+
+    // if it's the outer group that ends, don't skip the group-ending character
+    final outerGroupEnds =
+        !isParensGroup && isOuterParensGroup && _isCloseParens(runes);
+    if (!outerGroupEnds) {
+      _done = !runes.moveNext();
+    }
     if (members.isEmpty) throw const _UnterminatedExpression();
-    _done = !runes.moveNext();
     final errors = members.whereType<_Error>();
     final result = errors.isEmpty ? members : errors.toList(growable: false);
     if (result.length == 1) return result[0];
     return _GroupedExpression(result);
-  }
-
-  bool Function(RuneIterator) _endGroupFunction(RuneIterator runes) {
-    if (runes.currentAsString == '(') {
-      _done = !runes.moveNext();
-      return _isCloseBracket;
-    }
-    return _isEndOfExpression;
   }
 
   void reset() {
@@ -254,11 +260,14 @@ class ExpressionParser with WordBasedParser<Expression> {
     return ParseResult.FAIL;
   }
 
-  static bool _isCloseBracket(RuneIterator runes) =>
+  static bool _isCloseParens(RuneIterator runes) =>
       runes.currentAsString == ')';
 
   static bool _isEndOfExpression(RuneIterator runes) =>
       runes.currentAsString == null || runes.currentAsString == ';';
+
+  static bool _isAnyEnd(RuneIterator runes) =>
+      _isCloseParens(runes) || _isEndOfExpression(runes);
 
   @override
   Expression consume() {
@@ -269,7 +278,8 @@ class ExpressionParser with WordBasedParser<Expression> {
   }
 
   ParsedExpression _parseToAssignmentEnd(
-      RuneIterator runes, List<ParsedExpression> members) {
+      RuneIterator runes, List<ParsedExpression> members, bool isParensGroup) {
+    _done = whitespaces.parse(runes) == ParseResult.DONE;
     if (_done) {
       return _Error(['assignment expression'.wasExpected(runes, false)]);
     }
@@ -278,7 +288,7 @@ class ExpressionParser with WordBasedParser<Expression> {
     }
     final prevExpr = members.removeLast();
     final prev2Expr = members.removeLast();
-    final value = _parseToGroupEnd(runes, _endGroupFunction(runes));
+    final value = _parseToGroupEnd(runes, isParensGroup);
     final errors = <String>[];
     String keyword;
     String id;
@@ -318,30 +328,27 @@ class ExpressionParser with WordBasedParser<Expression> {
     }
   }
 
-  ParsedExpression _parseIf(
-      RuneIterator runes, bool Function(RuneIterator) isEnd) {
-    whitespaces.parse(runes);
-    final condExpr = _parseToGroupEnd(runes, _endGroupFunction(runes));
-    whitespaces.parse(runes);
-    final thenEnd = _endGroupFunction(runes);
-    var noElse = false;
-    final thenExpr = _parseToGroupEnd(runes, (r) {
-      if (thenEnd(r)) return true;
-      noElse = isEnd(r);
-      return noElse;
-    });
+  ParsedExpression _parseIf(RuneIterator runes, bool isParensGroup) {
+    final condExpr = _parseToGroupEnd(runes, isParensGroup);
+    if (isParensGroup && runes.currentAsString == ')') {
+      return _Error(
+          ['if expression ended unexpectedly: no then branch provided']);
+    }
+    final thenExpr = _parseToGroupEnd(runes, isParensGroup);
+    final noElse = (isParensGroup && _isCloseParens(runes)) ||
+        runes.currentAsString == null;
+
     if (noElse) {
       return _If(condExpr, thenExpr);
     }
-    whitespaces.parse(runes);
-    final elseExpr =
-        isEnd(runes) ? null : _parseToGroupEnd(runes, _endGroupFunction(runes));
+
+    final elseExpr = _parseToGroupEnd(runes, isParensGroup);
     return _If(condExpr, thenExpr, elseExpr);
   }
 
-  ParsedExpression _parseLoop(RuneIterator runes) {
+  ParsedExpression _parseLoop(RuneIterator runes, bool isParensGroup) {
     whitespaces.parse(runes);
-    final expr = _parseToGroupEnd(runes, _endGroupFunction(runes));
+    final expr = _parseToGroupEnd(runes, isParensGroup);
     return _Loop(expr);
   }
 }
