@@ -177,4 +177,35 @@ void main() {
             '  (i64.const 0)\n'
             ')'));
   });
+
+  test('can write simplest loop expression', () {
+    textSink.add(Expression.loopExpr(Expression.constant('10', ValueType.i32)));
+    expect(readText(), equals('(loop \$block0\n  (i32.const 10)\n)'));
+  });
+
+  test('can write usual loop expression', () {
+    textSink.add(Expression.loopExpr(Expression.group([
+      Expression.ifExpr(
+          Expression.constant('1', ValueType.i32), Expression.breakExpr()),
+      Expression.funCall(
+          'add',
+          [
+            Expression.constant('10', ValueType.i32),
+            Expression.constant('20', ValueType.i32),
+          ],
+          ValueType.i32),
+    ])));
+    expect(
+        readText(),
+        equals('(loop \$block0\n'
+            '  (if\n'
+            '    (i32.const 1)\n'
+            '    (br \$block0)\n'
+            '  )\n'
+            '  (i32.add\n'
+            '    (i32.const 10)\n'
+            '    (i32.const 20)\n'
+            '  )\n'
+            ')'));
+  });
 }

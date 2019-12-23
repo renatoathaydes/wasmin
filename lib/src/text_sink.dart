@@ -8,6 +8,7 @@ import 'type_check.dart';
 class WasmTextSink {
   var _indent = '';
   final StringSink _textSink;
+  final _blockStack = <String>[];
 
   WasmTextSink(this._textSink);
 
@@ -160,16 +161,18 @@ class WasmTextSink {
   }
 
   void _loop(LoopExpression loop) {
-    _textSink.writeln('(loop');
+    _pushBlock();
+    _textSink.writeln('(loop ${_currentBlock()}');
     _increaseIndent();
     _textSink.write(_indent);
     _writeExpression(loop.body);
     _decreaseIndent();
     _textSink.write('\n$_indent)');
+    _dropBlock();
   }
 
   void _break() {
-    _textSink.write('br');
+    _textSink.write('(br ${_currentBlock()})');
   }
 
   void _group(Group group) {
@@ -185,11 +188,15 @@ class WasmTextSink {
       i++;
       _textSink.writeln();
     }
+    var wroteNewLine = i > 0;
 
     // then, write the expressions themselves
     i = 0;
     for (final expr in group.body) {
-      _textSink.write(_indent);
+      if (wroteNewLine) {
+        _textSink.write(_indent);
+      }
+      wroteNewLine = true;
       _writeExpression(expr);
       i++;
       if (i < group.body.length) {
@@ -205,4 +212,14 @@ class WasmTextSink {
   void _decreaseIndent() {
     _indent = _indent.substring(0, _indent.length - 2);
   }
+
+  void _pushBlock() {
+    _blockStack.add('\$block${_blockStack.length}');
+  }
+
+  void _dropBlock() {
+    _blockStack.removeLast();
+  }
+
+  String _currentBlock() => _blockStack.last;
 }
