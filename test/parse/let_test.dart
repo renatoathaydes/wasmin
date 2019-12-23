@@ -10,7 +10,8 @@ void main() {
   MutableTypeContext context;
   setUp(() {
     context = ParsingContext();
-    parser = LetParser(ExpressionParser(WordParser(), ParsingContext()), context);
+    parser =
+        LetParser(ExpressionParser(WordParser(), ParsingContext()), context);
   });
 
   group('success cases', () {
@@ -115,7 +116,10 @@ void main() {
 
     test('cannot parse let expression with no value', () {
       final result = parser.parse('one = '.runes.iterator);
-      expect(parser.failure, equals('Let expression error: Empty expression'));
+      expect(
+          parser.failure,
+          equals('Let expression error: '
+              'Empty expression cannot be used as a value'));
       expect(result, equals(ParseResult.FAIL));
     });
 
@@ -127,8 +131,10 @@ void main() {
 
     test('cannot parse let expression with no value (end with separator)', () {
       final result = parser.parse('one=; foo'.runes.iterator);
-      expect(parser.failure,
-          equals('Let expression error: Unterminated expression'));
+      expect(
+          parser.failure,
+          equals('Let expression error: '
+              'Empty expression cannot be used as a value'));
       expect(result, equals(ParseResult.FAIL));
     });
   });

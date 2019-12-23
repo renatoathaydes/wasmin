@@ -334,35 +334,31 @@ void main() {
   group('failures', () {
     test('cannot parse invalid constant', () {
       final result = parser.parse('abcdef'.runes.iterator);
-      expect(parser.failure,
-          equals("type checking failed: unknown variable: 'abcdef'"));
+      expect(parser.failure, equals("unknown variable: 'abcdef'"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse unknown function call', () {
       final result = parser.parse('xxxx 1 2'.runes.iterator);
-      expect(parser.failure,
-          equals("type checking failed: unknown function: 'xxxx'"));
+      expect(parser.failure, equals("unknown function: 'xxxx'"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse function call that was terminated in the middle', () {
-      final result = parser.parse('add (1; 2)'.runes.iterator);
-      expect(parser.failure,
-          equals("Exception: Expected expression to be closed, got ';'"));
+      final result = parser.parse('(add 1 2;'.runes.iterator);
+      expect(parser.failure, equals("Exception: Expected ')', got EOF"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse function call that was not terminated', () {
       final result = parser.parse('(mul 3 2'.runes.iterator);
-      expect(parser.failure, equals('Unterminated expression'));
+      expect(parser.failure, equals("Exception: Expected ')', got EOF"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse nested function call that was not terminated', () {
       final result = parser.parse('(mul (add 3 2);'.runes.iterator);
-      expect(parser.failure,
-          equals("Exception: Expected expression to be closed, got ';'"));
+      expect(parser.failure, equals("Exception: Expected ')', got EOF"));
       expect(result, equals(ParseResult.FAIL));
     });
 
@@ -378,7 +374,7 @@ void main() {
       final result = parser.parse('if 0; 0.1; 0'.runes.iterator);
       expect(
           parser.failure,
-          equals('type checking failed: if branches have different types '
+          equals('if branches have different types '
               '(then: f64, else: i64)'));
       expect(result, equals(ParseResult.FAIL));
     });

@@ -35,32 +35,23 @@ Expression exprWithInferredType(
       onLoop: (loop) => _loopExpression(loop, context),
       onGroup: (members) {
         if (members.isEmpty) {
-          throw Exception('Empty expression cannot be used as a value');
+          throw TypeCheckException(
+              'Empty expression cannot be used as a value');
+        }
+        final evalTermIndex = members.indexWhere((e) => e.isSingleMember);
+        if (evalTermIndex < 0) {
+          // there's no eval term in the group, evaluate each member individually
+          return _group(members.map((e) => exprWithInferredType(e, context)));
         }
 
-        // the first single-member in a group may be a function call
-        // or loop/break
-        final intermediateExpressions =
-            members.takeWhile((m) => !m.isSingleMember).toList();
-        var resultExpressionParts =
-            members.skip(intermediateExpressions.length).toList();
-
-        if (intermediateExpressions.isEmpty) {
-          return _resultExpression(resultExpressionParts, context);
-        }
-        if (resultExpressionParts.isEmpty) {
-          if (intermediateExpressions.length == 1) {
-            return _resultExpression(intermediateExpressions, context);
-          } else {
-            resultExpressionParts = [intermediateExpressions.removeLast()];
-          }
-        }
-
-        return Expression.group([
-          ...intermediateExpressions
-              .map((e) => _intermediateExpression(e, context)),
-          _resultExpression(resultExpressionParts, context)
-        ]);
+        // split the members into intermediate expressions and the trailing
+        // evaluation term, which is the result of the expression
+        final intermediateExpressions = members
+            .sublist(0, evalTermIndex)
+            .map((e) => exprWithInferredType(e, context));
+        final result =
+            _resultExpression(members.sublist(evalTermIndex), context);
+        return _group([...intermediateExpressions, result]);
       });
 }
 
@@ -77,6 +68,11 @@ Expression _singleMemberExpression(String member, ParsingContext context) {
   return Expression.constant(member, inferValueType(member));
 }
 
+Expression _group(Iterable<Expression> expressions) {
+  if (expressions.length == 1) return expressions.first;
+  return Expression.group(expressions);
+}
+
 Expression _assignmentExpression(
     String keyword, String id, ParsedExpression body, ParsingContext context) {
   if (keyword == 'let') {
@@ -84,7 +80,7 @@ Expression _assignmentExpression(
     context.add(LetDeclaration(id, value.type));
     return LetExpression(id, value);
   } else {
-    throw Exception("Unsupported keyword for assignment: '$keyword'");
+    throw TypeCheckException("Unsupported keyword for assignment: '$keyword'");
   }
 }
 
@@ -92,54 +88,41 @@ Expression _loopExpression(ParsedExpression body, ParsingContext context) {
   return LoopExpression(exprWithInferredType(body, context.createChild()));
 }
 
-Expression _intermediateExpression(
-    ParsedExpression member, ParsingContext context) {
-  return member.match(
-    onGroup: (g) => g.length == 1
-        ? exprWithInferredType(g[0], context)
-        : Expression.group(g.map((m) => exprWithInferredType(m, context))),
-    onLoop: (loop) => _loopExpression(loop, context),
-    onMember: (m) => _singleMemberExpression(m, context),
-    onIf: (cond, then, [els]) => _ifExpression(cond, then, els, context),
-    onAssignment: (keyword, id, body) =>
-        _assignmentExpression(keyword, id, body, context),
-    onErrors: (errors) => throw Exception(errors.join('\n')),
-  );
-}
-
 Expression _resultExpression(
     Iterable<ParsedExpression> members, ParsingContext context) {
   if (members.isEmpty) {
-    throw Exception('Empty expression cannot be used as a value');
+    throw TypeCheckException('Empty expression cannot be used as a value');
   }
   if (members.length == 1) {
     return members.first.match(
       onGroup: (g) => _resultExpression(g, context),
-      onLoop: (loop) => throw Exception('loop cannot be used as a value'),
-      onAssignment: (k, i, v) =>
-          throw Exception('assignment cannot be used as a value'),
+      onLoop: (loop) => _loopExpression(loop, context),
+      onAssignment: (keyword, id, body) =>
+          _assignmentExpression(keyword, id, body, context),
       onMember: (m) => _singleMemberExpression(m, context),
-      // TODO verify that this is a non-empty value if expression
       onIf: (cond, then, [els]) => _ifExpression(cond, then, els, context),
-      onErrors: (errors) => throw Exception(errors.join('\n')),
+      onErrors: (errors) => throw TypeCheckException(errors.join('\n')),
     );
   }
 
   // result expressions with more than one member must be function calls
   final funName = members.first.match(
-    onGroup: (group) => throw Exception(
+    onGroup: (group) => throw TypeCheckException(
         'Expected function identifier, found expression instead: $group'),
-    onLoop: (loop) => throw Exception(
+    onLoop: (loop) => throw TypeCheckException(
         'Expected function identifier, found loop instead: $loop'),
-    onAssignment: (k, i, v) => throw Exception(
+    onAssignment: (k, i, v) => throw TypeCheckException(
         'Expected function identifier, found assignment instead: $i'),
     onMember: (member) => member,
-    onIf: (cond, then, [els]) => throw Exception(
+    onIf: (cond, then, [els]) => throw TypeCheckException(
         'Expected function identifier, found if-expression instead'),
-    onErrors: (errors) => throw Exception(errors.join('\n')),
+    onErrors: (errors) => throw TypeCheckException(errors.join('\n')),
   );
 
-  final args = members.skip(1).map((e) => exprWithInferredType(e, context));
+  final args = members
+      .skip(1)
+      .map((e) => exprWithInferredType(e, context))
+      .toList(growable: false);
 
   // TODO support more operators, move these to the context
   if (operators.contains(funName) && args.length != 2) {

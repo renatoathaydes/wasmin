@@ -95,6 +95,8 @@ class WasmTextSink {
       onFunCall: _funCall,
       onLet: _let,
       onIf: _if,
+      onLoop: _loop,
+      onBreak: _break,
       onGroup: _group,
     );
   }
@@ -155,6 +157,19 @@ class WasmTextSink {
     }
     _decreaseIndent();
     _textSink.write('\n$_indent)');
+  }
+
+  void _loop(LoopExpression loop) {
+    _textSink.writeln('(loop');
+    _increaseIndent();
+    _textSink.write(_indent);
+    _writeExpression(loop.body);
+    _decreaseIndent();
+    _textSink.write('\n$_indent)');
+  }
+
+  void _break() {
+    _textSink.write('br');
   }
 
   void _group(Group group) {

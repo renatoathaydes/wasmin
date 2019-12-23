@@ -258,7 +258,8 @@ class _Break extends Expression {
 class Group extends Expression {
   final List<Expression> body;
 
-  Group(this.body) : super._create('', body.last.type);
+  Group(this.body)
+      : super._create('', body.isEmpty ? ValueType.empty : body.last.type);
 
   @override
   bool operator ==(Object other) =>
