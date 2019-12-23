@@ -8,6 +8,8 @@ abstract class Expression {
   final String _id;
   final ValueType type;
 
+  List<Assignment> get assignments => const [];
+
   const Expression._create(this._id, this.type);
 
   factory Expression.constant(String value, ValueType type) {
@@ -169,6 +171,9 @@ class LetExpression extends Expression with Assignment {
   @override
   ValueType get varType => body.type;
 
+  @override
+  List<Assignment> get assignments => [this];
+
   LetExpression(String id, this.body) : super._create(id, ValueType.empty);
 
   @override
@@ -201,6 +206,14 @@ class IfExpression extends Expression {
   final Expression cond;
   final Expression then;
   final Expression els;
+
+  // TODO each assignment needs a unique identifier outside its scope
+  @override
+  List<Assignment> get assignments => [
+        ...cond.assignments,
+        ...then.assignments,
+        ...(els?.assignments ?? const [])
+      ];
 
   IfExpression(this.cond, this.then, [this.els])
       : super._create('', els?.type ?? ValueType.empty);
@@ -258,6 +271,10 @@ class _Break extends Expression {
 class Group extends Expression {
   final List<Expression> body;
 
+  @override
+  List<Assignment> get assignments =>
+      body.expand((g) => g.assignments).toList();
+
   Group(this.body)
       : super._create('', body.isEmpty ? ValueType.empty : body.last.type);
 
@@ -292,6 +309,9 @@ class Group extends Expression {
 
 class LoopExpression extends Expression {
   final Expression body;
+
+  @override
+  List<Assignment> get assignments => body.assignments;
 
   LoopExpression(this.body) : super._create('loop', ValueType.empty);
 

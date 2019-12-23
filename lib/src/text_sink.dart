@@ -80,9 +80,24 @@ class WasmTextSink {
     _textSink.writeln();
     _increaseIndent();
     _textSink.write(_indent);
+    final wroteNewLine = _writeAssignments(fun.body.assignments);
+    if (wroteNewLine) _textSink.write(_indent);
     _writeExpression(fun.body);
     _decreaseIndent();
     _textSink.write('\n$_indent)');
+  }
+
+  bool _writeAssignments(List<Assignment> assignments) {
+    var hasWrittenNewLine = false;
+    for (final assignment in assignments) {
+      if (hasWrittenNewLine) {
+        _textSink.write(_indent);
+      }
+      _assignment(assignment);
+      _textSink.writeln();
+      hasWrittenNewLine = true;
+    }
+    return hasWrittenNewLine;
   }
 
   void _topLevelLet(Let let) {
@@ -177,32 +192,12 @@ class WasmTextSink {
   }
 
   void _group(Group group) {
-    final newVarAssignments = group.body.whereType<LetExpression>();
-
-    // first, write all new assignments declarations
     var i = 0;
-    for (final assignment in newVarAssignments) {
-      if (i != 0) {
-        _textSink.write(_indent);
-      }
-      _assignment(assignment);
-      i++;
-      _textSink.writeln();
-    }
-    var wroteNewLine = i > 0;
-
-    // then, write the expressions themselves
-    i = 0;
     for (final expr in group.body) {
-      if (wroteNewLine) {
-        _textSink.write(_indent);
-      }
-      wroteNewLine = true;
+      if (i != 0) _textSink.write(_indent);
       _writeExpression(expr);
       i++;
-      if (i < group.body.length) {
-        _textSink.writeln();
-      }
+      if (i < group.body.length) _textSink.writeln();
     }
   }
 

@@ -95,9 +95,7 @@ void main() {
 
     expect(
         readText(),
-        equals('(local \$x i64)\n'
-            '(local \$y i64)\n'
-            '(local.set \$x\n  (i64.const 2)\n)\n'
+        equals('(local.set \$x\n  (i64.const 2)\n)\n'
             '(local.set \$y\n  (i64.const 4)\n)\n'
             '(i64.add\n  (local.get \$x)\n  (local.get \$y)\n)'));
   });
