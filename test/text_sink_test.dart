@@ -113,6 +113,46 @@ void main() {
             ')'));
   });
 
+  test('Can write a usual function implementation', () {
+    textSink.add(Fun(
+        FunDeclaration('calculate',
+            FunType(ValueType.i32, const [ValueType.i32, ValueType.i64])),
+        const ['x1', 'x2'],
+        Expression.group([
+          Expression.let(
+              'n',
+              Expression.funCall(
+                  'convert_i32_u',
+                  [
+                    Expression.variable('x2', ValueType.i64),
+                  ],
+                  ValueType.i32)),
+          Expression.funCall(
+              'add',
+              [
+                Expression.variable('n', ValueType.i32),
+                Expression.variable('x1', ValueType.i32),
+              ],
+              ValueType.i32)
+        ])));
+
+    expect(
+        readText(),
+        equals(
+            '(func \$calculate (param \$x1 i32) (param \$x2 i64) (result i32)\n'
+            '  (local \$n i32)\n'
+            '  (local.set \$n\n'
+            '    (i64.convert_i32_u\n'
+            '      (local.get \$x2)\n'
+            '    )\n'
+            '  )\n'
+            '  (i32.add\n'
+            '    (local.get \$n)\n'
+            '    (local.get \$x1)\n'
+            '  )\n'
+            ')'));
+  });
+
   test('Can write if statement without else', () {
     textSink.add(Expression.ifExpr(
       Expression.funCall(

@@ -111,8 +111,9 @@ class WasmTextSink {
   }
 
   void _funCall(FunCall funCall) {
-    final prefix =
-        operators.contains(funCall.name) ? '${funCall.type.name}.' : r'call $';
+    final prefix = operators.contains(funCall.name)
+        ? '${funCall.args.first.type.name}.'
+        : r'call $';
     _textSink.write('($prefix${funCall.name}');
     if (funCall.args.isNotEmpty) {
       _textSink.writeln();

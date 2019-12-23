@@ -10,6 +10,8 @@ const operators = {
   'and', 'or', 'xor', 'shl', 'shr_u', 'shr_s', 'rot_l', 'rot_r', 'eq', 'ne', //
   'lt_s', 'lt_u', 'le_s', 'le_u', 'gt_s', 'gt_u', 'ge_s', 'gs_u', 'clz', //
   'ct_z', 'popcnt', 'eqz', //
+  'convert_i32_u', 'convert_i64_u', 'convert_f32_u', 'convert_f64_u', //
+  'convert_i32_s', 'convert_i64_s', 'convert_f32_s', 'convert_f64_s', //
 };
 
 class TypeCheckException implements Exception {
