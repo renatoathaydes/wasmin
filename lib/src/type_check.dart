@@ -80,7 +80,7 @@ Expression _assignmentExpression(
   if (keyword == 'let') {
     final value = exprWithInferredType(body, context);
     context.add(LetDeclaration(id, value.type));
-    return LetExpression(id, value);
+    return Expression.let(id, value);
   } else {
     throw TypeCheckException("Unsupported keyword for assignment: '$keyword'");
   }

@@ -49,16 +49,16 @@ void main() {
 
   test('Can write simple let expression', () {
     textSink.add(
-        LetExpression('variable', Expression.constant('10', ValueType.i64)));
+        Expression.let('variable', Expression.constant('10', ValueType.i64)));
 
     expect(readText(), equals('(local.set \$variable\n  (i64.const 10)\n)'));
   });
 
   test('Can write many let expressions', () {
-    textSink.add(LetExpression('a1', Expression.constant('10', ValueType.i64)));
+    textSink.add(Expression.let('a1', Expression.constant('10', ValueType.i64)));
     textSink
-        .add(LetExpression('b2', Expression.constant('0.22', ValueType.f32)));
-    textSink.add(LetExpression('c3', Expression.constant('55', ValueType.i64)));
+        .add(Expression.let('b2', Expression.constant('0.22', ValueType.f32)));
+    textSink.add(Expression.let('c3', Expression.constant('55', ValueType.i64)));
 
     expect(
         readText(),
