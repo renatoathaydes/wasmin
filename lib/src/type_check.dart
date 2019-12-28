@@ -26,10 +26,7 @@ class TypeCheckException implements Exception {
 Expression exprWithInferredType(
     ParsedExpression parsedExpr, ParsingContext context) {
   return parsedExpr.match(
-      onErrors: (errors) {
-        // TODO emit error expressions
-        throw Exception(errors.join('\n'));
-      },
+      onError: (error) => error,
       onAssignment: (keyword, id, value) =>
           _assignmentExpression(keyword, id, value, context),
       onMember: (member) => _singleMemberExpression(member, context),
@@ -129,22 +126,22 @@ Expression _resultExpression(
           _assignmentExpression(keyword, id, body, context),
       onMember: (m) => _singleMemberExpression(m, context),
       onIf: (cond, then, [els]) => _ifExpression(cond, then, els, context),
-      onErrors: (errors) => throw TypeCheckException(errors.join('\n')),
+      onError: (error) => error,
     );
   }
 
   // result expressions with more than one member must be function calls
   final funName = members.first.match(
-    onGroup: (group) => throw TypeCheckException(
+    onGroup: (group) => throw Exception(
         'Expected function identifier, found expression instead: $group'),
-    onLoop: (loop) => throw TypeCheckException(
+    onLoop: (loop) => throw Exception(
         'Expected function identifier, found loop instead: $loop'),
-    onAssignment: (k, i, v) => throw TypeCheckException(
+    onAssignment: (k, i, v) => throw Exception(
         'Expected function identifier, found assignment instead: $i'),
     onMember: (member) => member,
-    onIf: (cond, then, [els]) => throw TypeCheckException(
+    onIf: (cond, then, [els]) => throw Exception(
         'Expected function identifier, found if-expression instead'),
-    onErrors: (errors) => throw TypeCheckException(errors.join('\n')),
+    onError: (error) => throw Exception(error.message),
   );
 
   final args = members

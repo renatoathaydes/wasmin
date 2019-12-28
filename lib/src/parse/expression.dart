@@ -17,7 +17,7 @@ abstract class ParsedExpression {
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
             [ParsedExpression elseExpr])
         onIf,
-    T Function(List<String>) onErrors,
+    T Function(CompilerError) onError,
   });
 }
 
@@ -38,16 +38,16 @@ class _SingleMember extends ParsedExpression {
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
             [ParsedExpression elseExpr])
         onIf,
-    T Function(List<String>) onErrors,
+    T Function(CompilerError) onError,
   }) {
     return onMember(name);
   }
 }
 
 class _Error extends ParsedExpression {
-  final List<String> messages;
+  final CompilerError error;
 
-  const _Error(this.messages) : super._();
+  const _Error(this.error) : super._();
 
   @override
   T match<T>({
@@ -58,9 +58,9 @@ class _Error extends ParsedExpression {
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
             [ParsedExpression elseExpr])
         onIf,
-    T Function(List<String>) onErrors,
+    T Function(CompilerError) onError,
   }) {
-    return onErrors(messages);
+    return onError(error);
   }
 }
 
@@ -78,7 +78,7 @@ class _GroupedExpression extends ParsedExpression {
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
             [ParsedExpression elseExpr])
         onIf,
-    T Function(List<String>) onErrors,
+    T Function(CompilerError) onError,
   }) {
     return onGroup(members);
   }
@@ -100,7 +100,7 @@ class _Assignment extends ParsedExpression {
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
             [ParsedExpression elseExpr])
         onIf,
-    T Function(List<String>) onErrors,
+    T Function(CompilerError) onError,
   }) {
     return onAssignment(keyword, id, value);
   }
@@ -123,7 +123,7 @@ class _If extends ParsedExpression {
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
             [ParsedExpression elseExpr])
         onIf,
-    T Function(List<String>) onErrors,
+    T Function(CompilerError) onError,
   }) {
     return onIf(condition, thenExpression, elseExpression);
   }
@@ -143,7 +143,7 @@ class _Loop extends ParsedExpression {
     T Function(ParsedExpression cond, ParsedExpression thenExpr,
             [ParsedExpression elseExpr])
         onIf,
-    T Function(List<String>) onErrors,
+    T Function(CompilerError) onError,
   }) {
     return onLoop(expression);
   }
@@ -164,11 +164,16 @@ class ExpressionParser with WordBasedParser<Expression> {
     try {
       _expr = exprWithInferredType(expr, _context);
     } on TypeCheckException catch (e, s) {
-      failure = e.message;
+      failure = CompilerError(runes.position, e.message);
       return ParseResult.FAIL;
     } catch (e, s) {
       // FIXME parser should not throw Exception
-      failure = e.toString();
+      failure = CompilerError(runes.position, e.toString());
+      return ParseResult.FAIL;
+    }
+
+    if (_expr is CompilerError) {
+      failure = _expr as CompilerError;
       return ParseResult.FAIL;
     }
 
@@ -198,7 +203,7 @@ class ExpressionParser with WordBasedParser<Expression> {
     if (runes.currentAsString == ')') {
       runes.moveNext();
     } else {
-      return _Error([')'.wasExpected(runes, true)]);
+      return _Error(')'.wasExpected(runes, quoteExpected: true));
     }
 
     final errors = members.whereType<_Error>();
@@ -257,16 +262,17 @@ class ExpressionParser with WordBasedParser<Expression> {
     final nextSymbol = runes.currentAsString;
     if (nextSymbol == ')') {
       if (!withinParens) {
-        return _Error([';'.wasExpected(runes, true)]);
+        return _Error(';'.wasExpected(runes, quoteExpected: true));
       }
     } else if (nextSymbol == ';') {
       runes.moveNext();
     } else if (nextSymbol == null) {
       if (withinParens) {
-        return _Error([')'.wasExpected(runes, true)]);
+        return _Error(')'.wasExpected(runes, quoteExpected: true));
       }
     } else {
-      return _Error([(withinParens ? ')' : ';').wasExpected(runes, true)]);
+      return _Error(
+          (withinParens ? ')' : ';').wasExpected(runes, quoteExpected: true));
     }
 
     final errors = members.whereType<_Error>();
@@ -292,14 +298,16 @@ class ExpressionParser with WordBasedParser<Expression> {
       ParserState runes, String keyword, bool withinParens) {
     var done = whitespaces.parse(runes) == ParseResult.DONE;
     if (done) {
-      return _Error(['assignment expression'.wasExpected(runes, false)]);
+      return _Error('assignment expression'.wasExpected(runes));
     }
 
     final id = nextWord(runes);
-    if (id.isEmpty) return _Error(['identifier'.wasExpected(runes, false)]);
+    if (id.isEmpty) return _Error('identifier'.wasExpected(runes));
     done = whitespaces.parse(runes) == ParseResult.DONE;
     final symbol = runes.currentAsString;
-    if (done || symbol != '=') return _Error(['='.wasExpected(runes, true)]);
+    if (done || symbol != '=') {
+      return _Error('='.wasExpected(runes, quoteExpected: true));
+    }
 
     // consume '='
     runes.moveNext();
@@ -312,8 +320,13 @@ class ExpressionParser with WordBasedParser<Expression> {
   ParsedExpression _parseIf(ParserState runes, bool withinParens) {
     final condExpr = _parseExpression(runes, withinParens);
     if (withinParens && runes.currentAsString == ')') {
+      return _Error('else expression'
+          .wasExpected(runes, prefix: 'Incomplete if expression'));
+    }
+    var result = whitespaces.parse(runes);
+    if (result == ParseResult.DONE) {
       return _Error(
-          ['if expression ended unexpectedly: no then branch provided']);
+          CompilerError(runes.position, 'Expected then expression, got EOF'));
     }
     final thenExpr = _parseExpression(runes, withinParens);
     whitespaces.parse(runes);

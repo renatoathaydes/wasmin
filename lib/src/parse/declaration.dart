@@ -1,4 +1,5 @@
 import '../ast.dart';
+import '../expression.dart';
 import '../type_context.dart';
 import 'base.dart';
 import 'iterator.dart';
@@ -9,7 +10,7 @@ class DeclarationParser with WordBasedParser<Declaration> {
   final WordParser words;
 
   @override
-  String failure;
+  CompilerError failure;
 
   final TypeParser type;
   final ParsingContext context;
@@ -36,7 +37,7 @@ class DeclarationParser with WordBasedParser<Declaration> {
     }
 
     if (id.isEmpty) {
-      failure = 'identifier'.wasExpected(runes, false);
+      failure = 'identifier'.wasExpected(runes);
       return ParseResult.FAIL;
     }
 

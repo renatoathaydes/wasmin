@@ -23,8 +23,8 @@ class FunParser with WordBasedParser<Fun> {
     reset();
     var word = nextWord(runes);
     if (word.isEmpty) {
-      failure = 'Incomplete fun declaration. ' +
-          'function identifier'.wasExpected(runes, false);
+      failure = 'function identifier'
+          .wasExpected(runes, prefix: 'Incomplete function declaration');
       return ParseResult.FAIL;
     }
 
@@ -39,7 +39,8 @@ class FunParser with WordBasedParser<Fun> {
     _whitespaces.parse(runes);
 
     if (runes.currentAsString != '=') {
-      failure = 'Incomplete fun declaration. ' + '='.wasExpected(runes, true);
+      failure = '='.wasExpected(runes,
+          quoteExpected: true, prefix: 'Incomplete function declaration');
       return ParseResult.FAIL;
     }
 
@@ -68,7 +69,7 @@ class FunParser with WordBasedParser<Fun> {
               result = funExpression.parse(runes);
 
               if (result == ParseResult.FAIL) {
-                failure = 'fun error: ${funExpression.failure}';
+                failure = funExpression.failure;
                 return null;
               }
               return funExpression.consume();
@@ -89,7 +90,7 @@ class FunParser with WordBasedParser<Fun> {
       final funExpression = ExpressionParser(words, _typeContext.createChild());
       result = funExpression.parse(runes);
       if (result == ParseResult.FAIL) {
-        failure = 'Function implementation error: ${funExpression.failure}';
+        failure = funExpression.failure;
       } else {
         expression = funExpression.consume();
         decl = FunDeclaration(id, FunType(expression.type, const []));

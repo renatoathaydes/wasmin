@@ -56,7 +56,6 @@ class WasmTextSink {
   }
 
   void _declaration(VarDeclaration declaration) {
-
     _textSink.write('(local \$${declaration.id} ${declaration.varType.name})');
   }
 
@@ -115,6 +114,7 @@ class WasmTextSink {
       onLoop: _loop,
       onBreak: _break,
       onGroup: _group,
+      onError: _error,
     );
   }
 
@@ -200,6 +200,10 @@ class WasmTextSink {
       i++;
       if (i < group.body.length) _textSink.writeln();
     }
+  }
+
+  void _error(CompilerError compilerError) {
+    print('ERROR: ${compilerError.position} - ${compilerError.message}');
   }
 
   void _increaseIndent() {

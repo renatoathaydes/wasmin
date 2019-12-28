@@ -1,4 +1,5 @@
-import 'package:wasmin/src/parse/iterator.dart';
+import '../expression.dart';
+import 'iterator.dart';
 
 const whitespace = {
   ' ', '\r', '\n', '\t', //
@@ -24,7 +25,7 @@ enum ParseResult { CONTINUE, DONE, FAIL }
 
 mixin Parser<N> {
   /// The last failure seem by this parser.
-  String get failure;
+  CompilerError get failure;
 
   /// Parse the runes emitted by the given iterator.
   ParseResult parse(ParserState runes);
@@ -66,7 +67,7 @@ mixin RuneBasedParser<N> implements Parser<N> {
 mixin WordBasedParser<N> implements Parser<N> {
   final whitespaces = SkipWhitespaces();
   @override
-  String failure;
+  CompilerError failure;
 
   WordParser get words;
 
@@ -83,7 +84,7 @@ class SkipWhitespaces with RuneBasedParser<void> {
   SkipWhitespaces();
 
   @override
-  final String failure = null;
+  final CompilerError failure = null;
 
   @override
   ParseResult parse(ParserState runes) {
@@ -112,7 +113,7 @@ class WordParser with RuneBasedParser<String> {
   final _buffer = StringBuffer();
 
   @override
-  final String failure = null;
+  final CompilerError failure = null;
 
   @override
   String consume() {
@@ -143,9 +144,13 @@ extension ParserStringExtensions on String {
 
   String quote() => "'${this}'";
 
-  String wasExpected(ParserState actual, bool quoteExpected) {
-    return 'Expected ${quoteExpected ? quote() : this}, '
-        "got ${actual.currentAsString?.quote() ?? 'EOF'}";
+  CompilerError wasExpected(ParserState state,
+      {bool quoteExpected = false, String prefix = ''}) {
+    final position = state.position;
+    final message = (prefix.isEmpty ? '' : '$prefix. ') +
+        'Expected ${quoteExpected ? quote() : this}, '
+            "got ${state.currentAsString?.quote() ?? 'EOF'}";
+    return CompilerError(position, message);
   }
 }
 

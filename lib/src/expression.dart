@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 
 import 'ast.dart';
+import 'parse/iterator.dart';
 import 'type.dart';
 
 /// An Expression is an arrangement, or combination, of function calls,
@@ -64,6 +65,7 @@ abstract class Expression {
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
     T Function(Group) onGroup,
+    T Function(CompilerError) onError,
   });
 
   @override
@@ -96,6 +98,7 @@ class Const extends Expression {
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
     T Function(Group) onGroup,
+    T Function(CompilerError) onError,
   }) {
     return onConst(this);
   }
@@ -119,6 +122,7 @@ class Var extends Expression {
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
     T Function(Group) onGroup,
+    T Function(CompilerError) onError,
   }) {
     return onVariable(this);
   }
@@ -155,6 +159,7 @@ class FunCall extends Expression {
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
     T Function(Group) onGroup,
+    T Function(CompilerError) onError,
   }) {
     return onFunCall(this);
   }
@@ -208,6 +213,7 @@ class AssignExpression extends Expression {
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
     T Function(Group) onGroup,
+    T Function(CompilerError) onError,
   }) {
     return onAssign(this);
   }
@@ -256,6 +262,7 @@ class IfExpression extends Expression {
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
     T Function(Group) onGroup,
+    T Function(CompilerError) onError,
   }) {
     return onIf(this);
   }
@@ -274,6 +281,7 @@ class _Break extends Expression {
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
     T Function(Group) onGroup,
+    T Function(CompilerError) onError,
   }) {
     return onBreak();
   }
@@ -313,6 +321,7 @@ class Group extends Expression {
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
     T Function(Group) onGroup,
+    T Function(CompilerError) onError,
   }) {
     return onGroup(this);
   }
@@ -347,7 +356,36 @@ class LoopExpression extends Expression {
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
     T Function(Group) onGroup,
+    T Function(CompilerError) onError,
   }) {
     return onLoop(this);
+  }
+}
+
+class CompilerError extends Expression {
+  final ParserPosition position;
+  final String message;
+
+  const CompilerError(this.position, this.message)
+      : super._create('compiler-error', ValueType.empty);
+
+  @override
+  String toString() {
+    return 'CompilerError{position: $position, message: $message}';
+  }
+
+  @override
+  T matchExpr<T>({
+    T Function(Const) onConst,
+    T Function(Var) onVariable,
+    T Function(FunCall) onFunCall,
+    T Function(AssignExpression) onAssign,
+    T Function(IfExpression) onIf,
+    T Function(LoopExpression) onLoop,
+    T Function() onBreak,
+    T Function(Group) onGroup,
+    T Function(CompilerError) onError,
+  }) {
+    return onError(this);
   }
 }

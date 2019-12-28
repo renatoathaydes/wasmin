@@ -7,7 +7,7 @@ void main() {
   group('let declarations', () {
     test('can parse let declaration with simple type', () {
       final result = parser.parse(ParserState.fromString('abc i32'));
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
       final expected = VarDeclaration('abc', ValueType.i32);
@@ -19,7 +19,7 @@ void main() {
     test('can parse exported let declaration with simple type', () {
       parser.firstWord = 'export';
       final result = parser.parse(ParserState.fromString('def f32'));
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
       final expected = VarDeclaration('def', ValueType.f32, isExported: true);
@@ -32,7 +32,7 @@ void main() {
   group('function declarations', () {
     test('can parse function signature returning constant', () {
       final result = parser.parse(ParserState.fromString('main []i64'));
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
       final expected = FunDeclaration('main', FunType(ValueType.i64, const []));
@@ -44,7 +44,7 @@ void main() {
     test('can parse exported function signature', () {
       final result =
           parser.parse(ParserState.fromString('export _start []i64'));
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
       final expected =
@@ -57,7 +57,7 @@ void main() {
     test('can parse function signature with no arg, no return type', () {
       final iter = ParserState.fromString('print-time [];X');
       final result = parser.parse(iter);
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.CONTINUE));
 
       final expected =
@@ -72,7 +72,7 @@ void main() {
     test('can parse function signature with one arg, no return type', () {
       final iter = ParserState.fromString('log-time [f64];X');
       final result = parser.parse(iter);
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.CONTINUE));
 
       final expected = FunDeclaration(
@@ -87,7 +87,7 @@ void main() {
     test('can parse function signature with one arg, one return type', () {
       final iter = ParserState.fromString('convert[f64]i32;X');
       final result = parser.parse(iter);
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.CONTINUE));
 
       final expected = FunDeclaration(
@@ -103,7 +103,7 @@ void main() {
       final iter =
           ParserState.fromString('f  [i32,i64\n,   f32, f64 ] i32 ; X');
       final result = parser.parse(iter);
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.CONTINUE));
 
       final expected = FunDeclaration(
@@ -126,34 +126,35 @@ void main() {
     test('cannot parse empty string', () {
       final result = parser.parse(ParserState.fromString(''));
       expect(result, equals(ParseResult.FAIL));
-      expect(parser.failure, equals('Expected identifier, got EOF'));
+      expect(parser.failure?.message, equals('Expected identifier, got EOF'));
     });
 
     test('cannot parse identifier without a type', () {
       final result = parser.parse(ParserState.fromString('hello; foo'));
       expect(result, equals(ParseResult.FAIL));
-      expect(parser.failure, equals("Expected type declaration, got ';'"));
+      expect(parser.failure?.message,
+          equals("Expected type declaration, got ';'"));
     });
 
-    test('', () {
+    test('cannot parse type with unexpected character', () {
       final result = parser.parse(ParserState.fromString('exp foo[]i64;'));
       expect(result, equals(ParseResult.FAIL));
-      expect(parser.failure,
-          equals("Unexpected character in type declaration: '['"));
+      expect(parser.failure?.message,
+          equals("Unexpected character. Expected type declaration, got '['"));
     });
 
     test('must close function arguments list', () {
       final result = parser.parse(ParserState.fromString('foo[i32'));
       expect(result, equals(ParseResult.FAIL));
       expect(
-          parser.failure,
+          parser.failure?.message,
           equals(
               "Unterminated function parameter list. Expected ']', got EOF"));
 
       final result2 = parser.parse(ParserState.fromString('func[i32; ]i64'));
       expect(result2, equals(ParseResult.FAIL));
       expect(
-          parser.failure,
+          parser.failure?.message,
           equals(
               "Unterminated function parameter list. Expected ']', got ';'"));
     });

@@ -1,10 +1,11 @@
+import '../expression.dart';
 import '../type.dart';
 import 'base.dart';
 import 'iterator.dart';
 
 class TypeParser with WordBasedParser<WasminType> {
   @override
-  String failure;
+  CompilerError failure;
 
   WasminType _type;
 
@@ -37,20 +38,21 @@ class TypeParser with WordBasedParser<WasminType> {
           _type = FunType(returnType,
               args.map((a) => ValueType(a)).toList(growable: false));
         } else {
-          failure = 'Unterminated function parameter list. ' +
-              ']'.wasExpected(runes, true);
+          failure = ']'.wasExpected(runes,
+              quoteExpected: true,
+              prefix: 'Unterminated function parameter list');
           return ParseResult.FAIL;
         }
       } else {
-        failure = 'type declaration'.wasExpected(runes, false);
+        failure = 'type declaration'.wasExpected(runes);
         return ParseResult.FAIL;
       }
     } else {
       if (runes.currentAsString == null || runes.currentAsString == ';') {
         _type = ValueType(word);
       } else {
-        failure = 'Unexpected character in '
-            "type declaration: '${runes.currentAsString}'";
+        failure = 'type declaration'
+            .wasExpected(runes, prefix: 'Unexpected character');
         return ParseResult.FAIL;
       }
     }

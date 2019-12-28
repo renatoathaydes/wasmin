@@ -1,3 +1,5 @@
+import 'package:wasmin/src/parse/iterator.dart';
+
 import 'expression.dart';
 import 'type.dart';
 
@@ -204,3 +206,4 @@ class VarDeclaration extends Declaration {
     return onVar(this);
   }
 }
+

@@ -24,7 +24,8 @@ class LetParser with WordBasedParser<Let> {
     reset();
     var word = nextWord(runes);
     if (word.isEmpty) {
-      failure = 'Incomplete let expresion. Expected identifier!';
+      failure =
+          'identifier'.wasExpected(runes, prefix: 'Incomplete let expresion');
       return ParseResult.FAIL;
     }
     final id = word;
@@ -32,7 +33,8 @@ class LetParser with WordBasedParser<Let> {
     _whitespaces.parse(runes);
 
     if (runes.currentAsString != '=') {
-      failure = "Incomplete let expresion. Expected '='!";
+      failure = '='.wasExpected(runes,
+          quoteExpected: true, prefix: 'Incomplete let expresion');
       return ParseResult.FAIL;
     }
 
@@ -41,7 +43,7 @@ class LetParser with WordBasedParser<Let> {
 
     final result = _expr.parse(runes);
     if (result == ParseResult.FAIL) {
-      failure = 'Let expression error: ${_expr.failure}';
+      failure = _expr.failure;
     } else {
       final expression = _expr.consume();
 

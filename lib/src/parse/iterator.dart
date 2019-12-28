@@ -2,7 +2,7 @@ class ParserPosition {
   final int line;
   final int column;
 
-  ParserPosition(this.line, this.column);
+  const ParserPosition(this.line, this.column);
 
   @override
   String toString() => '$line:$column';

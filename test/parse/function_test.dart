@@ -8,7 +8,7 @@ void main() {
     test('can parse function with no args returning constant', () {
       final result = parser.parse(ParserState.fromString('main = 10'));
 
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
       expect(
           parser.consume(),
@@ -19,7 +19,7 @@ void main() {
     test('can parse function with no args returning single expression', () {
       final result = parser.parse(ParserState.fromString('foo = add 2.0 3.3'));
 
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
       expect(
           parser.consume(),
@@ -40,7 +40,7 @@ void main() {
           ParserState.fromString('n = (let x = 2.0; let y = 3.3; add x y)');
       final result = parser.parse(iter);
 
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
       expect(
           parser.consume(),

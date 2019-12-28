@@ -13,7 +13,7 @@ void main() {
   group('success cases', () {
     test('can parse let expression', () {
       final result = parser.parse(ParserState.fromString('x=0'));
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
       final let = parser.consume();
@@ -27,7 +27,7 @@ void main() {
     test('can parse let expression with whitespace', () {
       final result =
           parser.parse(ParserState.fromString(' one_thousand  =     1000   '));
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
       final let = parser.consume();
@@ -39,7 +39,7 @@ void main() {
     test('can parse let expression with function call', () {
       final iter = ParserState.fromString('abc = mul 30 50;X');
       final result = parser.parse(iter);
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.CONTINUE));
       expect(iter.currentAsString, equals('X'));
 
@@ -60,7 +60,7 @@ void main() {
     test('can parse let expression with complex expression', () {
       final result = parser.parse(ParserState.fromString(
           'complex = div_s (add 2 3) (mul 30 (sub 32 21))'));
-      expect(parser.failure, isNull);
+      expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
       final let = parser.consume();
@@ -100,37 +100,38 @@ void main() {
   group('failures', () {
     test('cannot parse let expression with no assignment', () {
       final result = parser.parse(ParserState.fromString('one'));
-      expect(parser.failure, equals("Incomplete let expresion. Expected '='!"));
+      expect(parser.failure?.message,
+          equals("Incomplete let expresion. Expected '=', got EOF"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no =', () {
       final result = parser.parse(ParserState.fromString('one 1'));
-      expect(parser.failure, equals("Incomplete let expresion. Expected '='!"));
+      expect(parser.failure?.message,
+          equals("Incomplete let expresion. Expected '=', got '1'"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no value', () {
       final result = parser.parse(ParserState.fromString('one = '));
       expect(
-          parser.failure,
-          equals('Let expression error: '
-              'Empty expression cannot be used as a value'));
+          parser.failure?.message,
+          equals('Empty expression cannot be used as a value'));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no = (end with separator)', () {
       final result = parser.parse(ParserState.fromString('one; = foo'));
-      expect(parser.failure, equals("Incomplete let expresion. Expected '='!"));
+      expect(parser.failure?.message,
+          equals("Incomplete let expresion. Expected '=', got ';'"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no value (end with separator)', () {
       final result = parser.parse(ParserState.fromString('one=; foo'));
       expect(
-          parser.failure,
-          equals('Let expression error: '
-              'Empty expression cannot be used as a value'));
+          parser.failure?.message,
+          equals('Empty expression cannot be used as a value'));
       expect(result, equals(ParseResult.FAIL));
     });
   });
