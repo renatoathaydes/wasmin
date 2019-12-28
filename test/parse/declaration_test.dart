@@ -14,7 +14,7 @@ void main() {
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
 
-      final expected = LetDeclaration('abc', ValueType.i32);
+      final expected = VarDeclaration('abc', ValueType.i32);
 
       expect(parser.consume(), equals(expected));
       expect(parser.context.declarationOf('abc'), equals(expected));
@@ -26,7 +26,7 @@ void main() {
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
 
-      final expected = LetDeclaration('def', ValueType.f32, true);
+      final expected = VarDeclaration('def', ValueType.f32, isExported: true);
 
       expect(parser.consume(), equals(expected));
       expect(parser.context.declarationOf('def'), equals(expected));

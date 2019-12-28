@@ -179,6 +179,19 @@ void main() {
           ])));
     });
 
+    test('can parse re-assignment of mutable variables', () {
+      final result = parser.parse('(mut n = 1;n = 2; n)'.runes.iterator);
+      expect(parser.failure, isNull);
+      expect(result, equals(ParseResult.DONE));
+      expect(
+          parser.consume(),
+          equals(Expression.group([
+            Expression.mut('n', Expression.constant('1', ValueType.i64)),
+            Expression.reassign('n', Expression.constant('2', ValueType.i64)),
+            Expression.variable('n', ValueType.i64),
+          ])));
+    });
+
     test('can parse if expression without else', () {
       final result = parser.parse('if (0) 1'.runes.iterator);
       expect(parser.failure, isNull);
@@ -359,6 +372,20 @@ void main() {
     test('cannot parse nested function call that was not terminated', () {
       final result = parser.parse('(mul (add 3 2);'.runes.iterator);
       expect(parser.failure, equals("Exception: Expected ')', got EOF"));
+      expect(result, equals(ParseResult.FAIL));
+    });
+
+    test('cannot parse assignment not preceeded by binding', () {
+      final result = parser.parse('x=1'.runes.iterator);
+      expect(
+          parser.failure, equals("unknown variable 'x' cannot be re-assigned"));
+      expect(result, equals(ParseResult.FAIL));
+    });
+
+    test('cannot re-assign immutable binding', () {
+      final result = parser.parse('(let x = 0 ; x = 1 ; x)'.runes.iterator);
+      expect(parser.failure,
+          equals("immutable variable 'x' cannot be re-assigned"));
       expect(result, equals(ParseResult.FAIL));
     });
 

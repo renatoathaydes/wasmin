@@ -49,7 +49,7 @@ void main() {
       expect(
           parser.consume(),
           equals(Fun(
-              const FunDeclaration('n', FunType(ValueType.f64, [])),
+              FunDeclaration('n', FunType(ValueType.f64, [])),
               const [],
               Expression.group([
                 Expression.let('x', Expression.constant('2.0', ValueType.f64)),

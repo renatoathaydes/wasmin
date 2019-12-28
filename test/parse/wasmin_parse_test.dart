@@ -58,7 +58,7 @@ void main() {
     expect(unit.declarations.length, equals(1));
     expect(unit.implementations.length, equals(1));
 
-    final letDecl = LetDeclaration('my-value', ValueType.i64);
+    final letDecl = VarDeclaration('my-value', ValueType.i64);
     expect(unit.declarations[0], equals(letDecl));
     expect(unit.implementations[0],
         equals(Let(letDecl, Const('20', ValueType.i64))));
@@ -72,7 +72,7 @@ void main() {
     expect(unit.implementations.length, equals(1));
 
     final funDecl =
-        const FunDeclaration('foo', FunType(ValueType.f64, [ValueType.f64]));
+        FunDeclaration('foo', FunType(ValueType.f64, [ValueType.f64]));
     expect(unit.declarations[0], equals(funDecl));
     expect(
         unit.implementations[0],

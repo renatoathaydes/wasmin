@@ -21,7 +21,7 @@ class DeclarationParser with WordBasedParser<Declaration> {
 
   @override
   ParseResult parse(RuneIterator runes) {
-    final word = firstWord ?? nextWord(runes);;
+    final word = firstWord ?? nextWord(runes);
     reset();
 
     String id;
@@ -48,7 +48,8 @@ class DeclarationParser with WordBasedParser<Declaration> {
 
     _declaration = type.consume().match(
         onFunType: (type) => FunDeclaration(id, type, isExported),
-        onValueType: (type) => LetDeclaration(id, type, isExported));
+        onValueType: (type) =>
+            VarDeclaration(id, type, isExported: isExported));
 
     context.add(_declaration);
 

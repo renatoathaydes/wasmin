@@ -50,7 +50,8 @@ Expression exprWithInferredType(
         // evaluation term, which is the result of the expression
         final intermediateExpressions = members
             .sublist(0, evalTermIndex)
-            .map((e) => exprWithInferredType(e, context));
+            .map((e) => exprWithInferredType(e, context))
+            .toList(growable: false);
         final result =
             _resultExpression(members.sublist(evalTermIndex), context);
         return _group([...intermediateExpressions, result]);
@@ -65,7 +66,7 @@ Expression _singleMemberExpression(String member, ParsingContext context) {
   }
   final varType = context
       .declarationOf(member)
-      ?.match(onLet: (let) => let.varType, onFun: (fun) => null);
+      ?.match(onVar: (let) => let.varType, onFun: (fun) => null);
   if (varType != null) return Expression.variable(member, varType);
   return Expression.constant(member, inferValueType(member));
 }
@@ -77,10 +78,35 @@ Expression _group(Iterable<Expression> expressions) {
 
 Expression _assignmentExpression(
     String keyword, String id, ParsedExpression body, ParsingContext context) {
+  final value = exprWithInferredType(body, context);
   if (keyword == 'let') {
-    final value = exprWithInferredType(body, context);
-    context.add(LetDeclaration(id, value.type));
+    context.add(VarDeclaration(id, value.type));
     return Expression.let(id, value);
+  } else if (keyword == 'mut') {
+    context.add(VarDeclaration(id, value.type, isMutable: true));
+    return Expression.mut(id, value);
+  } else if (keyword.isEmpty) {
+    // this is a re-assignment
+    final decl = context.declarationOf(id);
+    if (decl != null) {
+      return decl.match(onFun: (fun) {
+        throw TypeCheckException("existing function '$id'"
+            "cannot be re-assigned value with type '${value.type.name}'");
+      }, onVar: (let) {
+        if (!let.isMutable) {
+          throw TypeCheckException(
+              "immutable variable '$id' cannot be re-assigned");
+        } else if (let.varType == value.type) {
+          return Expression.reassign(id, value);
+        } else {
+          throw TypeCheckException(
+              "variable '$id' of type '${let.varType.name}' "
+              "cannot be assigned value with type '${value.type.name}'");
+        }
+      });
+    } else {
+      throw TypeCheckException("unknown variable '$id' cannot be re-assigned");
+    }
   } else {
     throw TypeCheckException("Unsupported keyword for assignment: '$keyword'");
   }

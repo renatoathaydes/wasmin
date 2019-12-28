@@ -20,7 +20,7 @@ class WasmTextSink {
     // write declarations first to the top of the file
     for (final declaration in unit.declarations) {
       _textSink.write(_indent);
-      declaration.match(onFun: _funDeclaration, onLet: _assignment);
+      declaration.match(onFun: _funDeclaration, onVar: _declaration);
       _textSink.writeln();
     }
 
@@ -39,8 +39,8 @@ class WasmTextSink {
     if (node is Expression) {
       return _writeExpression(node);
     }
-    if (node is Assignment) {
-      return _assignment(node);
+    if (node is VarDeclaration) {
+      return _declaration(node);
     }
     if (node is Fun) {
       return _fun(node);
@@ -55,8 +55,9 @@ class WasmTextSink {
     }
   }
 
-  void _assignment(Assignment assignment) {
-    _textSink.write('(local \$${assignment.id} ${assignment.varType.name})');
+  void _declaration(VarDeclaration declaration) {
+
+    _textSink.write('(local \$${declaration.id} ${declaration.varType.name})');
   }
 
   void _fun(Fun fun) {
@@ -80,20 +81,20 @@ class WasmTextSink {
     _textSink.writeln();
     _increaseIndent();
     _textSink.write(_indent);
-    final wroteNewLine = _writeAssignments(fun.body.assignments);
+    final wroteNewLine = _writeDeclarations(fun.body.declarations);
     if (wroteNewLine) _textSink.write(_indent);
     _writeExpression(fun.body);
     _decreaseIndent();
     _textSink.write('\n$_indent)');
   }
 
-  bool _writeAssignments(List<Assignment> assignments) {
+  bool _writeDeclarations(List<VarDeclaration> assignments) {
     var hasWrittenNewLine = false;
     for (final assignment in assignments) {
       if (hasWrittenNewLine) {
         _textSink.write(_indent);
       }
-      _assignment(assignment);
+      _declaration(assignment);
       _textSink.writeln();
       hasWrittenNewLine = true;
     }
@@ -109,7 +110,7 @@ class WasmTextSink {
       onConst: _const,
       onVariable: _variable,
       onFunCall: _funCall,
-      onLet: _let,
+      onAssign: _assign,
       onIf: _if,
       onLoop: _loop,
       onBreak: _break,
@@ -145,7 +146,7 @@ class WasmTextSink {
     }
   }
 
-  void _let(LetExpression let) {
+  void _assign(AssignExpression let) {
     _textSink.write('(local.set \$${let.id}\n');
     _increaseIndent();
     _textSink.write(_indent);

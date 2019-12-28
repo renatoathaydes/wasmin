@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 
+import 'ast.dart';
 import 'type.dart';
 
 /// An Expression is an arrangement, or combination, of function calls,
@@ -8,7 +9,7 @@ abstract class Expression {
   final String _id;
   final ValueType type;
 
-  List<Assignment> get assignments => const [];
+  List<VarDeclaration> get declarations => const [];
 
   const Expression._create(this._id, this.type);
 
@@ -26,7 +27,15 @@ abstract class Expression {
   }
 
   factory Expression.let(String name, Expression body) {
-    return LetExpression(name, body);
+    return AssignExpression(AssignmentType.let, name, body);
+  }
+
+  factory Expression.mut(String name, Expression body) {
+    return AssignExpression(AssignmentType.mut, name, body);
+  }
+
+  factory Expression.reassign(String name, Expression body) {
+    return AssignExpression(AssignmentType.reassign, name, body);
   }
 
   factory Expression.ifExpr(Expression cond, Expression then,
@@ -50,7 +59,7 @@ abstract class Expression {
     T Function(Const) onConst,
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
-    T Function(LetExpression) onLet,
+    T Function(AssignExpression) onAssign,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
@@ -69,14 +78,6 @@ abstract class Expression {
   int get hashCode => type.hashCode;
 }
 
-mixin Assignment {
-  String get keyword;
-
-  String get id;
-
-  ValueType get varType;
-}
-
 class Const extends Expression {
   final String value;
 
@@ -90,7 +91,7 @@ class Const extends Expression {
     T Function(Const) onConst,
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
-    T Function(LetExpression) onLet,
+    T Function(AssignExpression) onAssign,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
@@ -113,7 +114,7 @@ class Var extends Expression {
     T Function(Const) onConst,
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
-    T Function(LetExpression) onLet,
+    T Function(AssignExpression) onAssign,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
@@ -149,7 +150,7 @@ class FunCall extends Expression {
     T Function(Const) onConst,
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
-    T Function(LetExpression) onLet,
+    T Function(AssignExpression) onAssign,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
@@ -159,30 +160,40 @@ class FunCall extends Expression {
   }
 }
 
-class LetExpression extends Expression with Assignment {
-  @override
-  String get keyword => 'let';
+class AssignExpression extends Expression {
+  final AssignmentType assignmentType;
 
-  @override
   String get id => _id;
 
   final Expression body;
 
-  @override
   ValueType get varType => body.type;
 
   @override
-  List<Assignment> get assignments => [this];
+  List<VarDeclaration> get declarations =>
+      [if (assignmentType != AssignmentType.reassign) _toDeclaration()];
 
-  LetExpression(String id, this.body) : super._create(id, ValueType.empty);
+  AssignExpression(this.assignmentType, String id, this.body)
+      : super._create(id, ValueType.empty);
+
+  VarDeclaration _toDeclaration() {
+    if (assignmentType == AssignmentType.reassign) {
+      return null;
+    }
+    return VarDeclaration(id, varType,
+        isMutable: assignmentType == AssignmentType.mut);
+  }
 
   @override
-  String toString() => '(let $_id = $body)';
+  String toString() => '($assignmentType $_id = $body)';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      super == other && other is LetExpression && body == other.body;
+      super == other &&
+          other is AssignExpression &&
+          assignmentType == other.assignmentType &&
+          body == other.body;
 
   @override
   int get hashCode => super.hashCode ^ body.hashCode;
@@ -192,13 +203,13 @@ class LetExpression extends Expression with Assignment {
     T Function(Const) onConst,
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
-    T Function(LetExpression) onLet,
+    T Function(AssignExpression) onAssign,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
     T Function(Group) onGroup,
   }) {
-    return onLet(this);
+    return onAssign(this);
   }
 }
 
@@ -209,10 +220,10 @@ class IfExpression extends Expression {
 
   // TODO each assignment needs a unique identifier outside its scope
   @override
-  List<Assignment> get assignments => [
-        ...cond.assignments,
-        ...then.assignments,
-        ...(els?.assignments ?? const [])
+  List<VarDeclaration> get declarations => [
+        ...cond.declarations,
+        ...then.declarations,
+        ...(els?.declarations ?? const [])
       ];
 
   IfExpression(this.cond, this.then, [this.els])
@@ -240,7 +251,7 @@ class IfExpression extends Expression {
     T Function(Const) onConst,
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
-    T Function(LetExpression) onLet,
+    T Function(AssignExpression) onAssign,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
@@ -258,7 +269,7 @@ class _Break extends Expression {
     T Function(Const) onConst,
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
-    T Function(LetExpression) onLet,
+    T Function(AssignExpression) onAssign,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
@@ -272,8 +283,8 @@ class Group extends Expression {
   final List<Expression> body;
 
   @override
-  List<Assignment> get assignments =>
-      body.expand((g) => g.assignments).toList();
+  List<VarDeclaration> get declarations =>
+      body.expand((g) => g.declarations).toList();
 
   Group(this.body)
       : super._create('', body.isEmpty ? ValueType.empty : body.last.type);
@@ -297,7 +308,7 @@ class Group extends Expression {
     T Function(Const) onConst,
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
-    T Function(LetExpression) onLet,
+    T Function(AssignExpression) onAssign,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
     T Function() onBreak,
@@ -311,7 +322,7 @@ class LoopExpression extends Expression {
   final Expression body;
 
   @override
-  List<Assignment> get assignments => body.assignments;
+  List<VarDeclaration> get declarations => body.declarations;
 
   LoopExpression(this.body) : super._create('loop', ValueType.empty);
 
@@ -331,7 +342,7 @@ class LoopExpression extends Expression {
     T Function(Const) onConst,
     T Function(Var) onVariable,
     T Function(FunCall) onFunCall,
-    T Function(LetExpression) onLet,
+    T Function(AssignExpression) onAssign,
     T Function(IfExpression) onIf,
     T Function(LoopExpression) onLoop,
     T Function() onBreak,

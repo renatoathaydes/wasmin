@@ -226,6 +226,14 @@ class ExpressionParser with WordBasedParser<Expression> {
         return _verifyExpressionEnd(runes, members, withinParens);
       }
     } else {
+      // check if this is a re-assignment
+      whitespaces.parse(runes);
+      if (runes.currentAsString == '=') {
+        runes.moveNext();
+        final value = _parseExpression(runes, withinParens);
+        return _Assignment('', firstWord, value);
+      }
+
       members.add(_SingleMember(firstWord));
     }
 

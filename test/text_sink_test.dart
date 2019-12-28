@@ -42,7 +42,7 @@ void main() {
   });
 
   test('Can write simple let declaration', () {
-    textSink.add(LetDeclaration('variable', ValueType.i64));
+    textSink.add(VarDeclaration('variable', ValueType.i64));
 
     expect(readText(), equals(r'(local $variable i64)'));
   });

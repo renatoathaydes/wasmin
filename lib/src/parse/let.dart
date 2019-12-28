@@ -50,12 +50,12 @@ class LetParser with WordBasedParser<Let> {
         decl.match(
             onFun: (_) => throw TypeCheckException(
                 "'$id' is declared as a function, but implemented as a let expression."),
-            onLet: (let) => _verifyType(let, expression));
+            onVar: (let) => _verifyType(let, expression));
       } else {
-        decl = LetDeclaration(id, expression.type);
-        _typeContext.add(LetDeclaration(id, expression.type));
+        decl = VarDeclaration(id, expression.type);
+        _typeContext.add(VarDeclaration(id, expression.type));
       }
-      _let = Let(decl as LetDeclaration, expression);
+      _let = Let(decl as VarDeclaration, expression);
     }
     return result;
   }
@@ -76,7 +76,7 @@ class LetParser with WordBasedParser<Let> {
     return result;
   }
 
-  void _verifyType(LetDeclaration decl, Expression body) {
+  void _verifyType(VarDeclaration decl, Expression body) {
     if (decl.varType != body.type) {
       throw TypeCheckException(
           "'${decl.id}' type should be '${decl.varType.name}', but its "

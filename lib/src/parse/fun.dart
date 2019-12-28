@@ -51,7 +51,7 @@ class FunParser with WordBasedParser<Fun> {
     var decl = _typeContext.declarationOf(id);
     if (decl != null) {
       expression = decl.match(
-          onLet: (_) =>
+          onVar: (_) =>
               throw TypeCheckException("'$id' is declared as a variable, "
                   'but implemented as a function.'),
           onFun: (fun) {
@@ -60,7 +60,7 @@ class FunParser with WordBasedParser<Fun> {
               final funContext = _typeContext.createChild();
               for (final arg in args) {
                 types.moveNext();
-                funContext.add(LetDeclaration(arg, types.current));
+                funContext.add(VarDeclaration(arg, types.current));
               }
               final funExpression = ExpressionParser(words, funContext);
 

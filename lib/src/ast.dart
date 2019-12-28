@@ -1,5 +1,3 @@
-import 'package:wasmin/wasmin.dart';
-
 import 'expression.dart';
 import 'type.dart';
 
@@ -39,7 +37,7 @@ abstract class Declaration with WasminNode {
 
   T match<T>({
     T Function(FunDeclaration) onFun,
-    T Function(LetDeclaration) onLet,
+    T Function(VarDeclaration) onVar,
   });
 
   @override
@@ -72,7 +70,7 @@ class WasminError with WasminNode {
 /// Top-level Let expression.
 class Let extends Implementation {
   final Expression body;
-  final LetDeclaration declaration;
+  final VarDeclaration declaration;
 
   const Let(this.declaration, this.body) : super._();
 
@@ -132,7 +130,7 @@ class FunDeclaration extends Declaration {
   final FunType type;
   final String id;
 
-  const FunDeclaration(this.id, this.type, [bool isExported = false])
+  FunDeclaration(this.id, this.type, [bool isExported = false])
       : super._(isExported);
 
   FunDeclaration asExported() {
@@ -158,46 +156,51 @@ class FunDeclaration extends Declaration {
 
   @override
   T match<T>(
-      {T Function(FunDeclaration) onFun, T Function(LetDeclaration) onLet}) {
+      {T Function(FunDeclaration) onFun, T Function(VarDeclaration) onVar}) {
     return onFun(this);
   }
 }
 
-class LetDeclaration extends Declaration with Assignment {
-  @override
-  final String keyword = 'let';
-  @override
-  final String id;
-  @override
-  final ValueType varType;
+enum AssignmentType { let, mut, reassign }
 
-  LetDeclaration(this.id, this.varType, [bool isExported = false])
+class VarDeclaration extends Declaration {
+  final String id;
+  final ValueType varType;
+  final bool isMutable;
+
+  VarDeclaration(this.id, this.varType,
+      {this.isMutable = false, bool isExported = false})
       : super._(isExported);
 
-  LetDeclaration asExported() {
-    return isExported ? this : LetDeclaration(id, varType, true);
+  VarDeclaration asExported() {
+    return isExported
+        ? this
+        : VarDeclaration(id, varType, isMutable: isMutable, isExported: true);
   }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is LetDeclaration &&
+      other is VarDeclaration &&
           runtimeType == other.runtimeType &&
           varType == other.varType &&
           id == other.id &&
+          isMutable == other.isMutable &&
           isExported == other.isExported;
 
   @override
-  int get hashCode => id.hashCode ^ varType.hashCode ^ isExported.hashCode;
+  int get hashCode =>
+      id.hashCode ^ varType.hashCode ^ isMutable.hashCode ^ isExported.hashCode;
 
   @override
   String toString() {
-    return 'LetDeclaration{type: $varType, name: $id, isExported: $isExported}';
+    return 'VarDeclaration{'
+        'type: $varType, name: $id, isExported: $isExported}';
   }
 
   @override
   T match<T>(
-      {T Function(FunDeclaration) onFun, T Function(LetDeclaration) onLet}) {
-    return onLet(this);
+      {T Function(FunDeclaration) onFun, T Function(VarDeclaration) onVar}) {
+    return onVar(this);
   }
 }
