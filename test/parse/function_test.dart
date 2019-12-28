@@ -1,17 +1,12 @@
 import 'package:test/test.dart';
-import 'package:wasmin/src/ast.dart';
-import 'package:wasmin/src/expression.dart';
-import 'package:wasmin/src/parse/base.dart';
-import 'package:wasmin/src/parse/fun.dart';
-import 'package:wasmin/src/type.dart';
-import 'package:wasmin/src/type_context.dart';
+import 'package:wasmin/wasmin.dart';
 
 void main() {
   final parser = FunParser(WordParser(), ParsingContext());
 
   group('functions without type declarations', () {
     test('can parse function with no args returning constant', () {
-      final result = parser.parse('main = 10'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('main = 10'));
 
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
@@ -22,7 +17,7 @@ void main() {
     });
 
     test('can parse function with no args returning single expression', () {
-      final result = parser.parse('foo = add 2.0 3.3'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('foo = add 2.0 3.3'));
 
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
@@ -41,7 +36,8 @@ void main() {
     });
 
     test('can parse function with no args returning grouped expression', () {
-      final iter = 'n = (let x = 2.0; let y = 3.3; add x y)'.runes.iterator;
+      final iter =
+          ParserState.fromString('n = (let x = 2.0; let y = 3.3; add x y)');
       final result = parser.parse(iter);
 
       expect(parser.failure, isNull);

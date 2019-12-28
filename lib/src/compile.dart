@@ -28,13 +28,13 @@ Future<WasminUnit> compileWasmin(
     String inputName, Iterable<String> chunks) async {
   final parser = WasminParser();
 
-  final iterator = ParserIterator.fromChunks(chunks);
+  final parserState = ParserState.fromChunks(chunks);
 
   try {
-    final program = await parser.parse(iterator);
+    final program = await parser.parse(parserState);
     return program;
   } on Exception catch (e) {
-    print('[ERROR] ${inputName}:${iterator.position} - $e');
+    print('[ERROR] ${inputName}:${parserState.position} - $e');
     // FIXME emit compilation error elements instead of rethrowing
     rethrow;
   }

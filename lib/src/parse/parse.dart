@@ -5,6 +5,7 @@ import '../ast.dart';
 import '../type_context.dart';
 import 'base.dart';
 import 'expression.dart';
+import 'iterator.dart';
 import 'let.dart';
 
 class WasminUnit {
@@ -19,7 +20,7 @@ class WasminParser {
   final _wordParser = WordParser();
   final _context = ParsingContext();
 
-  Future<WasminUnit> parse(RuneIterator runes) async {
+  Future<WasminUnit> parse(ParserState runes) async {
     final unit = WasminUnit();
     await for (final node in _parse(runes)) {
       node.matchNode(
@@ -30,7 +31,7 @@ class WasminParser {
     return unit;
   }
 
-  Stream<WasminNode> _parse(RuneIterator runes) async* {
+  Stream<WasminNode> _parse(ParserState runes) async* {
     final expr = ExpressionParser(_wordParser, _context);
     final declaration = DeclarationParser(_wordParser, _context);
     final let = LetParser(expr, _context);

@@ -1,15 +1,40 @@
-class ParserIterator implements RuneIterator {
+class ParserPosition {
+  final int line;
+  final int column;
+
+  ParserPosition(this.line, this.column);
+
+  @override
+  String toString() => '$line:$column';
+}
+
+mixin ParserState {
+  ParserPosition get position;
+
+  String get currentAsString;
+
+  bool moveNext();
+
+  static ParserState fromChunks(Iterable<String> chunks) =>
+      _ParserIterator.fromChunks(chunks);
+
+  static ParserState fromString(String text) =>
+      _ParserIterator.fromChunks([text]);
+}
+
+class _ParserIterator implements ParserState, RuneIterator {
   int _line = 1;
   int _col = 1;
 
   final RuneIterator _delegate;
 
-  ParserIterator(this._delegate);
+  _ParserIterator(this._delegate);
 
-  ParserIterator.fromChunks(Iterable<String> chunks)
+  _ParserIterator.fromChunks(Iterable<String> chunks)
       : _delegate = _ChunkedRunes(chunks.iterator);
 
-  String get position => '$_line:$_col';
+  @override
+  ParserPosition get position => ParserPosition(_line, _col);
 
   @override
   int get rawIndex => _delegate.rawIndex;

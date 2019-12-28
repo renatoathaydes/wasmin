@@ -1,7 +1,4 @@
 import 'package:test/test.dart';
-import 'package:wasmin/src/parse/base.dart';
-import 'package:wasmin/src/parse/expression.dart';
-import 'package:wasmin/src/type_context.dart';
 import 'package:wasmin/wasmin.dart';
 
 void main() {
@@ -11,14 +8,14 @@ void main() {
 
   group('success', () {
     test('can parse constant', () {
-      final result = parser.parse('1'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('1'));
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
       expect(parser.consume(), equals(Expression.constant('1', ValueType.i64)));
     });
 
     test('can parse function call', () {
-      final result = parser.parse('mul 1 2'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('mul 1 2'));
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
       expect(
@@ -34,7 +31,7 @@ void main() {
     });
 
     test('can parse grouped function call', () {
-      final result = parser.parse('(mul 1 2)'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('(mul 1 2)'));
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
       expect(
@@ -50,7 +47,7 @@ void main() {
     });
 
     test('can parse nested function calls', () {
-      final result = parser.parse('(mul (add 1 2) 3)'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('(mul (add 1 2) 3)'));
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
       expect(
@@ -73,7 +70,8 @@ void main() {
     });
 
     test('can parse multiple nested function calls', () {
-      final result = parser.parse('mul (add 1 2)( div_s 10 5 )'.runes.iterator);
+      final result =
+          parser.parse(ParserState.fromString('mul (add 1 2)( div_s 10 5 )'));
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
       expect(
@@ -103,7 +101,8 @@ void main() {
     });
 
     test('can parse grouped expressions', () {
-      final result = parser.parse('(let n = 1;mul n 2)'.runes.iterator);
+      final result =
+          parser.parse(ParserState.fromString('(let n = 1;mul n 2)'));
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
       expect(
@@ -122,8 +121,8 @@ void main() {
     });
 
     test('can parse complex grouped expressions', () {
-      final result = parser
-          .parse('(let x = 1; (let y = (add 1 2) )(add x y))X'.runes.iterator);
+      final result = parser.parse(ParserState.fromString(
+          '(let x = 1; (let y = (add 1 2) )(add x y))X'));
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.CONTINUE));
       expect(
@@ -151,8 +150,8 @@ void main() {
     });
 
     test('can parse complex grouped expressions (no parenthesis)', () {
-      final result = parser
-          .parse('(let x = 1;\nlet y = add 1 2\n;add x y\n)X'.runes.iterator);
+      final result = parser.parse(
+          ParserState.fromString('(let x = 1;\nlet y = add 1 2\n;add x y\n)X'));
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.CONTINUE));
       expect(
@@ -180,7 +179,8 @@ void main() {
     });
 
     test('can parse re-assignment of mutable variables', () {
-      final result = parser.parse('(mut n = 1;n = 2; n)'.runes.iterator);
+      final result =
+          parser.parse(ParserState.fromString('(mut n = 1;n = 2; n)'));
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
       expect(
@@ -193,7 +193,7 @@ void main() {
     });
 
     test('can parse if expression without else', () {
-      final result = parser.parse('if (0) 1'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('if (0) 1'));
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
       final ifExpr = parser.consume();
@@ -205,7 +205,7 @@ void main() {
     });
 
     test('can parse grouped if expression without else', () {
-      final iter = '(if (0) 1)X'.runes.iterator;
+      final iter = ParserState.fromString('(if (0) 1)X');
       final result = parser.parse(iter);
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.CONTINUE));
@@ -219,7 +219,7 @@ void main() {
     });
 
     test('can parse if expression with else', () {
-      final result = parser.parse('if 1; 2; 3'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('if 1; 2; 3'));
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.DONE));
       final ifExpr = parser.consume();
@@ -233,7 +233,7 @@ void main() {
     });
 
     test('can parse if expression with complex expressions', () {
-      final iter = 'if gt_s 1 0; mul 2 3; add 10 20;X'.runes.iterator;
+      final iter = ParserState.fromString('if gt_s 1 0; mul 2 3; add 10 20;X');
       final result = parser.parse(iter);
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.CONTINUE));
@@ -267,8 +267,8 @@ void main() {
     });
 
     test('can parse if expression with complex grouped expressions', () {
-      final iter =
-          'if (let n = 1; gt_s n 0) (mul 2 3) (add 10 20)X'.runes.iterator;
+      final iter = ParserState.fromString(
+          'if (let n = 1; gt_s n 0) (mul 2 3) (add 10 20)X');
       final result = parser.parse(iter);
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.CONTINUE));
@@ -305,7 +305,7 @@ void main() {
     });
 
     test('can parse simple loop expression', () {
-      final iter = 'loop(0)X'.runes.iterator;
+      final iter = ParserState.fromString('loop(0)X');
       final result = parser.parse(iter);
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.CONTINUE));
@@ -316,12 +316,10 @@ void main() {
     });
 
     test('can parse usual loop expression', () {
-      final iter = 'loop  (\n'
-              '  (if 1; break)\n'
-              '  add 2 2\n'
-              ')X'
-          .runes
-          .iterator;
+      final iter = ParserState.fromString('loop  (\n'
+          '  (if 1; break)\n'
+          '  add 2 2\n'
+          ')X');
       final result = parser.parse(iter);
       expect(parser.failure, isNull);
       expect(result, equals(ParseResult.CONTINUE));
@@ -346,44 +344,45 @@ void main() {
 
   group('failures', () {
     test('cannot parse invalid constant', () {
-      final result = parser.parse('abcdef'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('abcdef'));
       expect(parser.failure, equals("unknown variable: 'abcdef'"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse unknown function call', () {
-      final result = parser.parse('xxxx 1 2'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('xxxx 1 2'));
       expect(parser.failure, equals("unknown function: 'xxxx'"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse function call that was terminated in the middle', () {
-      final result = parser.parse('(add 1 2;'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('(add 1 2;'));
       expect(parser.failure, equals("Exception: Expected ')', got EOF"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse function call that was not terminated', () {
-      final result = parser.parse('(mul 3 2'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('(mul 3 2'));
       expect(parser.failure, equals("Exception: Expected ')', got EOF"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse nested function call that was not terminated', () {
-      final result = parser.parse('(mul (add 3 2);'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('(mul (add 3 2);'));
       expect(parser.failure, equals("Exception: Expected ')', got EOF"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse assignment not preceeded by binding', () {
-      final result = parser.parse('x=1'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('x=1'));
       expect(
           parser.failure, equals("unknown variable 'x' cannot be re-assigned"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot re-assign immutable binding', () {
-      final result = parser.parse('(let x = 0 ; x = 1 ; x)'.runes.iterator);
+      final result =
+          parser.parse(ParserState.fromString('(let x = 0 ; x = 1 ; x)'));
       expect(parser.failure,
           equals("immutable variable 'x' cannot be re-assigned"));
       expect(result, equals(ParseResult.FAIL));
@@ -391,14 +390,14 @@ void main() {
 
     // FIXME need to return error expression instead of throw, to fix this
     test('cannot parse if expression that was not terminated', () {
-      final result = parser.parse('if (add 3 2)'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('if (add 3 2)'));
       expect(parser.failure,
           equals('Exception: Expected then expression, got EOF'));
       expect(result, equals(ParseResult.FAIL));
     }, skip: true);
 
     test('type check fails for if and else branches with different types', () {
-      final result = parser.parse('if 0; 0.1; 0'.runes.iterator);
+      final result = parser.parse(ParserState.fromString('if 0; 0.1; 0'));
       expect(
           parser.failure,
           equals('if branches have different types '

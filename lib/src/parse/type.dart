@@ -1,5 +1,6 @@
 import '../type.dart';
 import 'base.dart';
+import 'iterator.dart';
 
 class TypeParser with WordBasedParser<WasminType> {
   @override
@@ -13,7 +14,7 @@ class TypeParser with WordBasedParser<WasminType> {
   TypeParser(this.words);
 
   @override
-  ParseResult parse(RuneIterator runes) {
+  ParseResult parse(ParserState runes) {
     reset();
     final word = nextWord(runes);
     whitespaces.parse(runes);

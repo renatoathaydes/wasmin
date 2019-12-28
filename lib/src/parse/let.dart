@@ -5,6 +5,7 @@ import '../ast.dart';
 import '../expression.dart';
 import '../type_context.dart';
 import 'base.dart';
+import 'iterator.dart';
 
 class LetParser with WordBasedParser<Let> {
   final ExpressionParser _expr;
@@ -19,7 +20,7 @@ class LetParser with WordBasedParser<Let> {
   LetParser(this._expr, this._typeContext) : words = _expr.words;
 
   @override
-  ParseResult parse(RuneIterator runes) {
+  ParseResult parse(ParserState runes) {
     reset();
     var word = nextWord(runes);
     if (word.isEmpty) {

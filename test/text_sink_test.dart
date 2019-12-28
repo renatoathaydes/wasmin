@@ -1,5 +1,4 @@
 import 'package:test/test.dart';
-import 'package:wasmin/src/text_sink.dart';
 import 'package:wasmin/wasmin.dart';
 
 void main() {
@@ -55,10 +54,12 @@ void main() {
   });
 
   test('Can write many let expressions', () {
-    textSink.add(Expression.let('a1', Expression.constant('10', ValueType.i64)));
+    textSink
+        .add(Expression.let('a1', Expression.constant('10', ValueType.i64)));
     textSink
         .add(Expression.let('b2', Expression.constant('0.22', ValueType.f32)));
-    textSink.add(Expression.let('c3', Expression.constant('55', ValueType.i64)));
+    textSink
+        .add(Expression.let('c3', Expression.constant('55', ValueType.i64)));
 
     expect(
         readText(),

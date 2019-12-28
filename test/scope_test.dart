@@ -24,7 +24,7 @@ void main() {
         '(((let x = 0)) ((add x 1)))',
         '(let x = 0;add x 1)',
       ]) {
-        parser.parse(expression.runes.iterator);
+        parser.parse(ParserState.fromString(expression));
         expect(parser.failure, isNull, reason: 'Expression: $expression');
         expect(parser.consume(), equals(expectedResult),
             reason: 'Expression: $expression');
@@ -85,7 +85,7 @@ void main() {
         '((let x = 0) (if (x) (add x 1)))',
         '(let x = 0; if 1; add x 1; add x 2)',
       ]) {
-        parser.parse(expression.runes.iterator);
+        parser.parse(ParserState.fromString(expression));
         expect(parser.failure, isNull, reason: 'Expression: $expression');
         results.moveNext();
         expect(parser.consume(), equals(results.current),
@@ -103,9 +103,8 @@ void main() {
         '((if 1; let x = 0) add x 1)',
         '((if 1; (let x = 0;x) (let x = 2;x)) add x 1)',
       ]) {
-        final result = parser.parse(expression.runes.iterator);
-        expect(parser.failure,
-            equals("unknown variable: 'x'"),
+        final result = parser.parse(ParserState.fromString(expression));
+        expect(parser.failure, equals("unknown variable: 'x'"),
             reason: 'Expression: $expression');
         expect(result, equals(ParseResult.FAIL));
       }
@@ -116,9 +115,8 @@ void main() {
         '(add x 1;(if 1; let x = 0))',
         '(add x 1; loop (let x = 0))',
       ]) {
-        final result = parser.parse(expression.runes.iterator);
-        expect(parser.failure,
-            equals("unknown variable: 'x'"),
+        final result = parser.parse(ParserState.fromString(expression));
+        expect(parser.failure, equals("unknown variable: 'x'"),
             reason: 'Expression: $expression');
         expect(result, equals(ParseResult.FAIL));
       }

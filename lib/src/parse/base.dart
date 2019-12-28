@@ -1,3 +1,5 @@
+import 'package:wasmin/src/parse/iterator.dart';
+
 const whitespace = {
   ' ', '\r', '\n', '\t', //
 };
@@ -25,7 +27,7 @@ mixin Parser<N> {
   String get failure;
 
   /// Parse the runes emitted by the given iterator.
-  ParseResult parse(RuneIterator runes);
+  ParseResult parse(ParserState runes);
 
   /// Consume the node parsed by this parser.
   ///
@@ -35,7 +37,7 @@ mixin Parser<N> {
 
 mixin RuneBasedParser<N> implements Parser<N> {
   @override
-  ParseResult parse(RuneIterator runes) {
+  ParseResult parse(ParserState runes) {
     var firstRun = true;
     do {
       var rune = runes.currentAsString;
@@ -68,7 +70,7 @@ mixin WordBasedParser<N> implements Parser<N> {
 
   WordParser get words;
 
-  String nextWord(RuneIterator runes) {
+  String nextWord(ParserState runes) {
     whitespaces.parse(runes);
     words.parse(runes);
     return words.consume();
@@ -84,7 +86,7 @@ class SkipWhitespaces with RuneBasedParser<void> {
   final String failure = null;
 
   @override
-  ParseResult parse(RuneIterator runes) {
+  ParseResult parse(ParserState runes) {
     final result = super.parse(runes);
     if (result != ParseResult.CONTINUE) parsingComment = false;
     return result;
@@ -141,7 +143,7 @@ extension ParserStringExtensions on String {
 
   String quote() => "'${this}'";
 
-  String wasExpected(RuneIterator actual, bool quoteExpected) {
+  String wasExpected(ParserState actual, bool quoteExpected) {
     return 'Expected ${quoteExpected ? quote() : this}, '
         "got ${actual.currentAsString?.quote() ?? 'EOF'}";
   }

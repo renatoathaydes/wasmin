@@ -1,8 +1,8 @@
-import 'package:wasmin/src/ast.dart';
-import 'package:wasmin/src/parse/type.dart';
-import 'package:wasmin/src/type_context.dart';
-
+import '../ast.dart';
+import '../type_context.dart';
 import 'base.dart';
+import 'iterator.dart';
+import 'type.dart';
 
 class DeclarationParser with WordBasedParser<Declaration> {
   @override
@@ -20,7 +20,7 @@ class DeclarationParser with WordBasedParser<Declaration> {
   DeclarationParser(this.words, this.context) : type = TypeParser(words);
 
   @override
-  ParseResult parse(RuneIterator runes) {
+  ParseResult parse(ParserState runes) {
     final word = firstWord ?? nextWord(runes);
     reset();
 

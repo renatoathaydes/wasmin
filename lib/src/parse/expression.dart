@@ -2,6 +2,7 @@ import '../expression.dart';
 import '../type_check.dart';
 import '../type_context.dart';
 import 'base.dart';
+import 'iterator.dart';
 
 abstract class ParsedExpression {
   const ParsedExpression._();
@@ -157,7 +158,7 @@ class ExpressionParser with WordBasedParser<Expression> {
   ExpressionParser(this.words, this._context);
 
   @override
-  ParseResult parse(RuneIterator runes) {
+  ParseResult parse(ParserState runes) {
     reset();
     final expr = _parseExpression(runes, false);
     try {
@@ -176,7 +177,7 @@ class ExpressionParser with WordBasedParser<Expression> {
         : ParseResult.CONTINUE;
   }
 
-  ParsedExpression _parseExpression(RuneIterator runes, bool withinParens) {
+  ParsedExpression _parseExpression(ParserState runes, bool withinParens) {
     whitespaces.parse(runes);
     if (runes.currentAsString == '(') {
       runes.moveNext();
@@ -186,7 +187,7 @@ class ExpressionParser with WordBasedParser<Expression> {
     }
   }
 
-  ParsedExpression _parseToGroupEnd(RuneIterator runes) {
+  ParsedExpression _parseToGroupEnd(ParserState runes) {
     whitespaces.parse(runes);
     final members = <ParsedExpression>[];
     while (runes.currentAsString != ')' && runes.currentAsString != null) {
@@ -206,8 +207,7 @@ class ExpressionParser with WordBasedParser<Expression> {
     return _GroupedExpression(result);
   }
 
-  ParsedExpression _parseToExpressionEnd(
-      RuneIterator runes, bool withinParens) {
+  ParsedExpression _parseToExpressionEnd(ParserState runes, bool withinParens) {
     whitespaces.parse(runes);
     final members = <ParsedExpression>[];
 
@@ -251,7 +251,7 @@ class ExpressionParser with WordBasedParser<Expression> {
   }
 
   ParsedExpression _verifyExpressionEnd(
-      RuneIterator runes, List<ParsedExpression> members, bool withinParens) {
+      ParserState runes, List<ParsedExpression> members, bool withinParens) {
     // check if the symbol after the word has special meaning or ends the
     // current group properly
     final nextSymbol = runes.currentAsString;
@@ -289,7 +289,7 @@ class ExpressionParser with WordBasedParser<Expression> {
   }
 
   ParsedExpression _parseToAssignmentEnd(
-      RuneIterator runes, String keyword, bool withinParens) {
+      ParserState runes, String keyword, bool withinParens) {
     var done = whitespaces.parse(runes) == ParseResult.DONE;
     if (done) {
       return _Error(['assignment expression'.wasExpected(runes, false)]);
@@ -309,7 +309,7 @@ class ExpressionParser with WordBasedParser<Expression> {
     return _Assignment(keyword, id, value);
   }
 
-  ParsedExpression _parseIf(RuneIterator runes, bool withinParens) {
+  ParsedExpression _parseIf(ParserState runes, bool withinParens) {
     final condExpr = _parseExpression(runes, withinParens);
     if (withinParens && runes.currentAsString == ')') {
       return _Error(
@@ -328,7 +328,7 @@ class ExpressionParser with WordBasedParser<Expression> {
     return _If(condExpr, thenExpr, elseExpr);
   }
 
-  ParsedExpression _parseLoop(RuneIterator runes, bool withinParens) {
+  ParsedExpression _parseLoop(ParserState runes, bool withinParens) {
     final expr = _parseExpression(runes, withinParens);
     return _Loop(expr);
   }

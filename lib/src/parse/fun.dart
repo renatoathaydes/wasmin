@@ -6,6 +6,7 @@ import '../ast.dart';
 import '../expression.dart';
 import '../type_context.dart';
 import 'base.dart';
+import 'iterator.dart';
 
 class FunParser with WordBasedParser<Fun> {
   final _whitespaces = SkipWhitespaces();
@@ -18,7 +19,7 @@ class FunParser with WordBasedParser<Fun> {
   FunParser(this.words, this._typeContext);
 
   @override
-  ParseResult parse(RuneIterator runes) {
+  ParseResult parse(ParserState runes) {
     reset();
     var word = nextWord(runes);
     if (word.isEmpty) {

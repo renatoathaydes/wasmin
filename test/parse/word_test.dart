@@ -1,19 +1,19 @@
 import 'package:test/test.dart';
-import 'package:wasmin/src/parse/base.dart';
+import 'package:wasmin/wasmin.dart';
 
 void main() {
   WordParser parser;
   setUp(() => parser = WordParser());
 
   test('can parse a word', () {
-    final result = parser.parse('hello'.runes.iterator);
+    final result = parser.parse(ParserState.fromString('hello'));
     expect(result, equals(ParseResult.DONE));
     expect(parser.consume(), equals('hello'));
     expect(parser.consume(), equals(''));
   });
 
   test('does not consume more than a word', () {
-    final iter = 'hello world'.runes.iterator;
+    final iter = ParserState.fromString('hello world');
     final result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
     expect(parser.consume(), equals('hello'));
@@ -23,7 +23,7 @@ void main() {
   });
 
   test('can parse words separated by common separators', () {
-    final iter = 'let x=10'.runes.iterator;
+    final iter = ParserState.fromString('let x=10');
     var result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
     expect(parser.consume(), equals('let'));
@@ -44,7 +44,7 @@ void main() {
   });
 
   test('can parse many words with separators and multi-lines', () {
-    final iter = 'abc\ndef;;ghi,jkl\nmno pqr\n'.runes.iterator;
+    final iter = ParserState.fromString('abc\ndef;;ghi,jkl\nmno pqr\n');
 
     var result = parser.parse(iter);
     expect(result, equals(ParseResult.CONTINUE));
