@@ -215,7 +215,7 @@ class ExpressionParser with WordBasedParser<Expression> {
     if (firstWord == 'if') return _parseIf(runes, withinParens);
     if (firstWord == 'loop') return _parseLoop(runes, withinParens);
     if (firstWord == 'let' || firstWord == 'mut') {
-      return _parseToAssignmentEnd(runes, firstWord, members, withinParens);
+      return _parseToAssignmentEnd(runes, firstWord, withinParens);
     }
 
     if (firstWord.isEmpty) {
@@ -288,8 +288,8 @@ class ExpressionParser with WordBasedParser<Expression> {
     return expr;
   }
 
-  ParsedExpression _parseToAssignmentEnd(RuneIterator runes, String keyword,
-      List<ParsedExpression> members, bool withinParens) {
+  ParsedExpression _parseToAssignmentEnd(
+      RuneIterator runes, String keyword, bool withinParens) {
     var done = whitespaces.parse(runes) == ParseResult.DONE;
     if (done) {
       return _Error(['assignment expression'.wasExpected(runes, false)]);
