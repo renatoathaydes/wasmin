@@ -11,7 +11,6 @@ import 'let.dart';
 class WasminUnit {
   final List<Declaration> declarations = [];
   final List<Implementation> implementations = [];
-  final List<WasminError> errors = [];
 
   WasminUnit();
 }
@@ -24,9 +23,9 @@ class WasminParser {
     final unit = WasminUnit();
     await for (final node in _parse(runes)) {
       node.matchNode(
-          onDeclaration: unit.declarations.add,
-          onImpl: unit.implementations.add,
-          onError: unit.errors.add);
+        onDeclaration: unit.declarations.add,
+        onImpl: unit.implementations.add,
+      );
     }
     return unit;
   }

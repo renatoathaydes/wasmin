@@ -1,18 +1,19 @@
-import 'package:wasmin/src/parse/parse.dart';
-import 'package:wasmin/src/type.dart';
-
 import 'ast.dart';
+import 'compile.dart';
 import 'expression.dart';
+import 'parse/parse.dart';
+import 'type.dart';
 import 'type_check.dart';
 
 class WasmTextSink {
   var _indent = '';
   final StringSink _textSink;
   final _blockStack = <String>[];
+  var _compilationResult = CompilationResult.success;
 
   WasmTextSink(this._textSink);
 
-  Future<void> call(Future<WasminUnit> programUnit) async {
+  Future<CompilationResult> call(Future<WasminUnit> programUnit) async {
     final unit = await programUnit;
     _textSink.writeln('(module');
     _increaseIndent();
@@ -32,6 +33,8 @@ class WasmTextSink {
 
     _decreaseIndent();
     _textSink.writeln(')');
+
+    return _compilationResult;
   }
 
   /// Debug method to write any node without validating anything.
@@ -203,6 +206,7 @@ class WasmTextSink {
   }
 
   void _error(CompilerError compilerError) {
+    _compilationResult = CompilationResult.error;
     print('ERROR: ${compilerError.position} - ${compilerError.message}');
   }
 

@@ -1,5 +1,3 @@
-import 'package:wasmin/src/parse/iterator.dart';
-
 import 'expression.dart';
 import 'type.dart';
 
@@ -8,7 +6,6 @@ mixin WasminNode {
   T matchNode<T>({
     T Function(Implementation) onImpl,
     T Function(Declaration) onDeclaration,
-    T Function(WasminError) onError,
   });
 }
 
@@ -25,7 +22,6 @@ abstract class Implementation with WasminNode {
   T matchNode<T>({
     T Function(Implementation) onImpl,
     T Function(Declaration) onDeclaration,
-    T Function(WasminError) onError,
   }) {
     return onImpl(this);
   }
@@ -46,26 +42,8 @@ abstract class Declaration with WasminNode {
   T matchNode<T>({
     T Function(Implementation) onImpl,
     T Function(Declaration) onDeclaration,
-    T Function(WasminError) onError,
   }) {
     return onDeclaration(this);
-  }
-}
-
-/// An instance of this type is emitted when a Wasmin program is found to
-/// contain errors.
-class WasminError with WasminNode {
-  final List<String> errors;
-
-  const WasminError(this.errors);
-
-  @override
-  T matchNode<T>({
-    T Function(Implementation) onImpl,
-    T Function(Declaration) onDeclaration,
-    T Function(WasminError) onError,
-  }) {
-    return onError(this);
   }
 }
 
@@ -206,4 +184,3 @@ class VarDeclaration extends Declaration {
     return onVar(this);
   }
 }
-

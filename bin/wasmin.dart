@@ -42,7 +42,16 @@ void main(List<String> args) async {
 
   final output = parsedArgs['output'].toString();
 
-  await compile(parsedArgs.rest.first, output);
+  final result = await compile(parsedArgs.rest.first, output);
+
+  switch (result) {
+    case CompilationResult.error:
+      print('There were compilation errors, see the compiler log for details');
+      exit(1);
+      break;
+    case CompilationResult.success:
+    // continue
+  }
 
   if (parsedArgs.wasParsed('run')) {
     final runtime = parsedArgs['runtime'].toString();

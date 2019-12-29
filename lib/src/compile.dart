@@ -8,19 +8,21 @@ import 'text_sink.dart';
 
 enum TargetFormat { wat, wasm }
 
-typedef Future<void> WasminSink(Future<WasminUnit> programUnit);
+enum CompilationResult { success, error }
 
-Future<void> compile(String inputFile, String outputFile,
+typedef Future<CompilationResult> WasminSink(Future<WasminUnit> programUnit);
+
+Future<CompilationResult> compile(String inputFile, String outputFile,
     [TargetFormat targetFormat = TargetFormat.wasm]) async {
   final chunks =
       await File(inputFile).openRead().transform(utf8.decoder).toList();
 
   final out = File(outputFile);
 
-  await out.openWrite().use((writer) async {
+  return await out.openWrite().use((writer) async {
     final WasminSink sink = WasmTextSink(writer);
     final programUnit = compileWasmin(inputFile, chunks);
-    await sink(programUnit);
+    return await sink(programUnit);
   });
 }
 
@@ -35,15 +37,14 @@ Future<WasminUnit> compileWasmin(
     return program;
   } on Exception catch (e) {
     print('[ERROR] ${inputName}:${parserState.position} - $e');
-    // FIXME emit compilation error elements instead of rethrowing
     rethrow;
   }
 }
 
 extension on IOSink {
-  FutureOr<void> use(FutureOr<void> Function(IOSink) user) async {
+  FutureOr<T> use<T>(FutureOr<T> Function(IOSink) user) async {
     try {
-      await user(this);
+      return await user(this);
     } finally {
       await close();
     }
