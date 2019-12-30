@@ -114,9 +114,7 @@ void main() {
 
     test('cannot parse let expression with no value', () {
       final result = parser.parse(ParserState.fromString('one = '));
-      expect(
-          parser.failure?.message,
-          equals('Empty expression cannot be used as a value'));
+      expect(parser.failure?.message, equals('missing expression'));
       expect(result, equals(ParseResult.FAIL));
     });
 
@@ -129,9 +127,7 @@ void main() {
 
     test('cannot parse let expression with no value (end with separator)', () {
       final result = parser.parse(ParserState.fromString('one=; foo'));
-      expect(
-          parser.failure?.message,
-          equals('Empty expression cannot be used as a value'));
+      expect(parser.failure?.message, equals('missing expression'));
       expect(result, equals(ParseResult.FAIL));
     });
   });

@@ -264,15 +264,20 @@ class ExpressionParser with WordBasedParser<Expression> {
       if (!withinParens) {
         return _Error(';'.wasExpected(runes, quoteExpected: true));
       }
-    } else if (nextSymbol == ';') {
-      runes.moveNext();
-    } else if (nextSymbol == null) {
-      if (withinParens) {
-        return _Error(')'.wasExpected(runes, quoteExpected: true));
-      }
     } else {
-      return _Error(
-          (withinParens ? ')' : ';').wasExpected(runes, quoteExpected: true));
+      if (members.isEmpty) {
+        return _Error(CompilerError(runes.position, 'missing expression'));
+      }
+      if (nextSymbol == ';') {
+        runes.moveNext();
+      } else if (nextSymbol == null) {
+        if (withinParens) {
+          return _Error(')'.wasExpected(runes, quoteExpected: true));
+        }
+      } else {
+        return _Error(
+            (withinParens ? ')' : ';').wasExpected(runes, quoteExpected: true));
+      }
     }
 
     final errors = members.whereType<_Error>();

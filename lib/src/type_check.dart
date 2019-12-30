@@ -34,8 +34,7 @@ Expression exprWithInferredType(
       onLoop: (loop) => _loopExpression(loop, context),
       onGroup: (members) {
         if (members.isEmpty) {
-          throw TypeCheckException(
-              'Empty expression cannot be used as a value');
+          return _resultExpression(members, context);
         }
         final evalTermIndex = members.indexWhere((e) => e.isSingleMember);
         if (evalTermIndex < 0) {
@@ -116,7 +115,7 @@ Expression _loopExpression(ParsedExpression body, ParsingContext context) {
 Expression _resultExpression(
     Iterable<ParsedExpression> members, ParsingContext context) {
   if (members.isEmpty) {
-    throw TypeCheckException('Empty expression cannot be used as a value');
+    return Expression.group(const []);
   }
   if (members.length == 1) {
     return members.first.match(
