@@ -1,0 +1,2 @@
+do-add [i32, i32] i32;
+fun do-add x y = add x y;
