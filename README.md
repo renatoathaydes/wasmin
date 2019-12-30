@@ -32,22 +32,25 @@ Feature Checklist:
 - [x] ungrouped expressions.
 - [x] multi-expressions.
 - [x] let assignments.
-- [ ] mut assignments.
+- [x] mut assignments.
 - [x] math operators.
 - [x] function calls.
 - [x] function declarations.
+- [ ] generic functions.
 - [x] single-line comments.
 - [ ] multi-line comments.
 - [ ] global constants.
+- [ ] import from other Wasmin files.
 - [ ] import external functions.
 - [x] export functions and constants.
 - [x] if/else blocks.
-- [ ] loops.
+- [x] loops.
 - [ ] stack operator `>`.
 - [ ] string values.
 - [ ] function pointers.
 - [ ] arrays.
 - [ ] records.
+- [ ] generic records.
 - [ ] special functions (`get`, `set`, `remove`, `size`, `copy`).
 - [ ] `typeof` special function.
 
@@ -63,7 +66,7 @@ Not yet designed features (may never be added):
 ## The language
 
 Wasmin is designed to be very simple, built from just a few very generic syntactic forms,
-and fast to parse and compile, just like WASM itself, on which it is based! It should run as fast
+and fast to parse and compile, like WASM itself! It should run as fast
 as hand-written WASM programs on any platform supported by WASM.
 
 It is able to leverage almost everything available in WASM, except unbounded mutability, because that
@@ -78,9 +81,13 @@ which do not generate garbage) and supports the procedural, functional and conca
 The basic constructs of a Wasmin program are **expressions**.
 
 Expressions are simply arrangements of constants and identifiers which evaluate to a value or, in the case of `let`,
-evaluate to nothing, but bind an identifier to an expression.
+evaluate to nothing, but bind an identifier to the result of evaluating an expression.
 
-These are all expressions:
+An expression may consist of several sub-expressions that are evaluated in sequence within a parenthesis-demarked
+group. Its value is that of the last sub-expression. To separate each sub-expression, either group each of them within
+parenthesis, or add a semi-colon `;` between them.
+
+For example, these are all expressions:
 
 - `0` (the constant `0`, of type `i64`, or 64-bit integer).
 - `(0)` (same as previous).
@@ -103,6 +110,8 @@ except control characters and the following special symbols:
 - `(`, `)`, `;` (expression and generic types delimiters).
 - `{`, `}` (record delimiters).
 - `[`, `]` (array delimiters).
+
+> Wasmin source code must always be encoded using UTF-8.
 
 Examples of valid identifiers:
 
@@ -138,7 +147,7 @@ Invalid identifiers:
 
 In order to bind the value of an expression to an identifier, a `let` expression can be used.
 
-Let expressions always evaluate to `()` (which cannot be assigned or returned) and have the form:
+Let expressions always evaluate to `empty`, or `()` (which cannot be assigned or returned) and have the form:
 
 ```
 let <identifier> = <expression>
@@ -161,7 +170,7 @@ let multiline-ten = (
 )
 ```
 
-Optionally, the type of an identifier can be declared before it's assigned:
+Optionally, the type of a top-level identifier can be declared before it's assigned:
 
 ```rust
 ten i32;
@@ -190,20 +199,20 @@ counter = counter > add 1;
 
 Wasmin functions are similar to `let` expressions, with the following differences:
  
-- functions are evaluated every time they are used, or called.
+- functions are evaluated every time they are called.
 - they can take any number of arguments (0 to many, limited only by WASM itself).
 - they return the value of the expression assigned to them.
 - it is mandatory to declare their type if they take one or more arguments.
 
 Functions have the form:
 
-> Currently, WASM support only one return value, but it will allow multiple returns values in the future.
-> Wasmin will allow multiple return values as soon as WASM does.
-
 ```
 <identifier> [<arg-types>, ...] <return-type>
 fun <identifier> <args> = <expression>
 ```
+
+> Currently, WASM support only one return value, but it will allow multiple returns values in the future.
+> Wasmin will allow multiple return values as soon as WASM does.
 
 For example:
 
