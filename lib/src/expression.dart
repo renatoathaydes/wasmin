@@ -18,8 +18,9 @@ abstract class Expression {
     return Const(value, type);
   }
 
-  factory Expression.variable(String name, ValueType type) {
-    return Var(name, type);
+  factory Expression.variable(String name, ValueType type,
+      [bool isGlobal = false]) {
+    return Var(name, type, isGlobal);
   }
 
   factory Expression.funCall(
@@ -106,11 +107,13 @@ class Const extends Expression {
 
 class Var extends Expression {
   final String name;
+  final bool isGlobal;
 
-  const Var(this.name, ValueType type) : super._create(name, type);
+  const Var(this.name, ValueType type, this.isGlobal)
+      : super._create(name, type);
 
   @override
-  String toString() => 'Var{name: $name, type: $type}';
+  String toString() => 'Var{name: $name, type: $type, global: $isGlobal}';
 
   @override
   T matchExpr<T>({

@@ -1,0 +1,4 @@
+let number = 10;
+
+export add-number [i64] i64;
+fun add-number n = add number n;

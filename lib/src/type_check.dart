@@ -60,10 +60,20 @@ Expression _singleMemberExpression(String member, ParsingContext context) {
   if (funType != null) {
     return Expression.funCall(member, const [], funType.returns);
   }
-  final varType = context
-      .declarationOf(member)
-      ?.match(onVar: (let) => let.varType, onFun: (fun) => null);
-  if (varType != null) return Expression.variable(member, varType);
+  final decl = context.declarationOf(member);
+  if (decl != null) {
+    return decl.match(onVar: (let) {
+      return Expression.variable(member, let.varType, let.isGlobal);
+    }, onFun: (fun) {
+      if (fun.type.takes.isEmpty) {
+        return Expression.funCall(member, const [], fun.type.returns);
+      } else {
+        throw TypeCheckException(
+            "function '${member}' expects arguments of types ${fun.type.takes},"
+            ' but was called without any arguments');
+      }
+    });
+  }
   return Expression.constant(member, inferValueType(member));
 }
 

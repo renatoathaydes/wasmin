@@ -107,7 +107,29 @@ class WasmTextSink {
   }
 
   void _topLevelLet(Let let) {
-    throw 'TODO: top-level Let';
+    final err = ([dynamic arg]) {
+      print('ERROR: top-level let not implemented yet for $arg');
+      return null;
+    };
+    final constant = let.body.matchExpr(
+      onConst: (c) => c,
+      onError: err,
+      onIf: err,
+      onGroup: err,
+      onFunCall: err,
+      onVariable: err,
+      onAssign: err,
+      onBreak: err,
+      onLoop: err,
+    );
+
+    if (constant != null) {
+      _textSink.write('(global \$${let.id}'
+          '${let.declaration.isExported ? ' (export ${let.id})' : ''}'
+          ' ${let.type.name} ');
+      _writeExpression(constant);
+      _textSink.write(')');
+    }
   }
 
   void _writeExpression(Expression expr) {
@@ -129,7 +151,8 @@ class WasmTextSink {
   }
 
   void _variable(Var variable) {
-    _textSink.write('(local.get \$${variable.name})');
+    _textSink.write(
+        '(${variable.isGlobal ? 'global' : 'local'}.get \$${variable.name})');
   }
 
   void _funCall(FunCall funCall) {

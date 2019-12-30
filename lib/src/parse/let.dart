@@ -55,8 +55,8 @@ class LetParser with WordBasedParser<Let> {
                 "'$id' is declared as a function, but implemented as a let expression."),
             onVar: (let) => _verifyType(let, expression));
       } else {
-        decl = VarDeclaration(id, expression.type);
-        _typeContext.add(VarDeclaration(id, expression.type));
+        decl = VarDeclaration(id, expression.type, isGlobal: true);
+        _typeContext.add(decl);
       }
       _let = Let(decl as VarDeclaration, expression);
     }

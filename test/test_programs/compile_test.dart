@@ -10,6 +10,7 @@ void main() async {
   group('success', () {
     test('nothing', checkWat('nothing.wasmin', tempDir));
     test('trivial', checkWat('trivial.wasmin', tempDir));
+    test('simple', checkWat('simple.wasmin', tempDir));
   });
 }
 

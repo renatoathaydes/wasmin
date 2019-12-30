@@ -147,9 +147,10 @@ class VarDeclaration extends Declaration {
   final String id;
   final ValueType varType;
   final bool isMutable;
+  final bool isGlobal;
 
   VarDeclaration(this.id, this.varType,
-      {this.isMutable = false, bool isExported = false})
+      {this.isMutable = false, bool isExported = false, this.isGlobal = false})
       : super._(isExported);
 
   VarDeclaration asExported() {
