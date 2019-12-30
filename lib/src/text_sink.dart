@@ -20,8 +20,9 @@ class WasmTextSink {
 
     // write declarations first to the top of the file
     for (final declaration in unit.declarations) {
-      _textSink.write(_indent);
-      declaration.match(onFun: _funDeclaration, onVar: _declaration);
+      declaration.match(
+          onFun: (f) => _funDeclaration(f, writeInNewLine: true),
+          onVar: (v) => _declaration(v, writeInNewLine: true));
       _textSink.writeln();
     }
 
@@ -51,14 +52,16 @@ class WasmTextSink {
     throw 'Cannot write $node';
   }
 
-  void _funDeclaration(FunDeclaration fun) {
+  void _funDeclaration(FunDeclaration fun, {bool writeInNewLine = false}) {
     // only write a declaration if it needs to be exported
     if (fun.isExported) {
+      if (writeInNewLine) _textSink.writeln('\n$_indent');
       _textSink.write('(export "${fun.id}" (func \$${fun.id}))');
     }
   }
 
-  void _declaration(VarDeclaration declaration) {
+  void _declaration(VarDeclaration declaration, {bool writeInNewLine = false}) {
+    if (writeInNewLine) _textSink.writeln('\n$_indent');
     _textSink.write('(local \$${declaration.id} ${declaration.varType.name})');
   }
 
