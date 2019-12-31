@@ -9,6 +9,7 @@ class WasmTextSink {
   var _indent = '';
   final StringSink _textSink;
   final _blockStack = <String>[];
+  final _initExpressions = <Expression>[];
   var _compilationResult = CompilationResult.success;
 
   WasmTextSink(this._textSink);
@@ -32,6 +33,12 @@ class WasmTextSink {
       _textSink.writeln();
     }
 
+    // write the start function if necessary
+    if (_initExpressions.isNotEmpty) {
+      _textSink.writeln();
+      _writeStartFun();
+    }
+
     _decreaseIndent();
     _textSink.writeln(')');
 
@@ -52,16 +59,27 @@ class WasmTextSink {
     throw 'Cannot write $node';
   }
 
+  void _writeStartFun() {
+    final startFun = Fun(
+        FunDeclaration('__wasmin__start__', FunType(ValueType.empty, const [])),
+        const [],
+        Expression.group(_initExpressions));
+    _fun(startFun);
+    _textSink.writeln('\n$_indent(start \$__wasmin__start__)');
+  }
+
   void _funDeclaration(FunDeclaration fun, {bool writeInNewLine = false}) {
     // only write a declaration if it needs to be exported
     if (fun.isExported) {
-      if (writeInNewLine) _textSink.writeln('\n$_indent');
+      if (writeInNewLine) _textSink.write('\n$_indent');
       _textSink.write('(export "${fun.id}" (func \$${fun.id}))');
     }
   }
 
   void _declaration(VarDeclaration declaration, {bool writeInNewLine = false}) {
-    if (writeInNewLine) _textSink.writeln('\n$_indent');
+    // we can't write a global declaration without knowing its implementation
+    if (declaration.isGlobal) return;
+    if (writeInNewLine) _textSink.write('\n$_indent');
     _textSink.write('(local \$${declaration.id} ${declaration.varType.name})');
   }
 
@@ -107,29 +125,36 @@ class WasmTextSink {
   }
 
   void _topLevelLet(Let let) {
-    final err = ([dynamic arg]) {
-      print('ERROR: top-level let not implemented yet for $arg');
+    final handleNonConst = ([Expression exp]) {
+      if (exp != null) {
+        _textSink.write('$_indent(global \$${let.id}'
+            '${let.declaration.isExported ? ' (export "${let.id}")' : ''}'
+            ' (mut ${let.type.name}) ');
+        _writeExpression(Expression.constant('0', let.declaration.varType));
+        _textSink.write(')');
+        final init = Expression.letWithDeclaration(let.declaration, exp);
+        _initExpressions.add(init);
+      }
       return null;
     };
-    final constant = let.body.matchExpr(
-      onConst: (c) => c,
-      onError: err,
-      onIf: err,
-      onGroup: err,
-      onFunCall: err,
-      onVariable: err,
-      onAssign: err,
-      onBreak: err,
-      onLoop: err,
-    );
-
-    if (constant != null) {
-      _textSink.write('(global \$${let.id}'
+    final handleConst = (Const constant) {
+      _textSink.write('$_indent(global \$${let.id}'
           '${let.declaration.isExported ? ' (export ${let.id})' : ''}'
           ' ${let.type.name} ');
       _writeExpression(constant);
       _textSink.write(')');
-    }
+    };
+    let.body.matchExpr(
+      onConst: handleConst,
+      onError: handleNonConst,
+      onIf: handleNonConst,
+      onGroup: handleNonConst,
+      onFunCall: handleNonConst,
+      onVariable: handleNonConst,
+      onAssign: handleNonConst,
+      onBreak: handleNonConst,
+      onLoop: handleNonConst,
+    );
   }
 
   void _writeExpression(Expression expr) {
@@ -176,7 +201,8 @@ class WasmTextSink {
   }
 
   void _assign(AssignExpression let) {
-    _textSink.write('(local.set \$${let.id}\n');
+    _textSink.writeln('(${let.declarations[0].isGlobal ? 'global' : 'local'}'
+        '.set \$${let.id}');
     _increaseIndent();
     _textSink.write(_indent);
     _writeExpression(let.body);

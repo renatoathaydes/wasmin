@@ -50,7 +50,7 @@ class DeclarationParser with WordBasedParser<Declaration> {
     _declaration = type.consume().match(
         onFunType: (type) => FunDeclaration(id, type, isExported),
         onValueType: (type) =>
-            VarDeclaration(id, type, isExported: isExported));
+            VarDeclaration(id, type, isExported: isExported, isGlobal: true));
 
     context.add(_declaration);
 

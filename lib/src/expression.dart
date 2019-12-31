@@ -32,6 +32,12 @@ abstract class Expression {
     return AssignExpression(AssignmentType.let, name, body);
   }
 
+  factory Expression.letWithDeclaration(
+      VarDeclaration declaration, Expression body) {
+    return AssignExpression.withDeclaration(
+        AssignmentType.let, declaration, body);
+  }
+
   factory Expression.mut(String name, Expression body) {
     return AssignExpression(AssignmentType.mut, name, body);
   }
@@ -169,6 +175,7 @@ class FunCall extends Expression {
 }
 
 class AssignExpression extends Expression {
+  final VarDeclaration _declaration;
   final AssignmentType assignmentType;
 
   String get id => _id;
@@ -182,12 +189,17 @@ class AssignExpression extends Expression {
       [if (assignmentType != AssignmentType.reassign) _toDeclaration()];
 
   AssignExpression(this.assignmentType, String id, this.body)
-      : super._create(id, ValueType.empty);
+      : _declaration = null,
+        super._create(id, ValueType.empty);
+
+  AssignExpression.withDeclaration(
+      this.assignmentType, VarDeclaration declaration, this.body)
+      : _declaration = declaration,
+        super._create(declaration.id, ValueType.empty);
 
   VarDeclaration _toDeclaration() {
-    if (assignmentType == AssignmentType.reassign) {
-      return null;
-    }
+    if (assignmentType == AssignmentType.reassign) return null;
+    if (_declaration != null) return _declaration;
     return VarDeclaration(id, varType,
         isMutable: assignmentType == AssignmentType.mut);
   }
