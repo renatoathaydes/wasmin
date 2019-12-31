@@ -49,11 +49,15 @@ class WasminParser {
             currentParser = let;
           } else if (word == 'fun') {
             currentParser = fun;
+          } else if (word == 'def') {
+            currentParser = declaration;
+          } else if (word == 'export') {
+            currentParser = declaration..isExported = true;
           } else if (word.isEmpty) {
 //            print("Got empty word, skipping separator");
             runes.moveNext();
           } else {
-            currentParser = declaration..firstWord = word;
+            // TODO this is an error
           }
           break;
         case ParseResult.DONE:

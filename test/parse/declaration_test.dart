@@ -17,15 +17,15 @@ void main() {
     });
 
     test('can parse exported let declaration with simple type', () {
-      parser.firstWord = 'export';
-      final result = parser.parse(ParserState.fromString('def f32'));
+      parser.isExported = true;
+      final result = parser.parse(ParserState.fromString('def abc f32'));
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
-      final expected = VarDeclaration('def', ValueType.f32, isExported: true);
+      final expected = VarDeclaration('abc', ValueType.f32, isExported: true);
 
       expect(parser.consume(), equals(expected));
-      expect(parser.context.declarationOf('def'), equals(expected));
+      expect(parser.context.declarationOf('abc'), equals(expected));
     });
   });
 
@@ -42,8 +42,9 @@ void main() {
     });
 
     test('can parse exported function signature', () {
+      parser.isExported = true;
       final result =
-          parser.parse(ParserState.fromString('export _start []i64'));
+          parser.parse(ParserState.fromString('def _start []i64'));
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 

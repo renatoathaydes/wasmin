@@ -1,4 +1,4 @@
-log [string];
-import log from "console"
+def log [string];
+import "console" show log;
 
 fun main = log "hello world";

@@ -1,7 +1,7 @@
 let number = 10;
 
-export large_number i64;
-export add-number [i64] i64;
+export def large_number i64;
+export def add-number [i64] i64;
 
 let large_number = add-number 33;
 

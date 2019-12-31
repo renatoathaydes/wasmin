@@ -12,29 +12,29 @@ class DeclarationParser with WordBasedParser<Declaration> {
   @override
   CompilerError failure;
 
+  bool isExported = false;
+
   final TypeParser type;
   final ParsingContext context;
 
   Declaration _declaration;
-  String firstWord;
 
   DeclarationParser(this.words, this.context) : type = TypeParser(words);
 
   @override
   ParseResult parse(ParserState runes) {
-    final word = firstWord ?? nextWord(runes);
+    final export = isExported;
     reset();
 
-    String id;
-    bool isExported;
-
-    if (word == 'export') {
-      id = nextWord(runes);
-      isExported = true;
-    } else {
-      id = word;
-      isExported = false;
+    if (export) {
+      final word = nextWord(runes);
+      if (word != 'def') {
+        failure = 'def'.wasExpected(runes, prefix: 'Invalid export statement');
+        return ParseResult.FAIL;
+      }
     }
+
+    final id = nextWord(runes);
 
     if (id.isEmpty) {
       failure = 'identifier'.wasExpected(runes);
@@ -48,9 +48,9 @@ class DeclarationParser with WordBasedParser<Declaration> {
     }
 
     _declaration = type.consume().match(
-        onFunType: (type) => FunDeclaration(id, type, isExported),
+        onFunType: (type) => FunDeclaration(id, type, export),
         onValueType: (type) =>
-            VarDeclaration(id, type, isExported: isExported, isGlobal: true));
+            VarDeclaration(id, type, isExported: export, isGlobal: true));
 
     context.add(_declaration);
 
@@ -67,7 +67,7 @@ class DeclarationParser with WordBasedParser<Declaration> {
 
   void reset() {
     failure = null;
-    firstWord = null;
+    isExported = false;
     _declaration = null;
   }
 }

@@ -53,7 +53,7 @@ void main() {
 
   test('can parse let declaration followed by its implementation', () async {
     final unit =
-        await compileWasmin('source', ['my-value i64;let my-value = 20']);
+        await compileWasmin('source', ['def my-value i64;let my-value = 20']);
 
     expect(unit.declarations.length, equals(1));
     expect(unit.implementations.length, equals(1));
@@ -65,8 +65,8 @@ void main() {
   });
 
   test('can parse fun declaration followed by its implementation', () async {
-    final unit =
-        await compileWasmin('source', ['foo[f64] f64 ; fun foo n = add n 1.0']);
+    final unit = await compileWasmin(
+        'source', ['def foo[f64] f64 ; fun foo n = add n 1.0']);
 
     expect(unit.declarations.length, equals(1));
     expect(unit.implementations.length, equals(1));

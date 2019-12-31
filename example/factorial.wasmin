@@ -1,10 +1,10 @@
 # traditional, recursive implementation of factorial
-factorial [i64] i64;
+def factorial [i64] i64;
 fun factorial n = if eq n 1; 1;
                   mul n (factorial (sub n 1));
 
 # without using recursion
-#factorial-2 [i64] i64;
+#def factorial-2 [i64] i64;
 #fun factorial-2 n = (
 #    mut result = 1;
 #    mut n' = n;
@@ -17,6 +17,6 @@ fun factorial n = if eq n 1; 1;
 #)
 
 # _start is the main function in wasmtime
-export _start [] i64;
+export def _start [] i64;
 
 fun _start = factorial 20

@@ -394,7 +394,7 @@ To import something from another Wasmin file, simply refer to the other file wit
 ```rust
 import "./factorial.wasmin";
 
-# use factorial
+# use factorial, which is defined in factorial.wasmin
 def main [] i64;
 fun main = factorial 10;
 ```
@@ -405,7 +405,8 @@ To only import certain definitions, use the form `import "./other-file" show <id
 For example:
 
 ```rust
-import "./factorial.wasmin" show factorial other-function;
+import "./factorial.wasmin" 
+    show factorial other-function;
 ```
 
 In case a definition is external (i.e. not from another Wasmin file, but from the host environment), 
