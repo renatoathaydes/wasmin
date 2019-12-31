@@ -31,15 +31,17 @@ Feature Checklist:
 - [x] parenthesis-grouped expressions.
 - [x] ungrouped expressions.
 - [x] multi-expressions.
+- [ ] type declarations.
+- [ ] generic type declarations.
 - [x] let assignments.
 - [x] mut assignments.
 - [x] math operators.
 - [x] function calls.
-- [x] function declarations.
+- [x] function implementations.
 - [ ] generic functions.
 - [x] single-line comments.
 - [ ] multi-line comments.
-- [ ] global constants.
+- [x] global constants.
 - [ ] import from other Wasmin files.
 - [ ] import external functions.
 - [x] export functions and constants.
@@ -65,12 +67,13 @@ Not yet designed features (may never be added):
 
 ## The language
 
-Wasmin is designed to be very simple, built from just a few very generic syntactic forms,
-and fast to parse and compile, like WASM itself! It should run as fast
-as hand-written WASM programs on any platform supported by WASM.
+Wasmin is designed to be simple, built from very few generic syntactic forms,
+and therefore fast to parse and compile, like WASM itself!
 
-It is able to leverage almost everything available in WASM, except unbounded mutability, because that
-would make Wasmin programs too difficult to reason about (but is necessary in a low-level virtual machine as WASM).
+It attempts to minimize punctuation to be as syntactically light as possible without losing readability.
+
+Because it only contains primitives that can be mapped easily to WASM, it should run as fast 
+as hand-written WASM programs on any platform.
 
 Wasmin is statically typed, non-garbage-collected
 (but requires no memory management thanks to [linear types](http://home.pipeline.com/~hbaker1/ForthStack.html),
@@ -80,8 +83,8 @@ which do not generate garbage) and supports the procedural, functional and conca
 
 The basic constructs of a Wasmin program are **expressions**.
 
-Expressions are simply arrangements of constants and identifiers which evaluate to a value or, in the case of `let`,
-evaluate to nothing, but bind an identifier to the result of evaluating an expression.
+Expressions are simply arrangements of symbols, constants and other expressions which evaluate to a value or perform some
+side-effect.
 
 An expression may consist of several sub-expressions that are evaluated in sequence within a parenthesis-demarked
 group. Its value is that of the last sub-expression. To separate each sub-expression, either group each of them within
@@ -128,8 +131,8 @@ Invalid identifiers:
 - `1a` (cannot start with number<sup><a href="#footnote-3">[3]</a></sup>).
 - `foo=bar` (`=` is the assignment operator, so this means _assign bar to foo_).
 - `big>small` (`>` is the stack operator, so this is valid, but is an expression, not an identifier).
-- `let`, `fun`, `mut`, `export`, `if`, `loop` (these are the only keywords in Wasmin).
-- `get`, `set`, `remove`, `size`, `copy`, `typeof` (special functions).
+- `let`, `fun`, `mut`, `def`, `import`, `export`, `if`, `loop` (these are the only keywords in Wasmin).
+- `get`, `set`, `remove`, `size`, `copy` (special functions).
 
 #### Footnotes
 
@@ -170,10 +173,10 @@ let multiline-ten = (
 )
 ```
 
-Optionally, the type of a top-level identifier can be declared before it's assigned:
+Optionally, the type of an identifier can be defined with the `def` keyword before it's assigned:
 
 ```rust
-ten i32;
+def ten i32;
 let ten = 10i32;
 ```
 
@@ -193,8 +196,6 @@ mut counter = 0;
 counter = counter > add 1;
 ```
 
-> Global variables cannot be declared with `mut`, they must be immutable, so they are declared with `let` only.
-
 ### Functions
 
 Wasmin functions are similar to `let` expressions, with the following differences:
@@ -207,7 +208,7 @@ Wasmin functions are similar to `let` expressions, with the following difference
 Functions have the form:
 
 ```
-<identifier> [<arg-types>, ...] <return-type>
+def <identifier> [<arg-types>, ...] <return-type>
 fun <identifier> <args> = <expression>
 ```
 
@@ -217,15 +218,15 @@ fun <identifier> <args> = <expression>
 For example:
 
 ```rust
-square [f64] f64;
+def square [f64] f64;
 fun square n = mul n n;
 
 # Lisp/functional style
-pythagoras [f64, f64] f64;
+def pythagoras [f64, f64] f64;
 fun pythagoras a b = (sqrt (add (square a) (square b)))
 
 # using a more C-like syntax
-pythagoras2 [f64, f64] f64;
+def pythagoras2 [f64, f64] f64;
 fun pythagoras2 a b = (
     let sa = square a;
     let sb = square b;
@@ -233,12 +234,12 @@ fun pythagoras2 a b = (
 )
 
 # using the concatenative style, which can be the cleanest sometimes!
-pythagoras3 [f64, f64] f64;
+def pythagoras3 [f64, f64] f64;
 fun pythagoras3 a b = square a > square b > add > sqrt;
 ```
 
 > Notice that function's type signatures are separated from a function's implementation, and
-> must be declared before they are used or implemented.
+> must be defined before they are used or implemented.
 
 ### Generic functions
 
@@ -248,7 +249,7 @@ the arguments it was called with.
 Generic functions have the form:
 
 ```
-<identifier> [<arg-types>, ...] <return-type> [: <T> = <type1> [ | <type2> ...], ...];
+def <identifier> [<arg-types>, ...] <return-type> [: <T> = <type1> [ | <type2> ...], ...];
 fun <identifier> <args ...> = <expression>
 ```
 
@@ -258,7 +259,7 @@ a value of the same type.
 Its type declaration would look like this in Wasmin:
 
 ```rust
-add [T, T] T: T = i32 | i64 | f32 | f64;
+def add [T, T] T: T = i32 | i64 | f32 | f64;
 ```
 
 > Single, capital letters are used to indicate a generic type.
@@ -266,7 +267,7 @@ add [T, T] T: T = i32 | i64 | f32 | f64;
 If more than one type is generic, the type parameters need to have different names:
 
 ```rust
-some-fun [I, F] I: I = i32 | i64, F = f32 | f64;
+def some-fun [I, F] I: I = i32 | i64, F = f32 | f64;
 ```
 
 The above should be read as _some-fun takes two arguments of type I and F respectively, and returns a value of type I,
@@ -278,20 +279,20 @@ work with, in which case it is not necessary to provide the types a function can
 A generic function can only pass its arguments to other generic functions with the same, or lower, bounds.
 
 ```rust
-add-twice [T T] T, T = i32 | i64 | f32 | f64;
-add-twice a b = add a b > add a b > add;
+def add-twice [T T] T, T = i32 | i64 | f32 | f64;
+fun add-twice a b = add a b > add a b > add;
 ```
 
 If that's not possible, different implementations can be provided for each type, without generics being used:
 
 ```rust
-do-something [i32] i32;
+def do-something [i32] i32;
 fun do-something n = ...;
 
-do-something [i64] i64;
+def do-something [i64] i64;
 fun do-something n = ...;
 
-do-something [f32] f32;
+def do-something [f32] f32;
 fun do-something n = ...;
 ```
 
@@ -377,10 +378,10 @@ Variables and functions may be exported by adding the `export` keyword before th
 ```rust
 # export the main function, which does not take any arguments
 # and returns an i64
-export main [] i64;
+export def main [] i64;
 
 # export the variable `ten` of type `i64`
-export ten i64;
+export def ten i64;
 let ten = 10;
 
 fun main = add ten 20;
@@ -391,18 +392,29 @@ Definitions can be imported from other modules (or the host environment) and fro
 To import something from another Wasmin file, simply refer to the other file with a relative path:
 
 ```rust
-import factorial from "./factorial.wasmin";
+import "./factorial.wasmin";
 
 # use factorial
+def main [] i64;
 fun main = factorial 10;
 ```
 
-In case a symbol is external (i.e. not from another Wasmin file), its type must be declared as usual,
-but instead of providing an implementation for it, an `import` statement can be used instead.
+Using the form `import "./other-file";`, all definitions exported by `other-file` are imported into the current file.
+To only import certain definitions, use the form `import "./other-file" show <identifier> ...;"`
+
+For example:
 
 ```rust
-log [any];
-import log from "console";
+import "./factorial.wasmin" show factorial other-function;
+```
+
+In case a definition is external (i.e. not from another Wasmin file, but from the host environment), 
+its type must be declared explicitly, and the `show` clause is not optional
+(as Wasmin cannot know what the environment exposes):
+
+```rust
+def log [any];
+import "console" show log;
 
 # use log
 fun main = log "hello world";
@@ -411,8 +423,8 @@ fun main = log "hello world";
 > Notice that a type declaration for a function without arguments is optional,
 > as its return type can be inferred by the compiler.
 
-If the host environment or another module does not provide the imported definition, are error will occur when loading
-the WASM module.
+If the host environment or another module does not provide the imported definition, or it has a different type than
+the one declared, an error will occur when loading the WASM module.
 
 ### Built-in functions
 
@@ -513,14 +525,14 @@ let Person = {name string, age i32}
 An instance of a record can be created as follows:
 
 ```rust
-joe Person;
+def joe Person;
 let joe = {name "Joe", age 35i32}
 ```
 
 Record fields can be read by using the special `get` function:
 
 ```rust
-joe Person;
+def joe Person;
 let joe = {name "Joe", age 35i32};
 let joesAge = get joe age;
 ```
@@ -528,7 +540,7 @@ let joesAge = get joe age;
 If a record is declared as mutable, its fields can be modified with the `set` function:
 
 ```rust
-joe Person;
+def joe Person;
 mut joe = {name "Joe", age 35i32};
 
 set joe name "Johan";
@@ -544,10 +556,10 @@ A record may use generic types to let the user decide what type one or more fiel
 ```rust
 let Box(T) = {item T};
 
-int-box Box(i64);
+def int-box Box(i64);
 let int-box = Box(item 32);
 
-string-box Box(string);
+def string-box Box(string);
 let string-box = Box(item "my box");
 ```
 
@@ -579,18 +591,18 @@ For example:
 let i64-array = [1 2 3];
 
 # create an array of size 100, initializing items with their zeroth values
-large-array array(i32)(100);
+def large-array array(i32)(100);
 let large-array = [];
 
 # function that requires an array of length 100
-use-array [i64(i32)(100)];
+def use-array [i64(i32)(100)];
 use-array a = ...
 ```
 
 To be able to mutate an array with the `set` function, it must be declared as mutable:
 
 ```rust
-large-array array(i32)(100);
+def large-array array(i32)(100);
 mut large-array = [];
 
 set large-array 0 1i32;
@@ -652,7 +664,7 @@ assigned to a variable. This is only useful for performing side-effects:
 > parenthesis, as shown below, so it's clear where the `if` expression ends.
 
 ```rust
-log-if-greater-than-0 [i64];
+def log-if-greater-than-0 [i64];
 fun log-if-greater-than-0 x =
     (if x > gt 0; log "greater than 0")
 ```
@@ -682,10 +694,10 @@ A more complex example:
 ```rust
 # implementing the traditional `map` function in Wasmin
 # with the `loop-if` construct
-map [[T] V, array(T)] array(V);
+def map [[T] V, array(T)] array(V);
 fun map function list = (
     mut index = 0;
-    result array(V)(list > size);
+    def result array(V)(list > size);
     mut result = [];
     loop (
         (if index > ge_u (list > size); break)
@@ -712,7 +724,7 @@ let size-of-array = size my-array;
 
 let Rec = {name string};
 
-rec Rec;
+def rec Rec;
 mut rec = {name "the record"};
 
 set rec name "another name";
@@ -732,7 +744,7 @@ Example:
 ```rust
 let Rec = {name string};
 
-rec Rec;
+def rec Rec;
 mut rec = {name "the record"};
 
 let current-name = remove rec name;
