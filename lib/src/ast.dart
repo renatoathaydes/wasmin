@@ -29,9 +29,10 @@ abstract class Implementation with WasminNode {
 
 /// Wasmin program declaration unit.
 abstract class Declaration with WasminNode {
+  final String id;
   final bool isExported;
 
-  const Declaration._(this.isExported);
+  const Declaration._(this.id, this.isExported);
 
   T match<T>({
     T Function(FunDeclaration) onFun,
@@ -45,6 +46,17 @@ abstract class Declaration with WasminNode {
   }) {
     return onDeclaration(this);
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Declaration &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          isExported == other.isExported;
+
+  @override
+  int get hashCode => id.hashCode ^ isExported.hashCode;
 }
 
 /// Top-level Let expression.
@@ -108,10 +120,9 @@ class Fun extends Implementation {
 
 class FunDeclaration extends Declaration {
   final FunType type;
-  final String id;
 
-  FunDeclaration(this.id, this.type, [bool isExported = false])
-      : super._(isExported);
+  FunDeclaration(String id, this.type, [bool isExported = false])
+      : super._(id, isExported);
 
   FunDeclaration asExported() {
     return isExported ? this : FunDeclaration(id, type, true);
@@ -120,14 +131,10 @@ class FunDeclaration extends Declaration {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is FunDeclaration &&
-          runtimeType == other.runtimeType &&
-          type == other.type &&
-          id == other.id &&
-          isExported == other.isExported;
+      super == other && other is FunDeclaration && type == other.type;
 
   @override
-  int get hashCode => type.hashCode ^ id.hashCode ^ isExported.hashCode;
+  int get hashCode => type.hashCode ^ super.hashCode;
 
   @override
   String toString() {
@@ -144,14 +151,13 @@ class FunDeclaration extends Declaration {
 enum AssignmentType { let, mut, reassign }
 
 class VarDeclaration extends Declaration {
-  final String id;
   final ValueType varType;
   final bool isMutable;
   final bool isGlobal;
 
-  VarDeclaration(this.id, this.varType,
+  VarDeclaration(String id, this.varType,
       {this.isMutable = false, bool isExported = false, this.isGlobal = false})
-      : super._(isExported);
+      : super._(id, isExported);
 
   VarDeclaration asExported() {
     return isExported
@@ -162,21 +168,24 @@ class VarDeclaration extends Declaration {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is VarDeclaration &&
-          runtimeType == other.runtimeType &&
+      super == other &&
+          other is VarDeclaration &&
           varType == other.varType &&
-          id == other.id &&
-          isMutable == other.isMutable &&
-          isExported == other.isExported;
+          isGlobal == other.isGlobal &&
+          isMutable == other.isMutable;
 
   @override
   int get hashCode =>
-      id.hashCode ^ varType.hashCode ^ isMutable.hashCode ^ isExported.hashCode;
+      super.hashCode ^
+      varType.hashCode ^
+      isMutable.hashCode ^
+      isGlobal.hashCode;
 
   @override
   String toString() {
     return 'VarDeclaration{'
-        'type: $varType, name: $id, isExported: $isExported}';
+        'type: $varType, id: $id, isExported: $isExported, '
+        'isMutable: $isMutable, isGlobal: $isGlobal}';
   }
 
   @override

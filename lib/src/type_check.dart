@@ -57,9 +57,9 @@ Expression exprWithInferredType(
 
 Expression _singleMemberExpression(String member, ParsingContext context) {
   if (member == 'break') return Expression.breakExpr();
-  final funType = context.typeOfFun(member, const []);
-  if (funType != null) {
-    return Expression.funCall(member, const [], funType.returns);
+  final funTypes = context.typeOfFun(member, 0);
+  if (funTypes.isNotEmpty) {
+    return Expression.funCall(member, const [], funTypes.first.returns);
   }
   final decl = context.declarationOf(member);
   if (decl != null) {
@@ -154,7 +154,7 @@ Expression _resultExpression(
     onError: (error) => throw Exception(error.message),
   );
 
-  var args = members
+  final args = members
       .skip(1)
       .map((e) => exprWithInferredType(e, context))
       .toList(growable: false);
@@ -164,34 +164,35 @@ Expression _resultExpression(
     throw TypeCheckException("Operator '$funName' expects 2 arguments, "
         'but was given ${args.length}');
   }
-  // FIXME it may be possible to fix up the args types to get a matching function
-  final type = context.typeOfFun(funName, args);
-  if (type == null) throw TypeCheckException("unknown function: '$funName'");
-  args = _checkFunCallArgs(funName, type.takes, args);
-  return Expression.funCall(funName, args, type.returns);
+  final types = context.typeOfFun(funName, args.length);
+  if (types.isEmpty) throw TypeCheckException("unknown function: '$funName'");
+  return _matchFunCallWithArgs(funName, args, types);
 }
 
-List<Expression> _checkFunCallArgs(
-    String funName, List<ValueType> takes, List<Expression> args) {
-  if (takes.length != args.length) {
-    throw TypeCheckException("Function '$funName' takes ${takes.length} "
-        'arguments, but was called with ${args.length}');
-  }
-  var index = 0;
-  return args.map((actualArg) {
-    final expected = takes[index++];
-    if (expected != actualArg.type) {
-      final fixedArg = tryConvertType(actualArg, expected);
-      if (fixedArg == null) {
-        throw TypeCheckException("Function '$funName' expects argument of "
-            'type ${expected.name} at position ${index - 1}, but was called '
-            'with a ${actualArg.type.name}');
-      } else {
-        return fixedArg;
+Expression _matchFunCallWithArgs(
+    String funName, List<Expression> args, Set<FunType> types) {
+  assert(types.every((type) => type.takes.length == args.length));
+  for (final type in types) {
+    final takes = type.takes;
+    var index = 0;
+    final fixedArgs = args.map((actualArg) {
+      final expected = takes[index++];
+      if (expected != actualArg.type) {
+        return tryConvertType(actualArg, expected);
       }
+      return actualArg;
+    }).toList(growable: false);
+
+    if (fixedArgs.every((arg) => arg != null)) {
+      return Expression.funCall(funName, fixedArgs, type.returns);
     }
-    return actualArg;
-  }).toList(growable: false);
+  }
+
+  // none of the function types match
+  throw TypeCheckException("Cannot call function '$funName' with arguments"
+      ' of types ${_typeNames(args.map((a) => a.type))}. '
+      'The following types would be acceptable:\n'
+      '${types.map((f) => _typeNames(f.takes)).join('\n  * ')}');
 }
 
 IfExpression _ifExpression(ParsedExpression cond, ParsedExpression then,
@@ -251,4 +252,8 @@ Expression tryConvertType(Expression expr, ValueType type) {
     }
   }
   return null;
+}
+
+String _typeNames(Iterable<ValueType> types) {
+  return '[${types.map((type) => type.name).join(', ')}]';
 }

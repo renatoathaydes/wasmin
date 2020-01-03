@@ -10,7 +10,7 @@ void main() {
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
-      final expected = VarDeclaration('abc', ValueType.i32);
+      final expected = VarDeclaration('abc', ValueType.i32, isGlobal: true);
 
       expect(parser.consume(), equals(expected));
       expect(parser.context.declarationOf('abc'), equals(expected));
@@ -18,14 +18,15 @@ void main() {
 
     test('can parse exported let declaration with simple type', () {
       parser.isExported = true;
-      final result = parser.parse(ParserState.fromString('def abc f32'));
+      final result = parser.parse(ParserState.fromString('def variable f32'));
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
-      final expected = VarDeclaration('abc', ValueType.f32, isExported: true);
+      final expected = VarDeclaration('variable', ValueType.f32,
+          isExported: true, isGlobal: true);
 
       expect(parser.consume(), equals(expected));
-      expect(parser.context.declarationOf('abc'), equals(expected));
+      expect(parser.context.declarationOf('variable'), equals(expected));
     });
   });
 
@@ -43,8 +44,7 @@ void main() {
 
     test('can parse exported function signature', () {
       parser.isExported = true;
-      final result =
-          parser.parse(ParserState.fromString('def _start []i64'));
+      final result = parser.parse(ParserState.fromString('def _start []i64'));
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 

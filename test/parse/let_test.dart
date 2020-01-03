@@ -21,7 +21,7 @@ void main() {
       expect(let.declaration.id, equals('x'));
       expect(let.body, equals(Expression.constant('0', ValueType.i32)));
       expect(context.declarationOf('x'),
-          equals(VarDeclaration('x', ValueType.i32)));
+          equals(VarDeclaration('x', ValueType.i32, isGlobal: true)));
     });
 
     test('can parse let expression with whitespace', () {

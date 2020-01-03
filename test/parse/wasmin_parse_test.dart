@@ -58,7 +58,7 @@ void main() {
     expect(unit.declarations.length, equals(1));
     expect(unit.implementations.length, equals(1));
 
-    final letDecl = VarDeclaration('my-value', ValueType.i64);
+    final letDecl = VarDeclaration('my-value', ValueType.i64, isGlobal: true);
     expect(unit.declarations[0], equals(letDecl));
     expect(unit.implementations[0],
         equals(Let(letDecl, Const('20', ValueType.i64))));
