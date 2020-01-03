@@ -9,14 +9,14 @@ void main() {
 
     test('can use variable at same scope level', () {
       final expectedResult = Expression.group([
-        Expression.let('x', Expression.constant('0', ValueType.i64)),
+        Expression.let('x', Expression.constant('0', ValueType.i32)),
         Expression.funCall(
             'add',
             [
-              Expression.variable('x', ValueType.i64),
-              Expression.constant('1', ValueType.i64),
+              Expression.variable('x', ValueType.i32),
+              Expression.constant('1', ValueType.i32),
             ],
-            ValueType.i64),
+            ValueType.i32),
       ]);
 
       for (final expression in [
@@ -34,45 +34,45 @@ void main() {
 
     test('can use variable from outer scope level', () {
       final expectedFirstResult = Expression.group([
-        Expression.let('x', Expression.constant('0', ValueType.i64)),
+        Expression.let('x', Expression.constant('0', ValueType.i32)),
         Expression.loopExpr(Expression.funCall(
             'add',
             [
-              Expression.variable('x', ValueType.i64),
-              Expression.constant('1', ValueType.i64),
+              Expression.variable('x', ValueType.i32),
+              Expression.constant('1', ValueType.i32),
             ],
-            ValueType.i64)),
+            ValueType.i32)),
       ]);
       final expectedSecondResult = Expression.group([
-        Expression.let('x', Expression.constant('0', ValueType.i64)),
+        Expression.let('x', Expression.constant('0', ValueType.i32)),
         Expression.ifExpr(
-            Expression.variable('x', ValueType.i64),
+            Expression.variable('x', ValueType.i32),
             Expression.funCall(
                 'add',
                 [
-                  Expression.variable('x', ValueType.i64),
-                  Expression.constant('1', ValueType.i64),
+                  Expression.variable('x', ValueType.i32),
+                  Expression.constant('1', ValueType.i32),
                 ],
-                ValueType.i64)),
+                ValueType.i32)),
       ]);
       final expectedThirdResult = Expression.group([
-        Expression.let('x', Expression.constant('0', ValueType.i64)),
+        Expression.let('x', Expression.constant('0', ValueType.i32)),
         Expression.ifExpr(
-            Expression.constant('1', ValueType.i64),
+            Expression.constant('1', ValueType.i32),
             Expression.funCall(
                 'add',
                 [
-                  Expression.variable('x', ValueType.i64),
-                  Expression.constant('1', ValueType.i64),
+                  Expression.variable('x', ValueType.i32),
+                  Expression.constant('1', ValueType.i32),
                 ],
-                ValueType.i64),
+                ValueType.i32),
             Expression.funCall(
                 'add',
                 [
-                  Expression.variable('x', ValueType.i64),
-                  Expression.constant('2', ValueType.i64),
+                  Expression.variable('x', ValueType.i32),
+                  Expression.constant('2', ValueType.i32),
                 ],
-                ValueType.i64)),
+                ValueType.i32)),
       ]);
 
       final results = [

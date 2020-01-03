@@ -1,10 +1,10 @@
-import 'package:wasmin/src/parse/expression.dart';
-import 'package:wasmin/src/type_check.dart';
-
 import '../ast.dart';
 import '../expression.dart';
+import '../type.dart';
+import '../type_check.dart';
 import '../type_context.dart';
 import 'base.dart';
+import 'expression.dart';
 import 'iterator.dart';
 
 class LetParser with WordBasedParser<Let> {
@@ -45,12 +45,12 @@ class LetParser with WordBasedParser<Let> {
     if (result == ParseResult.FAIL) {
       failure = _expr.failure;
     } else {
-      final expression = _expr.consume();
+      var expression = _expr.consume();
 
       // success!! Remember defined variable
       var decl = _typeContext.declarationOf(id);
       if (decl != null) {
-        decl.match(
+        expression = decl.match(
             onFun: (_) => throw TypeCheckException(
                 "'$id' is declared as a function, but implemented as a let expression."),
             onVar: (let) => _verifyType(let, expression));
@@ -79,11 +79,29 @@ class LetParser with WordBasedParser<Let> {
     return result;
   }
 
-  void _verifyType(VarDeclaration decl, Expression body) {
+  Expression _verifyType(VarDeclaration decl, Expression body) {
     if (decl.varType != body.type) {
+      final convertedExpr = _tryConvertType(body, decl.varType);
+      if (convertedExpr != null) return convertedExpr;
       throw TypeCheckException(
           "'${decl.id}' type should be '${decl.varType.name}', but its "
           "implementation has type '${body.type.name}'");
     }
+    return body;
+  }
+
+  Expression _tryConvertType(Expression expr, ValueType type) {
+    if (expr is Const) {
+      if (type == ValueType.f64) {
+        if (expr.type == ValueType.f32) {
+          return Expression.constant(expr.value, type);
+        }
+      } else if (type == ValueType.i64) {
+        if (expr.type == ValueType.i32) {
+          return Expression.constant(expr.value, type);
+        }
+      }
+    }
+    return null;
   }
 }

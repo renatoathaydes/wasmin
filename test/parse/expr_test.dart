@@ -11,7 +11,7 @@ void main() {
       final result = parser.parse(ParserState.fromString('1'));
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
-      expect(parser.consume(), equals(Expression.constant('1', ValueType.i64)));
+      expect(parser.consume(), equals(Expression.constant('1', ValueType.i32)));
     });
 
     test('can parse function call', () {
@@ -23,10 +23,10 @@ void main() {
           equals(Expression.funCall(
             'mul',
             [
-              Expression.constant('1', ValueType.i64),
-              Expression.constant('2', ValueType.i64),
+              Expression.constant('1', ValueType.i32),
+              Expression.constant('2', ValueType.i32),
             ],
-            ValueType.i64,
+            ValueType.i32,
           )));
     });
 
@@ -39,10 +39,10 @@ void main() {
           equals(Expression.funCall(
             'mul',
             [
-              Expression.constant('1', ValueType.i64),
-              Expression.constant('2', ValueType.i64),
+              Expression.constant('1', ValueType.i32),
+              Expression.constant('2', ValueType.i32),
             ],
-            ValueType.i64,
+            ValueType.i32,
           )));
     });
 
@@ -58,14 +58,14 @@ void main() {
               Expression.funCall(
                 'add',
                 [
-                  Expression.constant('1', ValueType.i64),
-                  Expression.constant('2', ValueType.i64),
+                  Expression.constant('1', ValueType.i32),
+                  Expression.constant('2', ValueType.i32),
                 ],
-                ValueType.i64,
+                ValueType.i32,
               ),
-              Expression.constant('3', ValueType.i64),
+              Expression.constant('3', ValueType.i32),
             ],
-            ValueType.i64,
+            ValueType.i32,
           )));
     });
 
@@ -82,21 +82,21 @@ void main() {
               Expression.funCall(
                 'add',
                 [
-                  Expression.constant('1', ValueType.i64),
-                  Expression.constant('2', ValueType.i64),
+                  Expression.constant('1', ValueType.i32),
+                  Expression.constant('2', ValueType.i32),
                 ],
-                ValueType.i64,
+                ValueType.i32,
               ),
               Expression.funCall(
                 'div_s',
                 [
-                  Expression.constant('10', ValueType.i64),
-                  Expression.constant('5', ValueType.i64),
+                  Expression.constant('10', ValueType.i32),
+                  Expression.constant('5', ValueType.i32),
                 ],
-                ValueType.i64,
+                ValueType.i32,
               )
             ],
-            ValueType.i64,
+            ValueType.i32,
           )));
     });
 
@@ -108,14 +108,14 @@ void main() {
       expect(
           parser.consume(),
           equals(Expression.group([
-            Expression.let('n', Expression.constant('1', ValueType.i64)),
+            Expression.let('n', Expression.constant('1', ValueType.i32)),
             Expression.funCall(
               'mul',
               [
-                Expression.variable('n', ValueType.i64),
-                Expression.constant('2', ValueType.i64),
+                Expression.variable('n', ValueType.i32),
+                Expression.constant('2', ValueType.i32),
               ],
-              ValueType.i64,
+              ValueType.i32,
             )
           ])));
     });
@@ -128,23 +128,23 @@ void main() {
       expect(
           parser.consume(),
           equals(Expression.group([
-            Expression.let('x', Expression.constant('1', ValueType.i64)),
+            Expression.let('x', Expression.constant('1', ValueType.i32)),
             Expression.let(
                 'y',
                 Expression.funCall(
                     'add',
                     [
-                      Expression.constant('1', ValueType.i64),
-                      Expression.constant('2', ValueType.i64),
+                      Expression.constant('1', ValueType.i32),
+                      Expression.constant('2', ValueType.i32),
                     ],
-                    ValueType.i64)),
+                    ValueType.i32)),
             Expression.funCall(
               'add',
               [
-                Expression.variable('x', ValueType.i64),
-                Expression.variable('y', ValueType.i64),
+                Expression.variable('x', ValueType.i32),
+                Expression.variable('y', ValueType.i32),
               ],
-              ValueType.i64,
+              ValueType.i32,
             )
           ])));
     });
@@ -157,23 +157,23 @@ void main() {
       expect(
           parser.consume(),
           equals(Expression.group([
-            Expression.let('x', Expression.constant('1', ValueType.i64)),
+            Expression.let('x', Expression.constant('1', ValueType.i32)),
             Expression.let(
                 'y',
                 Expression.funCall(
                     'add',
                     [
-                      Expression.constant('1', ValueType.i64),
-                      Expression.constant('2', ValueType.i64),
+                      Expression.constant('1', ValueType.i32),
+                      Expression.constant('2', ValueType.i32),
                     ],
-                    ValueType.i64)),
+                    ValueType.i32)),
             Expression.funCall(
               'add',
               [
-                Expression.variable('x', ValueType.i64),
-                Expression.variable('y', ValueType.i64),
+                Expression.variable('x', ValueType.i32),
+                Expression.variable('y', ValueType.i32),
               ],
-              ValueType.i64,
+              ValueType.i32,
             )
           ])));
     });
@@ -186,9 +186,9 @@ void main() {
       expect(
           parser.consume(),
           equals(Expression.group([
-            Expression.mut('n', Expression.constant('1', ValueType.i64)),
-            Expression.reassign('n', Expression.constant('2', ValueType.i64)),
-            Expression.variable('n', ValueType.i64),
+            Expression.mut('n', Expression.constant('1', ValueType.i32)),
+            Expression.reassign('n', Expression.constant('2', ValueType.i32)),
+            Expression.variable('n', ValueType.i32),
           ])));
     });
 
@@ -199,8 +199,8 @@ void main() {
       final ifExpr = parser.consume();
       expect(
           ifExpr,
-          IfExpression(Expression.constant('0', ValueType.i64),
-              Expression.constant('1', ValueType.i64)));
+          IfExpression(Expression.constant('0', ValueType.i32),
+              Expression.constant('1', ValueType.i32)));
       expect(ifExpr.type, equals(ValueType.empty));
     });
 
@@ -213,8 +213,8 @@ void main() {
       final ifExpr = parser.consume();
       expect(
           ifExpr,
-          IfExpression(Expression.constant('0', ValueType.i64),
-              Expression.constant('1', ValueType.i64)));
+          IfExpression(Expression.constant('0', ValueType.i32),
+              Expression.constant('1', ValueType.i32)));
       expect(ifExpr.type, equals(ValueType.empty));
     });
 
@@ -226,10 +226,10 @@ void main() {
       expect(
           ifExpr,
           IfExpression(
-              Expression.constant('1', ValueType.i64),
-              Expression.constant('2', ValueType.i64),
-              Expression.constant('3', ValueType.i64)));
-      expect(ifExpr.type, equals(ValueType.i64));
+              Expression.constant('1', ValueType.i32),
+              Expression.constant('2', ValueType.i32),
+              Expression.constant('3', ValueType.i32)));
+      expect(ifExpr.type, equals(ValueType.i32));
     });
 
     test('can parse if expression with complex expressions', () {
@@ -245,25 +245,25 @@ void main() {
               Expression.funCall(
                   'gt_s',
                   [
-                    Expression.constant('1', ValueType.i64),
-                    Expression.constant('0', ValueType.i64)
+                    Expression.constant('1', ValueType.i32),
+                    Expression.constant('0', ValueType.i32)
                   ],
-                  ValueType.i64),
+                  ValueType.i32),
               Expression.funCall(
                   'mul',
                   [
-                    Expression.constant('2', ValueType.i64),
-                    Expression.constant('3', ValueType.i64)
+                    Expression.constant('2', ValueType.i32),
+                    Expression.constant('3', ValueType.i32)
                   ],
-                  ValueType.i64),
+                  ValueType.i32),
               Expression.funCall(
                   'add',
                   [
-                    Expression.constant('10', ValueType.i64),
-                    Expression.constant('20', ValueType.i64)
+                    Expression.constant('10', ValueType.i32),
+                    Expression.constant('20', ValueType.i32)
                   ],
-                  ValueType.i64)));
-      expect(ifExpr.type, equals(ValueType.i64));
+                  ValueType.i32)));
+      expect(ifExpr.type, equals(ValueType.i32));
     });
 
     test('can parse if expression with complex grouped expressions', () {
@@ -278,30 +278,30 @@ void main() {
           ifExpr,
           IfExpression(
               Expression.group([
-                Expression.let('n', Expression.constant('1', ValueType.i64)),
+                Expression.let('n', Expression.constant('1', ValueType.i32)),
                 Expression.funCall(
                     'gt_s',
                     [
-                      Expression.variable('n', ValueType.i64),
-                      Expression.constant('0', ValueType.i64)
+                      Expression.variable('n', ValueType.i32),
+                      Expression.constant('0', ValueType.i32)
                     ],
-                    ValueType.i64),
+                    ValueType.i32),
               ]),
               Expression.funCall(
                   'mul',
                   [
-                    Expression.constant('2', ValueType.i64),
-                    Expression.constant('3', ValueType.i64)
+                    Expression.constant('2', ValueType.i32),
+                    Expression.constant('3', ValueType.i32)
                   ],
-                  ValueType.i64),
+                  ValueType.i32),
               Expression.funCall(
                   'add',
                   [
-                    Expression.constant('10', ValueType.i64),
-                    Expression.constant('20', ValueType.i64)
+                    Expression.constant('10', ValueType.i32),
+                    Expression.constant('20', ValueType.i32)
                   ],
-                  ValueType.i64)));
-      expect(ifExpr.type, equals(ValueType.i64));
+                  ValueType.i32)));
+      expect(ifExpr.type, equals(ValueType.i32));
     });
 
     test('can parse simple loop expression', () {
@@ -311,7 +311,7 @@ void main() {
       expect(result, equals(ParseResult.CONTINUE));
       expect(iter.currentAsString, equals('X'));
       final loopExpr = parser.consume();
-      expect(loopExpr, LoopExpression(Expression.constant('0', ValueType.i64)));
+      expect(loopExpr, LoopExpression(Expression.constant('0', ValueType.i32)));
       expect(loopExpr.type, equals(ValueType.empty));
     });
 
@@ -328,15 +328,15 @@ void main() {
       expect(
           loopExpr,
           Expression.loopExpr(Expression.group([
-            Expression.ifExpr(Expression.constant('1', ValueType.i64),
+            Expression.ifExpr(Expression.constant('1', ValueType.i32),
                 Expression.breakExpr()),
             Expression.funCall(
                 'add',
                 [
-                  Expression.constant('2', ValueType.i64),
-                  Expression.constant('2', ValueType.i64)
+                  Expression.constant('2', ValueType.i32),
+                  Expression.constant('2', ValueType.i32)
                 ],
-                ValueType.i64)
+                ValueType.i32)
           ])));
       expect(loopExpr.type, equals(ValueType.empty));
     });
@@ -400,7 +400,7 @@ void main() {
       expect(
           parser.failure?.message,
           equals('if branches have different types '
-              '(then: f64, else: i64)'));
+              '(then: f32, else: i32)'));
       expect(result, equals(ParseResult.FAIL));
     });
   });

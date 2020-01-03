@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:wasmin/src/ast.dart';
 
 import 'expression.dart';
@@ -185,9 +186,19 @@ IfExpression _ifExpression(ParsedExpression cond, ParsedExpression then,
 }
 
 ValueType inferValueType(String value) {
-  final i = int.tryParse(value);
-  if (i != null) return ValueType.i64;
-  final d = double.tryParse(value);
-  if (d != null) return ValueType.f64;
+  final i = BigInt.tryParse(value);
+  if (i != null) {
+    if (i.bitLength > 64) {
+      throw TypeCheckException(
+          'Integer literal \'$value\' too big, requires ${i.bitLength} bits '
+          'for storage, but WASM limits integer types to 64 bits');
+    }
+    if (i.bitLength <= 32) return ValueType.i32;
+    return ValueType.i64;
+  }
+  final d = Decimal.tryParse(value);
+  if (d != null) {
+    return ValueType.f32;
+  }
   throw TypeCheckException("unknown variable: '$value'");
 }

@@ -12,8 +12,8 @@ void main() {
       expect(result, equals(ParseResult.DONE));
       expect(
           parser.consume(),
-          equals(Fun(FunDeclaration('main', FunType(ValueType.i64, const [])),
-              const [], Expression.constant('10', ValueType.i64))));
+          equals(Fun(FunDeclaration('main', FunType(ValueType.i32, const [])),
+              const [], Expression.constant('10', ValueType.i32))));
     });
 
     test('can parse function with no args returning single expression', () {
@@ -24,15 +24,15 @@ void main() {
       expect(
           parser.consume(),
           equals(Fun(
-              FunDeclaration('foo', FunType(ValueType.f64, const [])),
+              FunDeclaration('foo', FunType(ValueType.f32, const [])),
               const [],
               Expression.funCall(
                   'add',
                   [
-                    Expression.constant('2.0', ValueType.f64),
-                    Expression.constant('3.3', ValueType.f64),
+                    Expression.constant('2.0', ValueType.f32),
+                    Expression.constant('3.3', ValueType.f32),
                   ],
-                  ValueType.f64))));
+                  ValueType.f32))));
     });
 
     test('can parse function with no args returning grouped expression', () {
@@ -45,18 +45,18 @@ void main() {
       expect(
           parser.consume(),
           equals(Fun(
-              FunDeclaration('n', FunType(ValueType.f64, [])),
+              FunDeclaration('n', FunType(ValueType.f32, [])),
               const [],
               Expression.group([
-                Expression.let('x', Expression.constant('2.0', ValueType.f64)),
-                Expression.let('y', Expression.constant('3.3', ValueType.f64)),
+                Expression.let('x', Expression.constant('2.0', ValueType.f32)),
+                Expression.let('y', Expression.constant('3.3', ValueType.f32)),
                 Expression.funCall(
                     'add',
                     [
-                      Expression.variable('x', ValueType.f64),
-                      Expression.variable('y', ValueType.f64),
+                      Expression.variable('x', ValueType.f32),
+                      Expression.variable('y', ValueType.f32),
                     ],
-                    ValueType.f64)
+                    ValueType.f32)
               ]))));
     });
   });

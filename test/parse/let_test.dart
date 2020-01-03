@@ -19,9 +19,9 @@ void main() {
       final let = parser.consume();
 
       expect(let.declaration.id, equals('x'));
-      expect(let.body, equals(Expression.constant('0', ValueType.i64)));
+      expect(let.body, equals(Expression.constant('0', ValueType.i32)));
       expect(context.declarationOf('x'),
-          equals(VarDeclaration('x', ValueType.i64)));
+          equals(VarDeclaration('x', ValueType.i32)));
     });
 
     test('can parse let expression with whitespace', () {
@@ -33,7 +33,7 @@ void main() {
       final let = parser.consume();
 
       expect(let.declaration.id, equals('one_thousand'));
-      expect(let.body, equals(Expression.constant('1000', ValueType.i64)));
+      expect(let.body, equals(Expression.constant('1000', ValueType.i32)));
     });
 
     test('can parse let expression with function call', () {
@@ -51,10 +51,10 @@ void main() {
           equals(Expression.funCall(
               'mul',
               [
-                Expression.constant('30', ValueType.i64),
-                Expression.constant('50', ValueType.i64),
+                Expression.constant('30', ValueType.i32),
+                Expression.constant('50', ValueType.i32),
               ],
-              ValueType.i64)));
+              ValueType.i32)));
     });
 
     test('can parse let expression with complex expression', () {
@@ -75,25 +75,25 @@ void main() {
                 Expression.funCall(
                     'add',
                     [
-                      Expression.constant('2', ValueType.i64),
-                      Expression.constant('3', ValueType.i64),
+                      Expression.constant('2', ValueType.i32),
+                      Expression.constant('3', ValueType.i32),
                     ],
-                    ValueType.i64),
+                    ValueType.i32),
                 Expression.funCall(
                     'mul',
                     [
-                      Expression.constant('30', ValueType.i64),
+                      Expression.constant('30', ValueType.i32),
                       Expression.funCall(
                           'sub',
                           [
-                            Expression.constant('32', ValueType.i64),
-                            Expression.constant('21', ValueType.i64),
+                            Expression.constant('32', ValueType.i32),
+                            Expression.constant('21', ValueType.i32),
                           ],
-                          ValueType.i64),
+                          ValueType.i32),
                     ],
-                    ValueType.i64),
+                    ValueType.i32),
               ],
-              ValueType.i64)));
+              ValueType.i32)));
     });
   });
 
