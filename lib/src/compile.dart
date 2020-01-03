@@ -21,7 +21,7 @@ Future<CompilationResult> compile(String inputFile,
   _WasminWriter out;
 
   if (outputFile == null) {
-    out = const _SysoutWriter();
+    out = _SysoutWriter();
   } else {
     out = _FileWriter(File(outputFile));
   }
@@ -49,15 +49,54 @@ Future<WasminUnit> compileWasmin(
 }
 
 mixin _WasminWriter {
-  FutureOr<T> use<T>(FutureOr<T> Function(IOSink) user);
+  FutureOr<T> use<T>(FutureOr<T> Function(StringSink) user);
 }
 
-class _SysoutWriter with _WasminWriter {
-  const _SysoutWriter();
+class _SysoutWriter with _WasminWriter, StringSink {
+  final _toPrint = <Object>[];
 
   @override
-  FutureOr<T> use<T>(FutureOr<T> Function(IOSink) user) {
-    return user(stdout);
+  FutureOr<T> use<T>(FutureOr<T> Function(StringSink) user) {
+    final result = user(this);
+    flush();
+    return result;
+  }
+
+  @override
+  void write(Object obj) {
+    _write(obj?.toString());
+  }
+
+  @override
+  void writeAll(Iterable objects, [String separator = '']) {
+    final writeSeparator = separator != null && separator.isNotEmpty;
+    for (final obj in objects) {
+      _write(obj?.toString());
+      if (writeSeparator) _write(separator);
+    }
+  }
+
+  @override
+  void writeCharCode(int charCode) {
+    _write(String.fromCharCode(charCode));
+  }
+
+  @override
+  void writeln([Object obj = '']) {
+    _write(obj.toString());
+    _write('\n');
+  }
+
+  void _write(String obj) {
+    _toPrint.add(obj);
+    if (obj != null && obj.contains('\n')) {
+      flush();
+    }
+  }
+
+  void flush() {
+    _toPrint.forEach(print);
+    _toPrint.clear();
   }
 }
 
@@ -67,7 +106,7 @@ class _FileWriter with _WasminWriter {
   _FileWriter(this.file);
 
   @override
-  FutureOr<T> use<T>(FutureOr<T> Function(IOSink) user) {
+  FutureOr<T> use<T>(FutureOr<T> Function(StringSink) user) {
     return file.openWrite().use(user);
   }
 }

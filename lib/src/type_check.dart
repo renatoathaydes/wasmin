@@ -154,7 +154,7 @@ Expression _resultExpression(
     onError: (error) => throw Exception(error.message),
   );
 
-  final args = members
+  var args = members
       .skip(1)
       .map((e) => exprWithInferredType(e, context))
       .toList(growable: false);
@@ -164,22 +164,57 @@ Expression _resultExpression(
     throw TypeCheckException("Operator '$funName' expects 2 arguments, "
         'but was given ${args.length}');
   }
+  // FIXME it may be possible to fix up the args types to get a matching function
   final type = context.typeOfFun(funName, args);
   if (type == null) throw TypeCheckException("unknown function: '$funName'");
-  return Expression.funCall(
-      funName, args.toList(growable: false), type.returns);
+  args = _checkFunCallArgs(funName, type.takes, args);
+  return Expression.funCall(funName, args, type.returns);
+}
+
+List<Expression> _checkFunCallArgs(
+    String funName, List<ValueType> takes, List<Expression> args) {
+  if (takes.length != args.length) {
+    throw TypeCheckException("Function '$funName' takes ${takes.length} "
+        'arguments, but was called with ${args.length}');
+  }
+  var index = 0;
+  return args.map((actualArg) {
+    final expected = takes[index++];
+    if (expected != actualArg.type) {
+      final fixedArg = tryConvertType(actualArg, expected);
+      if (fixedArg == null) {
+        throw TypeCheckException("Function '$funName' expects argument of "
+            'type ${expected.name} at position ${index - 1}, but was called '
+            'with a ${actualArg.type.name}');
+      } else {
+        return fixedArg;
+      }
+    }
+    return actualArg;
+  }).toList(growable: false);
 }
 
 IfExpression _ifExpression(ParsedExpression cond, ParsedExpression then,
     ParsedExpression els, ParsingContext context) {
   final condExpr = exprWithInferredType(cond, context);
-  final thenExpr = exprWithInferredType(then, context.createChild());
-  final elseExpr =
+  var thenExpr = exprWithInferredType(then, context.createChild());
+  var elseExpr =
       els == null ? null : exprWithInferredType(els, context.createChild());
   if (elseExpr != null) {
     if (thenExpr.type != elseExpr.type) {
-      throw TypeCheckException('if branches have different types '
-          '(then: ${thenExpr.type.name}, else: ${elseExpr.type.name})');
+      // try to convert the type of either branch so they match
+      final fixedThen = tryConvertType(thenExpr, elseExpr.type);
+      if (fixedThen == null) {
+        final fixedElse = tryConvertType(elseExpr, thenExpr.type);
+        if (fixedElse == null) {
+          throw TypeCheckException('if branches have different types '
+              '(then: ${thenExpr.type.name}, else: ${elseExpr.type.name})');
+        } else {
+          elseExpr = fixedElse;
+        }
+      } else {
+        thenExpr = fixedThen;
+      }
     }
   }
   return IfExpression(condExpr, thenExpr, elseExpr);
@@ -201,4 +236,19 @@ ValueType inferValueType(String value) {
     return ValueType.f32;
   }
   throw TypeCheckException("unknown variable: '$value'");
+}
+
+Expression tryConvertType(Expression expr, ValueType type) {
+  if (expr is Const) {
+    if (type == ValueType.f64) {
+      if (expr.type == ValueType.f32) {
+        return Expression.constant(expr.value, type);
+      }
+    } else if (type == ValueType.i64) {
+      if (expr.type == ValueType.i32) {
+        return Expression.constant(expr.value, type);
+      }
+    }
+  }
+  return null;
 }

@@ -1,13 +1,13 @@
 # type declaration
-export def main [] i64;
+export def main [] i32;
 
 # _start is the main function in wasmtime
-export def _start [] i64;
+export def _start [] i32;
 
 # functions without args do not need a type declaration
-#def use-stack [] i64;
+#def use-stack [] i32;
 
-def do-add [i64, i64] i64;
+def do-add [i32, i32] i32;
 
 # C-like function implementation
 fun main = (

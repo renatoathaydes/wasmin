@@ -83,7 +83,7 @@ void main() {
                 'add',
                 [
                   Expression.variable('n', ValueType.f64),
-                  Expression.constant('1.0', ValueType.f32)
+                  Expression.constant('1.0', ValueType.f64)
                 ],
                 ValueType.f64))));
   });

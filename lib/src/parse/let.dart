@@ -1,6 +1,5 @@
 import '../ast.dart';
 import '../expression.dart';
-import '../type.dart';
 import '../type_check.dart';
 import '../type_context.dart';
 import 'base.dart';
@@ -81,27 +80,12 @@ class LetParser with WordBasedParser<Let> {
 
   Expression _verifyType(VarDeclaration decl, Expression body) {
     if (decl.varType != body.type) {
-      final convertedExpr = _tryConvertType(body, decl.varType);
+      final convertedExpr = tryConvertType(body, decl.varType);
       if (convertedExpr != null) return convertedExpr;
       throw TypeCheckException(
           "'${decl.id}' type should be '${decl.varType.name}', but its "
           "implementation has type '${body.type.name}'");
     }
     return body;
-  }
-
-  Expression _tryConvertType(Expression expr, ValueType type) {
-    if (expr is Const) {
-      if (type == ValueType.f64) {
-        if (expr.type == ValueType.f32) {
-          return Expression.constant(expr.value, type);
-        }
-      } else if (type == ValueType.i64) {
-        if (expr.type == ValueType.i32) {
-          return Expression.constant(expr.value, type);
-        }
-      }
-    }
-    return null;
   }
 }
