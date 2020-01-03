@@ -8,6 +8,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.1"
+  actors:
+    dependency: transitive
+    description:
+      name: actors
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.6.0"
   analyzer:
     dependency: transitive
     description:
@@ -15,6 +22,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.39.2+1"
+  ansicolor:
+    dependency: transitive
+    description:
+      name: ansicolor
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.2"
   args:
     dependency: "direct main"
     description:
@@ -78,6 +92,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.16.1"
+  dartle:
+    dependency: "direct dev"
+    description:
+      name: dartle
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.5.1"
+  decimal:
+    dependency: "direct main"
+    description:
+      name: decimal
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.3.5"
   glob:
     dependency: transitive
     description:
@@ -225,6 +253,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.4.2"
+  rational:
+    dependency: transitive
+    description:
+      name: rational
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.3.7"
   shelf:
     dependency: transitive
     description:
@@ -337,6 +372,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.3"
+  wasm_interop:
+    dependency: "direct dev"
+    description:
+      name: wasm_interop
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0-dev.1.0"
   watcher:
     dependency: transitive
     description:
