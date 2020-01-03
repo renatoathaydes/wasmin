@@ -431,17 +431,17 @@ the one declared, an error will occur when loading the WASM module.
 
 Built-in WASM functions do not need to be declared or imported.
 
-Most mathematical operators are simple functions in Wasmin, as in WASM:
+Wasmin supports all [WASM numeric instructions](https://webassembly.github.io/spec/core/syntax/instructions.html)
+as simple functions:
 
 * `mul` multiplies two numbers.
 * `add` adds two numbers.
-* `div_s` and `div_u` divide two signed or unsigned numbers, respectively.
-* `and`, `or`, `xor` etc. perform logical operations.
+* `div` divides two floating-point numbers.
+* `div_s` and `div_u` divide two signed or unsigned integers, respectively.
+* `and`, `or`, `xor` etc. logical operations on integers.
 * `sqrt` takes the square root of a floating-point number.
 
-> TODO add all type signatures to a reference doc.
-
-See the [WASM specification](https://webassembly.github.io/spec/core/bikeshed/index.html) for all available operators.
+See the [WASM specification](https://webassembly.github.io/spec/core/syntax/instructions.html) for all available operators.
 
 ### Type system
 
