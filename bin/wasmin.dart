@@ -35,12 +35,7 @@ void main(List<String> args) async {
     exit(1);
   }
 
-  if (!parsedArgs.wasParsed('output')) {
-    print('No -o option provided. See usage with the --help flag.');
-    exit(1);
-  }
-
-  final output = parsedArgs['output'].toString();
+  final output = parsedArgs['output']?.toString();
 
   final result = await compile(parsedArgs.rest.first, output);
 
