@@ -1,6 +1,6 @@
 import 'package:decimal/decimal.dart';
-import 'package:wasmin/src/ast.dart';
 
+import 'ast.dart';
 import 'expression.dart';
 import 'parse/expression.dart';
 import 'type.dart';

@@ -1,11 +1,10 @@
-import 'package:wasmin/src/parse/expression.dart';
-import 'package:wasmin/src/type.dart';
-import 'package:wasmin/src/type_check.dart';
-
 import '../ast.dart';
 import '../expression.dart';
+import '../type.dart';
+import '../type_check.dart';
 import '../type_context.dart';
 import 'base.dart';
+import 'expression.dart';
 import 'iterator.dart';
 
 class FunParser with WordBasedParser<Fun> {

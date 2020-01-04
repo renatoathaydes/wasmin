@@ -1,10 +1,9 @@
-import 'package:wasmin/src/parse/declaration.dart';
-import 'package:wasmin/src/parse/fun.dart';
-
 import '../ast.dart';
 import '../type_context.dart';
 import 'base.dart';
+import 'declaration.dart';
 import 'expression.dart';
+import 'fun.dart';
 import 'iterator.dart';
 import 'let.dart';
 
