@@ -94,7 +94,6 @@ For example, these are all expressions:
 
 - `0` (the constant `0`, of type `i64`, or 64-bit integer).
 - `(0)` (same as previous).
-- `10i32` (the constant `10`, of type `i32`).
 - `add 1 2` (calls function<sup><a href="#footnote-1">[1]</a></sup> `add` with arguments `1` and `2`).
 - `(let n = 1; add n 3)` (one expression grouping two others<sup><a href="#footnote-2">[2]</a></sup> - evaluates to the result of the last one).
 - `((let n = 1) (add n 3))` (same as previous).
@@ -177,7 +176,7 @@ Optionally, the type of an identifier can be defined with the `def` keyword befo
 
 ```rust
 def ten i32;
-let ten = 10i32;
+let ten = 10;
 ```
 
 This is mostly useful when exporting an identifier, as we'll see later.
@@ -452,15 +451,9 @@ Wasmin uses all the basic types provided by WASM:
 * `f32` - 32-bit floating-point.
 * `f64` - 64-bit floating-point.
 
-Whole numbers are `i64` by default, and fractional numbers are `f64` by default.
-
-To make a number use the 32-bit types, you need to append the appropriate type name to the
-number:
-
-```rust
-let an-i32-int = 100i32;
-let a-f32-float = 0.314f32;
-```
+Whole numbers are `i32` by default, and fractional numbers, `f32`, but when literals are used in a position that 
+requires a 64-bit number, or the literal is just too big to fit in 32 bits, the 64-bit version will automatically
+be used.
 
 Besides the numeric types provided by WASM, Wasmin also has the following types:
  
@@ -527,14 +520,14 @@ An instance of a record can be created as follows:
 
 ```rust
 def joe Person;
-let joe = {name "Joe", age 35i32}
+let joe = {name "Joe", age 35}
 ```
 
 Record fields can be read by using the special `get` function:
 
 ```rust
 def joe Person;
-let joe = {name "Joe", age 35i32};
+let joe = {name "Joe", age 35};
 let joesAge = get joe age;
 ```
 
@@ -542,7 +535,7 @@ If a record is declared as mutable, its fields can be modified with the `set` fu
 
 ```rust
 def joe Person;
-mut joe = {name "Joe", age 35i32};
+mut joe = {name "Joe", age 35};
 
 set joe name "Johan";
 
@@ -606,8 +599,8 @@ To be able to mutate an array with the `set` function, it must be declared as mu
 def large-array array(i32)(100);
 mut large-array = [];
 
-set large-array 0 1i32;
-set large-array 1 2i32;
+set large-array 0 1;
+set large-array 1 2;
 
 # large-array now looks like [1 2 0 0 ... ]
 ```
@@ -626,7 +619,7 @@ in the zeroth-value for the array's type being returned:
 ```rust
 let my-array = [1];
 
-# element is assigned 0i64 as that's the zero-value for this array's type
+# element is assigned 0 as that's the zero-value for this array's type
 let element = get my-array 22;
 ```
 
