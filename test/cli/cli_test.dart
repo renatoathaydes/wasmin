@@ -1,18 +1,20 @@
 @TestOn('vm')
 import 'dart:async';
+import 'dart:io';
 
 import 'package:test/test.dart';
 
 import '../../bin/wasmin.dart' as wasmin;
 
 void main() {
-  test('example/example.wasmin', () async {
-    final lines = <String>[];
-    final exitCode = await runZoned(
-        () => wasmin.run(['example/example.wasmin']),
-        zoneSpecification:
-            ZoneSpecification(print: (a, b, c, line) => lines.add(line)));
-    expect(lines.join(' '), equalsIgnoringWhitespace(r'''
+  group('compiles to WAT', () {
+    test('example/example.wasmin', () async {
+      final lines = <String>[];
+      final exitCode = await runZoned(
+          () => wasmin.run(['example/example.wasmin']),
+          zoneSpecification:
+              ZoneSpecification(print: (a, b, c, line) => lines.add(line)));
+      expect(lines.join(' '), equalsIgnoringWhitespace(r'''
     (module
       (export "main" (func $main))
       (export "_start" (func $_start))
@@ -49,16 +51,16 @@ void main() {
       )
     )
     '''));
-    expect(exitCode, equals(0));
-  });
+      expect(exitCode, equals(0));
+    });
 
-  test('example/factorial.wasmin', () async {
-    final lines = <String>[];
-    final exitCode = await runZoned(
-        () => wasmin.run(['example/factorial.wasmin']),
-        zoneSpecification:
-            ZoneSpecification(print: (a, b, c, line) => lines.add(line)));
-    expect(lines.join(' '), equalsIgnoringWhitespace(r'''
+    test('example/factorial.wasmin', () async {
+      final lines = <String>[];
+      final exitCode = await runZoned(
+          () => wasmin.run(['example/factorial.wasmin']),
+          zoneSpecification:
+              ZoneSpecification(print: (a, b, c, line) => lines.add(line)));
+      expect(lines.join(' '), equalsIgnoringWhitespace(r'''
     (module
       (export "_start" (func $_start))
       (func $factorial (param $n i64) (result i64)
@@ -86,6 +88,24 @@ void main() {
       )
     )
     '''));
-    expect(exitCode, equals(0));
+      expect(exitCode, equals(0));
+    });
+  });
+
+  group('Errors', () {
+    final outputFile = File('${Directory.systemTemp}/out.wat');
+    tearDown(() async {
+      if (await outputFile.exists()) await outputFile.delete();
+    });
+    test('cannot compile non-existent file', () async {
+      final lines = <String>[];
+      final exitCode = await runZoned(
+          () => wasmin
+              .run(['some-non-existing-file.wasmin', '-o', outputFile.path]),
+          zoneSpecification:
+              ZoneSpecification(print: (a, b, c, line) => lines.add(line)));
+      expect(exitCode, equals(1));
+      expect(lines, isEmpty);
+    });
   });
 }

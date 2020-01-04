@@ -45,7 +45,14 @@ Future<int> run(List<String> args) async {
 
   final output = parsedArgs['output']?.toString();
 
-  final result = await compile(parsedArgs.rest.first, output);
+  final input = parsedArgs.rest.first;
+
+  if (!await File(input).exists()) {
+    stderr.writeln('ERROR: file does not exist: $input');
+    return 1;
+  }
+
+  final result = await compile(input, output);
 
   switch (result) {
     case CompilationResult.error:
@@ -65,8 +72,8 @@ Future<int> run(List<String> args) async {
     } else {
       final runtime = parsedArgs['runtime'].toString();
       final result = await Process.run(runtime, [output]);
-      stdout.write(result.stdout);
-      stderr.write(result.stderr);
+      print(result.stdout);
+      print(result.stderr);
       return result.exitCode;
     }
   }
