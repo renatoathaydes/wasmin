@@ -152,8 +152,10 @@ In order to bind the value of an expression to an identifier, a `let` expression
 Let expressions always evaluate to `empty`, or `()` (which cannot be assigned or returned) and have the form:
 
 ```
-let <identifier> = <expression>
+let <identifier>: <type> = <expression>
 ```
+
+The type is optional. 
 
 For example:
 
@@ -172,7 +174,7 @@ let multiline-ten = (
 )
 ```
 
-Optionally, the type of an identifier can be provided explicitly, as in this example:
+The type of an identifier can be provided explicitly, as in this example:
 
 ```rust
 let ten: i64 = 10;
