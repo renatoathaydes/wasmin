@@ -299,6 +299,10 @@ class ExpressionParser with WordBasedParser<Expression> {
     return expr;
   }
 
+  ParsedExpression parseLet(ParserState runes) {
+    return _parseToAssignmentEnd(runes, 'let', false);
+  }
+
   ParsedExpression _parseToAssignmentEnd(
       ParserState runes, String keyword, bool withinParens) {
     var done = whitespaces.parse(runes) == ParseResult.DONE;

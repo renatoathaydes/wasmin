@@ -9,57 +9,30 @@ import 'iterator.dart';
 class LetParser with WordBasedParser<Let> {
   final ExpressionParser _expr;
 
-  final _whitespaces = SkipWhitespaces();
   @override
   final WordParser words;
-  final MutableTypeContext _typeContext;
 
-  Let _let;
+  final ParsingContext _context;
 
-  LetParser(this._expr, this._typeContext) : words = _expr.words;
+  Expression _let;
+
+  LetParser(this._expr, this._context) : words = _expr.words;
 
   @override
   ParseResult parse(ParserState runes) {
     reset();
-    var word = nextWord(runes);
-    if (word.isEmpty) {
-      failure =
-          'identifier'.wasExpected(runes, prefix: 'Incomplete let expresion');
+    final let = _expr.parseLet(runes);
+
+    try {
+      _let = exprWithInferredType(let, _context);
+    } on TypeCheckException catch (e) {
+      failure = CompilerError(runes.position, e.message);
+      return ParseResult.FAIL;
+    } catch (e) {
+      // FIXME parser should not throw Exception
+      failure = CompilerError(runes.position, e.toString());
       return ParseResult.FAIL;
     }
-    final id = word;
-
-    _whitespaces.parse(runes);
-
-    if (runes.currentAsString != '=') {
-      failure = '='.wasExpected(runes,
-          quoteExpected: true, prefix: 'Incomplete let expresion');
-      return ParseResult.FAIL;
-    }
-
-    // drop '='
-    runes.moveNext();
-
-    final result = _expr.parse(runes);
-    if (result == ParseResult.FAIL) {
-      failure = _expr.failure;
-    } else {
-      var expression = _expr.consume();
-
-      // success!! Remember defined variable
-      var decl = _typeContext.declarationOf(id);
-      if (decl != null) {
-        expression = decl.match(
-            onFun: (_) => throw TypeCheckException(
-                "'$id' is declared as a function, but implemented as a let expression."),
-            onVar: (let) => _verifyType(let, expression));
-      } else {
-        decl = VarDeclaration(id, expression.type, isGlobal: true);
-        _typeContext.add(decl);
-      }
-      _let = Let(decl as VarDeclaration, expression);
-    }
-    return result;
   }
 
   void reset() {
@@ -78,14 +51,4 @@ class LetParser with WordBasedParser<Let> {
     return result;
   }
 
-  Expression _verifyType(VarDeclaration decl, Expression body) {
-    if (decl.varType != body.type) {
-      final convertedExpr = tryConvertType(body, decl.varType);
-      if (convertedExpr != null) return convertedExpr;
-      throw TypeCheckException(
-          "'${decl.id}' type should be '${decl.varType.name}', but its "
-          "implementation has type '${body.type.name}'");
-    }
-    return body;
-  }
 }

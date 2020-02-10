@@ -85,7 +85,21 @@ Expression _group(Iterable<Expression> expressions) {
 
 Expression _assignmentExpression(
     String keyword, String id, ParsedExpression body, ParsingContext context) {
-  final value = exprWithInferredType(body, context);
+  var value = exprWithInferredType(body, context);
+
+  // success!! Remember defined variable
+  var decl = context.declarationOf(id);
+  if (decl != null) {
+    value = decl.match(
+        onFun: (_) => throw TypeCheckException(
+            "'$id' is declared as a function, but implemented as "
+            'a $keyword expression.'),
+        onVar: (let) => _verifyType(let, value));
+  } else {
+    decl = VarDeclaration(id, value.type, isGlobal: true);
+    context.add(decl);
+  }
+
   if (keyword == 'let') {
     context.add(VarDeclaration(id, value.type));
     return Expression.let(id, value);
@@ -219,6 +233,17 @@ IfExpression _ifExpression(ParsedExpression cond, ParsedExpression then,
     }
   }
   return IfExpression(condExpr, thenExpr, elseExpr);
+}
+
+Expression _verifyType(VarDeclaration decl, Expression body) {
+  if (decl.varType != body.type) {
+    final convertedExpr = tryConvertType(body, decl.varType);
+    if (convertedExpr != null) return convertedExpr;
+    throw TypeCheckException(
+        "'${decl.id}' type should be '${decl.varType.name}', but its "
+        "implementation has type '${body.type.name}'");
+  }
+  return body;
 }
 
 ValueType inferValueType(String value) {
