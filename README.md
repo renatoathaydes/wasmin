@@ -331,18 +331,18 @@ If we let a be `3.0`, b be `4.0`, the stack operations would look like this:
 Which gets translated into very efficient WASM as:
 
 ```wat
-f64.const 3
+f32.const 3
 call $square
-f64.const 4
+f32.const 4
 call $square
-f64.add
-f64.sqrt
+f32.add
+f32.sqrt
 ```
 
 The stack for the above example changes as follows for each operation:
 
 ```
-f64.const 3 > call $square > f64.const 4 > call $square >  f64.add  > f64.sqrt
+f32.const 3 > call $square > f32.const 4 > call $square >  f32.add  > f32.sqrt
 
                               +-------+      +-------+   
                               |   4   |      |   16  |   
