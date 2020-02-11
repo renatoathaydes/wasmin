@@ -2,21 +2,20 @@ import 'package:test/test.dart';
 import 'package:wasmin/wasmin.dart';
 
 void main() {
-  LetParser parser;
-  MutableTypeContext context;
+  ExpressionParser parser;
+  ParsingContext context;
   setUp(() {
     context = ParsingContext();
-    parser =
-        LetParser(ExpressionParser(WordParser(), ParsingContext()), context);
+    parser = ExpressionParser(WordParser(), context);
   });
 
   group('success cases', () {
     test('can parse let expression', () {
-      final result = parser.parse(ParserState.fromString('x=0'));
+      final result = parser.parse(ParserState.fromString('let x=0'));
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
-      final let = parser.consume();
+      final let = parser.consume().forceIntoTopLevelNode() as Let;
 
       expect(let.declaration.id, equals('x'));
       expect(let.body, equals(Expression.constant('0', ValueType.i32)));
@@ -25,25 +24,25 @@ void main() {
     });
 
     test('can parse let expression with whitespace', () {
-      final result =
-          parser.parse(ParserState.fromString(' one_thousand  =     1000   '));
+      final result = parser
+          .parse(ParserState.fromString('let one_thousand  =     1000   '));
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
-      final let = parser.consume();
+      final let = parser.consume().forceIntoTopLevelNode() as Let;
 
       expect(let.declaration.id, equals('one_thousand'));
       expect(let.body, equals(Expression.constant('1000', ValueType.i32)));
     });
 
     test('can parse let expression with function call', () {
-      final iter = ParserState.fromString('abc = mul 30 50;X');
+      final iter = ParserState.fromString('let abc = mul 30 50;X');
       final result = parser.parse(iter);
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.CONTINUE));
       expect(iter.currentAsString, equals('X'));
 
-      final let = parser.consume();
+      final let = parser.consume().forceIntoTopLevelNode() as Let;
 
       expect(let.declaration.id, equals('abc'));
       expect(
@@ -59,11 +58,11 @@ void main() {
 
     test('can parse let expression with complex expression', () {
       final result = parser.parse(ParserState.fromString(
-          'complex = div_s (add 2 3) (mul 30 (sub 32 21))'));
+          'let complex = div_s (add 2 3) (mul 30 (sub 32 21))'));
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
-      final let = parser.consume();
+      final let = parser.consume().forceIntoTopLevelNode() as Let;
 
       expect(let.declaration.id, equals('complex'));
 
@@ -99,36 +98,51 @@ void main() {
 
   group('failures', () {
     test('cannot parse let expression with no assignment', () {
-      final result = parser.parse(ParserState.fromString('one'));
+      final result = parser.parse(ParserState.fromString('let one'));
       expect(parser.failure?.message,
-          equals("Incomplete let expresion. Expected '=', got EOF"));
+          equals("Incomplete assignment. Expected '=', got EOF"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no =', () {
-      final result = parser.parse(ParserState.fromString('one 1'));
+      final result = parser.parse(ParserState.fromString('let one 1'));
       expect(parser.failure?.message,
-          equals("Incomplete let expresion. Expected '=', got '1'"));
+          equals("Incomplete assignment. Expected '=', got '1'"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no value', () {
-      final result = parser.parse(ParserState.fromString('one = '));
-      expect(parser.failure?.message, equals('missing expression'));
-      expect(result, equals(ParseResult.FAIL));
+      final result = parser.parse(ParserState.fromString('let one = '));
+      expect(result, equals(ParseResult.DONE));
+      expect(parser.failure, isNull);
+
+      final let = parser.consume().forceIntoTopLevelNode() as Let;
+
+      expect(
+          let.body,
+          isA<CompilerError>().having(
+              (err) => err.message, 'message', equals('missing expression')));
     });
 
     test('cannot parse let expression with no = (end with separator)', () {
-      final result = parser.parse(ParserState.fromString('one; = foo'));
+      final result = parser.parse(ParserState.fromString('let one; = foo'));
       expect(parser.failure?.message,
-          equals("Incomplete let expresion. Expected '=', got ';'"));
+          equals("Incomplete assignment. Expected '=', got ';'"));
       expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no value (end with separator)', () {
-      final result = parser.parse(ParserState.fromString('one=; foo'));
-      expect(parser.failure?.message, equals('missing expression'));
-      expect(result, equals(ParseResult.FAIL));
+      final result = parser.parse(ParserState.fromString('let one=; foo'));
+
+      expect(result, equals(ParseResult.CONTINUE));
+      expect(parser.failure, isNull);
+
+      final let = parser.consume().forceIntoTopLevelNode() as Let;
+
+      expect(
+          let.body,
+          isA<CompilerError>().having(
+              (err) => err.message, 'message', equals('missing expression')));
     });
   });
 }

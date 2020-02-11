@@ -10,6 +10,9 @@ abstract class Expression {
   final String _id;
   final ValueType type;
 
+  /// Get the nested variable declarations within this Expression.
+  ///
+  /// Any Expression that contains a block of code may contain declarations.
   List<VarDeclaration> get declarations => const [];
 
   const Expression._create(this._id, this.type);
@@ -175,7 +178,7 @@ class FunCall extends Expression {
 }
 
 class AssignExpression extends Expression {
-  final VarDeclaration _declaration;
+  final VarDeclaration declaration;
   final AssignmentType assignmentType;
 
   String get id => _id;
@@ -189,17 +192,17 @@ class AssignExpression extends Expression {
       [if (assignmentType != AssignmentType.reassign) _toDeclaration()];
 
   AssignExpression(this.assignmentType, String id, this.body)
-      : _declaration = null,
+      : declaration = null,
         super._create(id, ValueType.empty);
 
   AssignExpression.withDeclaration(
       this.assignmentType, VarDeclaration declaration, this.body)
-      : _declaration = declaration,
+      : declaration = declaration,
         super._create(declaration.id, ValueType.empty);
 
   VarDeclaration _toDeclaration() {
     if (assignmentType == AssignmentType.reassign) return null;
-    if (_declaration != null) return _declaration;
+    if (declaration != null) return declaration;
     return VarDeclaration(id, varType,
         isMutable: assignmentType == AssignmentType.mut);
   }

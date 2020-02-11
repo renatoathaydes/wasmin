@@ -6,7 +6,6 @@ export 'src/parse/declaration.dart';
 export 'src/parse/expression.dart';
 export 'src/parse/fun.dart';
 export 'src/parse/iterator.dart';
-export 'src/parse/let.dart';
 export 'src/parse/parse.dart';
 export 'src/parse/type.dart';
 export 'src/text_sink.dart';

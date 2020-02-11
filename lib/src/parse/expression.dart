@@ -163,10 +163,10 @@ class ExpressionParser with WordBasedParser<Expression> {
     final expr = _parseExpression(runes, false);
     try {
       _expr = exprWithInferredType(expr, _context);
-    } on TypeCheckException catch (e, s) {
+    } on TypeCheckException catch (e) {
       failure = CompilerError(runes.position, e.message);
       return ParseResult.FAIL;
-    } catch (e, s) {
+    } catch (e) {
       // FIXME parser should not throw Exception
       failure = CompilerError(runes.position, e.toString());
       return ParseResult.FAIL;
@@ -299,23 +299,20 @@ class ExpressionParser with WordBasedParser<Expression> {
     return expr;
   }
 
-  ParsedExpression parseLet(ParserState runes) {
-    return _parseToAssignmentEnd(runes, 'let', false);
-  }
-
   ParsedExpression _parseToAssignmentEnd(
       ParserState runes, String keyword, bool withinParens) {
     var done = whitespaces.parse(runes) == ParseResult.DONE;
     if (done) {
-      return _Error('assignment expression'.wasExpected(runes));
+      return _Error('assignment expression'
+          .wasExpected(runes, prefix: 'Incomplete assignment'));
     }
-
     final id = nextWord(runes);
     if (id.isEmpty) return _Error('identifier'.wasExpected(runes));
     done = whitespaces.parse(runes) == ParseResult.DONE;
     final symbol = runes.currentAsString;
     if (done || symbol != '=') {
-      return _Error('='.wasExpected(runes, quoteExpected: true));
+      return _Error('='.wasExpected(runes,
+          quoteExpected: true, prefix: 'Incomplete assignment'));
     }
 
     // consume '='

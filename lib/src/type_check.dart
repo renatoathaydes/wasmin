@@ -89,28 +89,30 @@ Expression _assignmentExpression(
 
   // success!! Remember defined variable
   var decl = context.declarationOf(id);
+  var declaredExplicitly = true;
+  VarDeclaration varDeclaration;
   if (decl != null) {
-    value = decl.match(
+    varDeclaration = decl.match(
         onFun: (_) => throw TypeCheckException(
             "'$id' is declared as a function, but implemented as "
             'a $keyword expression.'),
-        onVar: (let) => _verifyType(let, value));
+        onVar: (v) => v);
+    value = _verifyType(varDeclaration, value);
   } else {
-    decl = VarDeclaration(id, value.type, isGlobal: true);
-    context.add(decl);
+    declaredExplicitly = false;
+    varDeclaration = VarDeclaration(id, value.type,
+        isMutable: keyword == 'mut', isGlobal: true);
+    context.add(varDeclaration);
   }
 
   if (keyword == 'let') {
-    context.add(VarDeclaration(id, value.type));
-    return Expression.let(id, value);
+    return Expression.letWithDeclaration(varDeclaration, value);
   } else if (keyword == 'mut') {
-    context.add(VarDeclaration(id, value.type, isMutable: true));
     return Expression.mut(id, value);
   } else if (keyword.isEmpty) {
     // this is a re-assignment
-    final decl = context.declarationOf(id);
-    if (decl != null) {
-      return decl.match(onFun: (fun) {
+    if (declaredExplicitly) {
+      return varDeclaration.match(onFun: (fun) {
         throw TypeCheckException("existing function '$id'"
             "cannot be re-assigned value with type '${value.type.name}'");
       }, onVar: (let) {
