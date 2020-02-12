@@ -167,7 +167,6 @@ class ExpressionParser with WordBasedParser<Expression> {
       failure = CompilerError(runes.position, e.message);
       return ParseResult.FAIL;
     } catch (e) {
-      // FIXME parser should not throw Exception
       failure = CompilerError(runes.position, e.toString());
       return ParseResult.FAIL;
     }
@@ -217,10 +216,14 @@ class ExpressionParser with WordBasedParser<Expression> {
     final members = <ParsedExpression>[];
 
     final firstWord = nextWord(runes);
-    if (firstWord == 'if') return _parseIf(runes, withinParens);
-    if (firstWord == 'loop') return _parseLoop(runes, withinParens);
-    if (firstWord == 'let' || firstWord == 'mut') {
-      return _parseToAssignmentEnd(runes, firstWord, withinParens);
+    switch (firstWord) {
+      case 'if':
+        return _parseIf(runes, withinParens);
+      case 'loop':
+        return _parseLoop(runes, withinParens);
+      case 'let':
+      case 'mut':
+        return _parseToAssignmentEnd(runes, firstWord, withinParens);
     }
 
     if (firstWord.isEmpty) {
