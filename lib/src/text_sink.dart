@@ -1,9 +1,10 @@
+import 'package:wasmin/src/type_context.dart';
+
 import 'ast.dart';
 import 'compile.dart';
 import 'expression.dart';
 import 'parse/parse.dart';
 import 'type.dart';
-import 'type_check.dart';
 
 class WasmTextSink {
   var _indent = '';
@@ -181,7 +182,7 @@ class WasmTextSink {
   }
 
   void _funCall(FunCall funCall) {
-    final prefix = operators.contains(funCall.name)
+    final prefix = WasmDefaultTypeContext.isOperator(funCall.name)
         ? '${funCall.args.first.type.name}.'
         : r'call $';
     _textSink.write('($prefix${funCall.name}');

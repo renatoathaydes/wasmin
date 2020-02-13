@@ -104,7 +104,7 @@ void main() {
       final result =
           parser.parse(ParserState.fromString('(let n = 1;mul n 2)'));
       expect(parser.failure?.message, isNull);
-      expect(result, equals(ParseResult.DONE));
+      expect(result, equals(ParseResult.CONTINUE));
       expect(
           parser.consume(),
           equals(Expression.group([

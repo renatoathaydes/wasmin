@@ -110,6 +110,8 @@ class WasmDefaultTypeContext with TypeContext {
 
   const WasmDefaultTypeContext();
 
+  static bool isOperator(String name) => _operators.containsKey(name);
+
   @override
   Set<FunType> typeOfFun(String funName, int argsCount) {
     final types = _operators[funName];

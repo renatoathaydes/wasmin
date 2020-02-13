@@ -66,6 +66,10 @@ abstract class Expression {
     return Group(body.toList(growable: false));
   }
 
+  factory Expression.empty() {
+    return const Const('', ValueType.empty);
+  }
+
   T matchExpr<T>({
     T Function(Const) onConst,
     T Function(Var) onVariable,

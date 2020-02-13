@@ -2,18 +2,8 @@ import 'package:decimal/decimal.dart';
 
 import 'ast.dart';
 import 'expression.dart';
-import 'parse/expression.dart';
 import 'type.dart';
 import 'type_context.dart';
-
-const operators = {
-  'add', 'sub', 'mul', 'div_s', 'div_u', 'rem_s', 'rem_u', //
-  'and', 'or', 'xor', 'shl', 'shr_u', 'shr_s', 'rot_l', 'rot_r', 'eq', 'ne', //
-  'lt_s', 'lt_u', 'le_s', 'le_u', 'gt_s', 'gt_u', 'ge_s', 'gs_u', 'clz', //
-  'ct_z', 'popcnt', 'eqz', //
-  'convert_i32_u', 'convert_i64_u', 'convert_f32_u', 'convert_f64_u', //
-  'convert_i32_s', 'convert_i64_s', 'convert_f32_s', 'convert_f64_s', //
-};
 
 class TypeCheckException implements Exception {
   final String message;
@@ -24,38 +14,7 @@ class TypeCheckException implements Exception {
   String toString() => 'type checking failed: $message';
 }
 
-Expression exprWithInferredType(
-    ParsedExpression parsedExpr, ParsingContext context) {
-  return parsedExpr.match(
-      onError: (error) => error,
-      onAssignment: (keyword, id, value) =>
-          _assignmentExpression(keyword, id, value, context),
-      onMember: (member) => _singleMemberExpression(member, context),
-      onIf: (cond, then, [els]) => _ifExpression(cond, then, els, context),
-      onLoop: (loop) => _loopExpression(loop, context),
-      onGroup: (members) {
-        if (members.isEmpty) {
-          return _resultExpression(members, context);
-        }
-        final evalTermIndex = members.indexWhere((e) => e.isSingleMember);
-        if (evalTermIndex < 0) {
-          // there's no eval term in the group, evaluate each member individually
-          return _group(members.map((e) => exprWithInferredType(e, context)));
-        }
-
-        // split the members into intermediate expressions and the trailing
-        // evaluation term, which is the result of the expression
-        final intermediateExpressions = members
-            .sublist(0, evalTermIndex)
-            .map((e) => exprWithInferredType(e, context))
-            .toList(growable: false);
-        final result =
-            _resultExpression(members.sublist(evalTermIndex), context);
-        return _group([...intermediateExpressions, result]);
-      });
-}
-
-Expression _singleMemberExpression(String member, ParsingContext context) {
+Expression singleMemberExpression(String member, ParsingContext context) {
   if (member == 'break') return Expression.breakExpr();
   final funTypes = context.typeOfFun(member, 0);
   if (funTypes.isNotEmpty) {
@@ -78,111 +37,58 @@ Expression _singleMemberExpression(String member, ParsingContext context) {
   return Expression.constant(member, inferValueType(member));
 }
 
-Expression _group(Iterable<Expression> expressions) {
-  if (expressions.length == 1) return expressions.first;
-  return Expression.group(expressions);
-}
-
-Expression _assignmentExpression(
-    String keyword, String id, ParsedExpression body, ParsingContext context) {
-  var value = exprWithInferredType(body, context);
-
-  // success!! Remember defined variable
+Expression assignmentExpression(AssignmentType assignmentType, String id,
+    Expression value, ParsingContext context) {
   var decl = context.declarationOf(id);
-  var declaredExplicitly = true;
+  var declaredExplicitly = false;
   VarDeclaration varDeclaration;
   if (decl != null) {
     varDeclaration = decl.match(
         onFun: (_) => throw TypeCheckException(
             "'$id' is declared as a function, but implemented as "
-            'a $keyword expression.'),
+            'a ${assignmentType}'),
         onVar: (v) => v);
+    declaredExplicitly = true;
     value = _verifyType(varDeclaration, value);
   } else {
-    declaredExplicitly = false;
     varDeclaration = VarDeclaration(id, value.type,
-        isMutable: keyword == 'mut', isGlobal: true);
+        isMutable: assignmentType == AssignmentType.mut, isGlobal: true);
     context.add(varDeclaration);
   }
 
-  if (keyword == 'let') {
-    return Expression.letWithDeclaration(varDeclaration, value);
-  } else if (keyword == 'mut') {
-    return Expression.mut(id, value);
-  } else if (keyword.isEmpty) {
-    // this is a re-assignment
-    if (declaredExplicitly) {
-      return varDeclaration.match(onFun: (fun) {
-        throw TypeCheckException("existing function '$id'"
-            "cannot be re-assigned value with type '${value.type.name}'");
-      }, onVar: (let) {
-        if (!let.isMutable) {
-          throw TypeCheckException(
-              "immutable variable '$id' cannot be re-assigned");
-        } else if (let.varType == value.type) {
-          return Expression.reassign(id, value);
-        } else {
-          throw TypeCheckException(
-              "variable '$id' of type '${let.varType.name}' "
-              "cannot be assigned value with type '${value.type.name}'");
-        }
-      });
-    } else {
-      throw TypeCheckException("unknown variable '$id' cannot be re-assigned");
-    }
-  } else {
-    throw TypeCheckException("Unsupported keyword for assignment: '$keyword'");
+  switch (assignmentType) {
+    case AssignmentType.let:
+      return Expression.letWithDeclaration(varDeclaration, value);
+    case AssignmentType.mut:
+      return Expression.mut(id, value);
+    case AssignmentType.reassign:
+    default:
+      if (declaredExplicitly) {
+        return varDeclaration.match(onFun: (fun) {
+          throw TypeCheckException("existing function '$id'"
+              "cannot be re-assigned value with type '${value.type.name}'");
+        }, onVar: (v) {
+          if (!v.isMutable) {
+            throw TypeCheckException(
+                "immutable variable '$id' cannot be re-assigned");
+          } else if (v.varType == value.type) {
+            return Expression.reassign(id, value);
+          } else {
+            throw TypeCheckException(
+                "variable '$id' of type '${v.varType.name}' "
+                "cannot be assigned value with type '${value.type.name}'");
+          }
+        });
+      } else {
+        throw TypeCheckException(
+            "unknown variable '$id' cannot be re-assigned");
+      }
   }
 }
 
-Expression _loopExpression(ParsedExpression body, ParsingContext context) {
-  return LoopExpression(exprWithInferredType(body, context.createChild()));
-}
-
-Expression _resultExpression(
-    Iterable<ParsedExpression> members, ParsingContext context) {
-  if (members.isEmpty) {
-    return Expression.group(const []);
-  }
-  if (members.length == 1) {
-    return members.first.match(
-      onGroup: (g) => _resultExpression(g, context),
-      onLoop: (loop) => _loopExpression(loop, context),
-      onAssignment: (keyword, id, body) =>
-          _assignmentExpression(keyword, id, body, context),
-      onMember: (m) => _singleMemberExpression(m, context),
-      onIf: (cond, then, [els]) => _ifExpression(cond, then, els, context),
-      onError: (error) => error,
-    );
-  }
-
-  // result expressions with more than one member must be function calls
-  final funName = members.first.match(
-    onGroup: (group) => throw Exception(
-        'Expected function identifier, found expression instead: $group'),
-    onLoop: (loop) => throw Exception(
-        'Expected function identifier, found loop instead: $loop'),
-    onAssignment: (k, i, v) => throw Exception(
-        'Expected function identifier, found assignment instead: $i'),
-    onMember: (member) => member,
-    onIf: (cond, then, [els]) => throw Exception(
-        'Expected function identifier, found if-expression instead'),
-    onError: (error) => throw Exception(error.message),
-  );
-
-  final args = members
-      .skip(1)
-      .map((e) => exprWithInferredType(e, context))
-      .toList(growable: false);
-
-  // TODO support more operators, move these to the context
-  if (operators.contains(funName) && args.length != 2) {
-    throw TypeCheckException("Operator '$funName' expects 2 arguments, "
-        'but was given ${args.length}');
-  }
-  final types = context.typeOfFun(funName, args.length);
-  if (types.isEmpty) throw TypeCheckException("unknown function: '$funName'");
-  return _matchFunCallWithArgs(funName, args, types);
+Expression funCall(String id, List<Expression> args, ParsingContext context) {
+  final types = context.typeOfFun(id, args.length);
+  return _matchFunCallWithArgs(id, args, types);
 }
 
 Expression _matchFunCallWithArgs(
@@ -211,30 +117,27 @@ Expression _matchFunCallWithArgs(
       '${types.map((f) => _typeNames(f.takes)).join('\n  * ')}');
 }
 
-IfExpression _ifExpression(ParsedExpression cond, ParsedExpression then,
-    ParsedExpression els, ParsingContext context) {
-  final condExpr = exprWithInferredType(cond, context);
-  var thenExpr = exprWithInferredType(then, context.createChild());
-  var elseExpr =
-      els == null ? null : exprWithInferredType(els, context.createChild());
-  if (elseExpr != null) {
-    if (thenExpr.type != elseExpr.type) {
+Expression ifExpression(
+    ParsingContext context, Expression cond, Expression then,
+    [Expression els]) {
+  if (els != null) {
+    if (then.type != els.type) {
       // try to convert the type of either branch so they match
-      final fixedThen = tryConvertType(thenExpr, elseExpr.type);
+      final fixedThen = tryConvertType(then, els.type);
       if (fixedThen == null) {
-        final fixedElse = tryConvertType(elseExpr, thenExpr.type);
+        final fixedElse = tryConvertType(els, then.type);
         if (fixedElse == null) {
           throw TypeCheckException('if branches have different types '
-              '(then: ${thenExpr.type.name}, else: ${elseExpr.type.name})');
+              '(then: ${then.type.name}, else: ${els.type.name})');
         } else {
-          elseExpr = fixedElse;
+          els = fixedElse;
         }
       } else {
-        thenExpr = fixedThen;
+        then = fixedThen;
       }
     }
   }
-  return IfExpression(condExpr, thenExpr, elseExpr);
+  return Expression.ifExpr(cond, then, els);
 }
 
 Expression _verifyType(VarDeclaration decl, Expression body) {

@@ -1,168 +1,28 @@
+import 'package:wasmin/src/ast.dart';
+import 'package:wasmin/src/parse/declaration.dart';
+
 import '../expression.dart';
 import '../type_check.dart';
 import '../type_context.dart';
 import 'base.dart';
 import 'iterator.dart';
 
-abstract class ParsedExpression {
-  const ParsedExpression._();
-
-  bool get isSingleMember => false;
-
-  T match<T>({
-    T Function(List<ParsedExpression>) onGroup,
-    T Function(ParsedExpression) onLoop,
-    T Function(String) onMember,
-    T Function(String keyword, String id, ParsedExpression value) onAssignment,
-    T Function(ParsedExpression cond, ParsedExpression thenExpr,
-            [ParsedExpression elseExpr])
-        onIf,
-    T Function(CompilerError) onError,
-  });
-}
-
-class _SingleMember extends ParsedExpression {
-  final String name;
-
-  @override
-  final bool isSingleMember = true;
-
-  const _SingleMember(this.name) : super._();
-
-  @override
-  T match<T>({
-    T Function(List<ParsedExpression> members) onGroup,
-    T Function(ParsedExpression) onLoop,
-    T Function(String value) onMember,
-    T Function(String keyword, String id, ParsedExpression value) onAssignment,
-    T Function(ParsedExpression cond, ParsedExpression thenExpr,
-            [ParsedExpression elseExpr])
-        onIf,
-    T Function(CompilerError) onError,
-  }) {
-    return onMember(name);
-  }
-}
-
-class _Error extends ParsedExpression {
-  final CompilerError error;
-
-  const _Error(this.error) : super._();
-
-  @override
-  T match<T>({
-    T Function(List<ParsedExpression> members) onGroup,
-    T Function(ParsedExpression) onLoop,
-    T Function(String value) onMember,
-    T Function(String keyword, String id, ParsedExpression value) onAssignment,
-    T Function(ParsedExpression cond, ParsedExpression thenExpr,
-            [ParsedExpression elseExpr])
-        onIf,
-    T Function(CompilerError) onError,
-  }) {
-    return onError(error);
-  }
-}
-
-class _GroupedExpression extends ParsedExpression {
-  final List<ParsedExpression> members;
-
-  const _GroupedExpression(this.members) : super._();
-
-  @override
-  T match<T>({
-    T Function(List<ParsedExpression>) onGroup,
-    T Function(ParsedExpression) onLoop,
-    T Function(String) onMember,
-    T Function(String keyword, String id, ParsedExpression value) onAssignment,
-    T Function(ParsedExpression cond, ParsedExpression thenExpr,
-            [ParsedExpression elseExpr])
-        onIf,
-    T Function(CompilerError) onError,
-  }) {
-    return onGroup(members);
-  }
-}
-
-class _Assignment extends ParsedExpression {
-  final String keyword;
-  final String id;
-  final ParsedExpression value;
-
-  const _Assignment(this.keyword, this.id, this.value) : super._();
-
-  @override
-  T match<T>({
-    T Function(List<ParsedExpression>) onGroup,
-    T Function(ParsedExpression) onLoop,
-    T Function(String) onMember,
-    T Function(String keyword, String id, ParsedExpression value) onAssignment,
-    T Function(ParsedExpression cond, ParsedExpression thenExpr,
-            [ParsedExpression elseExpr])
-        onIf,
-    T Function(CompilerError) onError,
-  }) {
-    return onAssignment(keyword, id, value);
-  }
-}
-
-class _If extends ParsedExpression {
-  final ParsedExpression condition;
-  final ParsedExpression thenExpression;
-  final ParsedExpression elseExpression;
-
-  const _If(this.condition, this.thenExpression, [this.elseExpression])
-      : super._();
-
-  @override
-  T match<T>({
-    T Function(List<ParsedExpression>) onGroup,
-    T Function(ParsedExpression) onLoop,
-    T Function(String) onMember,
-    T Function(String keyword, String id, ParsedExpression value) onAssignment,
-    T Function(ParsedExpression cond, ParsedExpression thenExpr,
-            [ParsedExpression elseExpr])
-        onIf,
-    T Function(CompilerError) onError,
-  }) {
-    return onIf(condition, thenExpression, elseExpression);
-  }
-}
-
-class _Loop extends ParsedExpression {
-  final ParsedExpression expression;
-
-  _Loop(this.expression) : super._();
-
-  @override
-  T match<T>({
-    T Function(List<ParsedExpression>) onGroup,
-    T Function(ParsedExpression) onLoop,
-    T Function(String) onMember,
-    T Function(String keyword, String id, ParsedExpression value) onAssignment,
-    T Function(ParsedExpression cond, ParsedExpression thenExpr,
-            [ParsedExpression elseExpr])
-        onIf,
-    T Function(CompilerError) onError,
-  }) {
-    return onLoop(expression);
-  }
-}
-
 class ExpressionParser with WordBasedParser<Expression> {
   @override
   final WordParser words;
   final ParsingContext _context;
+  final DeclarationParser _declaration;
+
   Expression _expr;
 
-  ExpressionParser(this.words, this._context);
+  ExpressionParser(this.words, this._context)
+      : _declaration = DeclarationParser(words, _context);
 
   @override
   ParseResult parse(ParserState runes) {
     reset();
-    final expr = _parseExpression(runes, false);
     try {
-      _expr = exprWithInferredType(expr, _context);
+      _expr = _parseExpression(runes, false);
     } on TypeCheckException catch (e) {
       failure = CompilerError(runes.position, e.message);
       return ParseResult.FAIL;
@@ -181,39 +41,18 @@ class ExpressionParser with WordBasedParser<Expression> {
         : ParseResult.CONTINUE;
   }
 
-  ParsedExpression _parseExpression(ParserState runes, bool withinParens) {
+  Expression _parseExpression(ParserState runes, bool withinParens) {
     whitespaces.parse(runes);
     if (runes.currentAsString == '(') {
       runes.moveNext();
-      return _parseToGroupEnd(runes);
+      return _parseToExpressionEnd(runes, true);
     } else {
       return _parseToExpressionEnd(runes, withinParens);
     }
   }
 
-  ParsedExpression _parseToGroupEnd(ParserState runes) {
+  Expression _parseToExpressionEnd(ParserState runes, bool withinParens) {
     whitespaces.parse(runes);
-    final members = <ParsedExpression>[];
-    while (runes.currentAsString != ')' && runes.currentAsString != null) {
-      members.add(_parseToExpressionEnd(runes, true));
-      whitespaces.parse(runes);
-    }
-
-    if (runes.currentAsString == ')') {
-      runes.moveNext();
-    } else {
-      return _Error(')'.wasExpected(runes, quoteExpected: true));
-    }
-
-    final errors = members.whereType<_Error>();
-    final result = errors.isEmpty ? members : errors.toList(growable: false);
-    if (result.length == 1) return result[0];
-    return _GroupedExpression(result);
-  }
-
-  ParsedExpression _parseToExpressionEnd(ParserState runes, bool withinParens) {
-    whitespaces.parse(runes);
-    final members = <ParsedExpression>[];
 
     final firstWord = nextWord(runes);
     switch (firstWord) {
@@ -222,71 +61,73 @@ class ExpressionParser with WordBasedParser<Expression> {
       case 'loop':
         return _parseLoop(runes, withinParens);
       case 'let':
+        return _parseToAssignmentEnd(runes, AssignmentType.let, withinParens);
       case 'mut':
-        return _parseToAssignmentEnd(runes, firstWord, withinParens);
+        return _parseToAssignmentEnd(runes, AssignmentType.mut, withinParens);
     }
 
     if (firstWord.isEmpty) {
       if (runes.currentAsString == '(') {
         runes.moveNext();
-        return _parseToGroupEnd(runes);
+        return _parseToExpressionEnd(runes, true);
       } else {
-        return _verifyExpressionEnd(runes, members, withinParens);
+        final error = _verifyExpressionEnd(runes, withinParens);
+        if (error != null) return error;
+        return Expression.empty();
       }
-    } else {
-      // check if this is a re-assignment
-      whitespaces.parse(runes);
-      if (runes.currentAsString == '=') {
-        runes.moveNext();
-        final value = _parseExpression(runes, withinParens);
-        return _Assignment('', firstWord, value);
-      }
-
-      members.add(_SingleMember(firstWord));
+    }
+    // check if this is a re-assignment
+    whitespaces.parse(runes);
+    if (runes.currentAsString == '=') {
+      runes.moveNext();
+      final value = _parseExpression(runes, withinParens);
+      return assignmentExpression(
+          AssignmentType.reassign, firstWord, value, _context);
     }
 
+    // this must be a function call, where 'firstWord' is the fun name,
+    // the rest are its args
+    final args = <Expression>[];
     while (true) {
       final word = nextWord(runes);
-      if (word.isNotEmpty) {
-        members.add(_SingleMember(word));
-      } else if (runes.currentAsString == '(') {
-        runes.moveNext();
-        members.add(_parseToGroupEnd(runes));
-      } else {
-        return _verifyExpressionEnd(runes, members, withinParens);
-      }
-    }
-  }
-
-  ParsedExpression _verifyExpressionEnd(
-      ParserState runes, List<ParsedExpression> members, bool withinParens) {
-    // check if the symbol after the word has special meaning or ends the
-    // current group properly
-    final nextSymbol = runes.currentAsString;
-    if (nextSymbol == ')') {
-      if (!withinParens) {
-        return _Error(';'.wasExpected(runes, quoteExpected: true));
-      }
-    } else {
-      if (members.isEmpty) {
-        return _Error(CompilerError(runes.position, 'missing expression'));
-      }
-      if (nextSymbol == ';') {
-        runes.moveNext();
-      } else if (nextSymbol == null) {
-        if (withinParens) {
-          return _Error(')'.wasExpected(runes, quoteExpected: true));
+      if (word.isEmpty) {
+        if (runes.currentAsString == '(') {
+          runes.moveNext();
+          args.add(_parseToExpressionEnd(runes, true));
+        } else {
+          break;
         }
       } else {
-        return _Error(
-            (withinParens ? ')' : ';').wasExpected(runes, quoteExpected: true));
+        args.add(singleMemberExpression(word, _context));
       }
     }
 
-    final errors = members.whereType<_Error>();
-    final result = errors.isEmpty ? members : errors.toList(growable: false);
-    if (result.length == 1) return result[0];
-    return _GroupedExpression(result);
+    final error = _verifyExpressionEnd(runes, withinParens);
+    if (error != null) return error;
+
+    return args.isEmpty
+        ? singleMemberExpression(firstWord, _context)
+        : funCall(firstWord, args, _context);
+  }
+
+  CompilerError _verifyExpressionEnd(ParserState runes, bool withinParens) {
+    // expression must be properly terminated
+    final nextSymbol = runes.currentAsString;
+
+    if (withinParens) {
+      if (nextSymbol != ')') {
+        return ')'.wasExpected(runes, quoteExpected: true);
+      }
+      // parens properly closed, done
+      runes.moveNext();
+      return null;
+    }
+    if (nextSymbol != ';' && nextSymbol != null) {
+      return ';'.wasExpected(runes, quoteExpected: true);
+    }
+    // expression terminated properly, done
+    runes.moveNext();
+    return null;
   }
 
   void reset() {
@@ -302,20 +143,20 @@ class ExpressionParser with WordBasedParser<Expression> {
     return expr;
   }
 
-  ParsedExpression _parseToAssignmentEnd(
-      ParserState runes, String keyword, bool withinParens) {
+  Expression _parseToAssignmentEnd(
+      ParserState runes, AssignmentType assignmentType, bool withinParens) {
     var done = whitespaces.parse(runes) == ParseResult.DONE;
     if (done) {
-      return _Error('assignment expression'
-          .wasExpected(runes, prefix: 'Incomplete assignment'));
+      return 'assignment expression'
+          .wasExpected(runes, prefix: 'Incomplete assignment');
     }
     final id = nextWord(runes);
-    if (id.isEmpty) return _Error('identifier'.wasExpected(runes));
+    if (id.isEmpty) return 'identifier'.wasExpected(runes);
     done = whitespaces.parse(runes) == ParseResult.DONE;
     final symbol = runes.currentAsString;
     if (done || symbol != '=') {
-      return _Error('='.wasExpected(runes,
-          quoteExpected: true, prefix: 'Incomplete assignment'));
+      return '='.wasExpected(runes,
+          quoteExpected: true, prefix: 'Incomplete assignment');
     }
 
     // consume '='
@@ -323,19 +164,18 @@ class ExpressionParser with WordBasedParser<Expression> {
 
     final value = _parseExpression(runes, withinParens);
 
-    return _Assignment(keyword, id, value);
+    return assignmentExpression(assignmentType, id, value, _context);
   }
 
-  ParsedExpression _parseIf(ParserState runes, bool withinParens) {
+  Expression _parseIf(ParserState runes, bool withinParens) {
     final condExpr = _parseExpression(runes, withinParens);
     if (withinParens && runes.currentAsString == ')') {
-      return _Error('else expression'
-          .wasExpected(runes, prefix: 'Incomplete if expression'));
+      return 'else expression'
+          .wasExpected(runes, prefix: 'Incomplete if expression');
     }
     var result = whitespaces.parse(runes);
     if (result == ParseResult.DONE) {
-      return _Error(
-          CompilerError(runes.position, 'Expected then expression, got EOF'));
+      return CompilerError(runes.position, 'Expected then expression, got EOF');
     }
     final thenExpr = _parseExpression(runes, withinParens);
     whitespaces.parse(runes);
@@ -343,15 +183,15 @@ class ExpressionParser with WordBasedParser<Expression> {
         runes.currentAsString == null;
 
     if (noElse) {
-      return _If(condExpr, thenExpr);
+      return ifExpression(_context.createChild(), condExpr, thenExpr);
     }
 
     final elseExpr = _parseExpression(runes, withinParens);
-    return _If(condExpr, thenExpr, elseExpr);
+    return ifExpression(_context.createChild(), condExpr, thenExpr, elseExpr);
   }
 
-  ParsedExpression _parseLoop(ParserState runes, bool withinParens) {
+  Expression _parseLoop(ParserState runes, bool withinParens) {
     final expr = _parseExpression(runes, withinParens);
-    return _Loop(expr);
+    return Expression.loopExpr(expr);
   }
 }
