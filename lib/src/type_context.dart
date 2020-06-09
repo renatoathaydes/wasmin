@@ -24,7 +24,7 @@ const _f32BiOperator = FunType(ValueType.f32, [ValueType.f32, ValueType.f32]);
 const _f64BiOperator = FunType(ValueType.f64, [ValueType.f64, ValueType.f64]);
 
 mixin TypeContext {
-  Set<FunType> typeOfFun(String funName, int argsCount);
+  Set<FunType> typeOfFun(String funName, {int argsCount});
 
   Declaration declarationOf(String id);
 }
@@ -113,10 +113,12 @@ class WasmDefaultTypeContext with TypeContext {
   static bool isOperator(String name) => _operators.containsKey(name);
 
   @override
-  Set<FunType> typeOfFun(String funName, int argsCount) {
+  Set<FunType> typeOfFun(String funName, {int argsCount}) {
     final types = _operators[funName];
     if (types != null) {
-      return types.where((op) => op.takes.length == argsCount).toSet();
+      return argsCount == null
+          ? types.toSet()
+          : types.where((op) => op.takes.length == argsCount).toSet();
     }
     return const {};
   }
@@ -132,7 +134,7 @@ class ParsingContext with MutableTypeContext {
   ParsingContext([this._parent = const WasmDefaultTypeContext()]);
 
   @override
-  Set<FunType> typeOfFun(String funName, int argsCount) {
+  Set<FunType> typeOfFun(String funName, {int argsCount}) {
     final declarations = _declarations[funName]
             ?.expand((decl) => decl.match(
                   onVar: (_) => const <FunType>{},
@@ -140,7 +142,10 @@ class ParsingContext with MutableTypeContext {
                 ))
             ?.toSet() ??
         const <FunType>{};
-    return {..._parent.typeOfFun(funName, argsCount), ...declarations};
+    return {
+      ..._parent.typeOfFun(funName, argsCount: argsCount),
+      ...declarations
+    };
   }
 
   @override

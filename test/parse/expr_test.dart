@@ -100,11 +100,31 @@ void main() {
           )));
     });
 
-    test('can parse grouped expressions', () {
+    test('can parse grouped, sequential expressions (C-style)', () {
       final result =
           parser.parse(ParserState.fromString('(let n = 1;mul n 2)'));
       expect(parser.failure?.message, isNull);
-      expect(result, equals(ParseResult.CONTINUE));
+      expect(result, equals(ParseResult.DONE));
+      expect(
+          parser.consume(),
+          equals(Expression.group([
+            Expression.let('n', Expression.constant('1', ValueType.i32)),
+            Expression.funCall(
+              'mul',
+              [
+                Expression.variable('n', ValueType.i32),
+                Expression.constant('2', ValueType.i32),
+              ],
+              ValueType.i32,
+            )
+          ])));
+    });
+
+    test('can parse grouped, sequential expressions (Lisp-style)', () {
+      final result =
+          parser.parse(ParserState.fromString('((let n = 1)(mul n 2))'));
+      expect(parser.failure?.message, isNull);
+      expect(result, equals(ParseResult.DONE));
       expect(
           parser.consume(),
           equals(Expression.group([
@@ -129,15 +149,18 @@ void main() {
           parser.consume(),
           equals(Expression.group([
             Expression.let('x', Expression.constant('1', ValueType.i32)),
-            Expression.let(
-                'y',
-                Expression.funCall(
-                    'add',
-                    [
-                      Expression.constant('1', ValueType.i32),
-                      Expression.constant('2', ValueType.i32),
-                    ],
-                    ValueType.i32)),
+            Expression.group([
+              Expression.let(
+                  'y',
+                  Expression.funCall(
+                      'add',
+                      [
+                        Expression.constant('1', ValueType.i32),
+                        Expression.constant('2', ValueType.i32),
+                      ],
+                      ValueType.i32)),
+              Expression.empty(),
+            ]),
             Expression.funCall(
               'add',
               [
@@ -351,7 +374,10 @@ void main() {
 
     test('cannot parse unknown function call', () {
       final result = parser.parse(ParserState.fromString('xxxx 1 2'));
-      expect(parser.failure?.message, equals("unknown function: 'xxxx'"));
+      expect(
+          parser.failure?.message,
+          equals("Cannot call function 'xxxx' with arguments "
+              'of types [i32, i32] as there is no function with that name'));
       expect(result, equals(ParseResult.FAIL));
     });
 
@@ -364,6 +390,19 @@ void main() {
     test('cannot parse function call that was not terminated', () {
       final result = parser.parse(ParserState.fromString('(mul 3 2'));
       expect(parser.failure?.message, equals("Expected ')', got EOF"));
+      expect(result, equals(ParseResult.FAIL));
+    });
+
+    test('cannot type-check call to function with missing argument', () {
+      final result = parser.parse(ParserState.fromString('(mul (add 3 2))'));
+      expect(
+          parser.failure?.message,
+          equals("Cannot call function 'mul' with arguments of types [i32]. "
+              'The following types would be acceptable:\n'
+              '  * [i32, i32]\n'
+              '  * [i64, i64]\n'
+              '  * [f32, f32]\n'
+              '  * [f64, f64]'));
       expect(result, equals(ParseResult.FAIL));
     });
 

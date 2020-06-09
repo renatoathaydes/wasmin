@@ -16,7 +16,7 @@ class TypeCheckException implements Exception {
 
 Expression singleMemberExpression(String member, ParsingContext context) {
   if (member == 'break') return Expression.breakExpr();
-  final funTypes = context.typeOfFun(member, 0);
+  final funTypes = context.typeOfFun(member, argsCount: 0);
   if (funTypes.isNotEmpty) {
     return Expression.funCall(member, const [], funTypes.first.returns);
   }
@@ -87,14 +87,13 @@ Expression assignmentExpression(AssignmentType assignmentType, String id,
 }
 
 Expression funCall(String id, List<Expression> args, ParsingContext context) {
-  final types = context.typeOfFun(id, args.length);
+  final types = context.typeOfFun(id);
   return _matchFunCallWithArgs(id, args, types);
 }
 
 Expression _matchFunCallWithArgs(
     String funName, List<Expression> args, Set<FunType> types) {
-  assert(types.every((type) => type.takes.length == args.length));
-  for (final type in types) {
+  for (final type in types.where((t) => t.takes.length == args.length)) {
     final takes = type.takes;
     var index = 0;
     final fixedArgs = args.map((actualArg) {
@@ -111,10 +110,12 @@ Expression _matchFunCallWithArgs(
   }
 
   // none of the function types match
+  final reason = types.isEmpty
+      ? ' as there is no function with that name'
+      : '. The following types would be acceptable:\n'
+          '  * ${types.map((f) => _typeNames(f.takes)).join('\n  * ')}';
   throw TypeCheckException("Cannot call function '$funName' with arguments"
-      ' of types ${_typeNames(args.map((a) => a.type))}. '
-      'The following types would be acceptable:\n'
-      '${types.map((f) => _typeNames(f.takes)).join('\n  * ')}');
+      ' of types ${_typeNames(args.map((a) => a.type))}$reason');
 }
 
 Expression ifExpression(
