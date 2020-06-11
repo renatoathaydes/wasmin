@@ -149,18 +149,15 @@ void main() {
           parser.consume(),
           equals(Expression.group([
             Expression.let('x', Expression.constant('1', ValueType.i32)),
-            Expression.group([
-              Expression.let(
-                  'y',
-                  Expression.funCall(
-                      'add',
-                      [
-                        Expression.constant('1', ValueType.i32),
-                        Expression.constant('2', ValueType.i32),
-                      ],
-                      ValueType.i32)),
-              Expression.empty(),
-            ]),
+            Expression.let(
+                'y',
+                Expression.funCall(
+                    'add',
+                    [
+                      Expression.constant('1', ValueType.i32),
+                      Expression.constant('2', ValueType.i32),
+                    ],
+                    ValueType.i32)),
             Expression.funCall(
               'add',
               [
@@ -407,7 +404,7 @@ void main() {
     });
 
     test('cannot parse nested function call that was not terminated', () {
-      final result = parser.parse(ParserState.fromString('(mul (add 3 2);'));
+      final result = parser.parse(ParserState.fromString('(eqz (add 3 2);'));
       expect(parser.failure?.message, equals("Expected ')', got EOF"));
       expect(result, equals(ParseResult.FAIL));
     });

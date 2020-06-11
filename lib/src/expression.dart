@@ -82,6 +82,21 @@ abstract class Expression {
     T Function(CompilerError) onError,
   });
 
+  CompilerError findError() {
+    return matchExpr(
+        onConst: (_) => null,
+        onVariable: (_) => null,
+        onFunCall: (_) => null,
+        onAssign: (_) => null,
+        onIf: (_) => null,
+        onLoop: (_) => null,
+        onBreak: () => null,
+        onGroup: (g) => g.body
+            .map((e) => e.findError())
+            .firstWhere((e) => e != null, orElse: () => null),
+        onError: (e) => e);
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

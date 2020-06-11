@@ -39,15 +39,15 @@ mixin Parser<N> {
 mixin RuneBasedParser<N> implements Parser<N> {
   @override
   ParseResult parse(ParserState runes) {
-    var firstRun = true;
+    var rune = runes.currentAsString;
+    if (rune == '') {
+      // iterator never advanced, so let's advance it
+      runes.moveNext();
+      rune = runes.currentAsString;
+    }
     do {
-      var rune = runes.currentAsString;
-      if (firstRun && rune == null) {
-        runes.moveNext();
-        rune = runes.currentAsString;
-        if (rune == null) return ParseResult.DONE;
-      }
-      firstRun = false;
+      rune = runes.currentAsString;
+      if (rune == null) return ParseResult.DONE;
       final result = accept(rune);
       switch (result) {
         case ParseResult.FAIL:
