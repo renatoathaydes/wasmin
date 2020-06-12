@@ -21,7 +21,7 @@ class ExpressionParser with WordBasedParser<Expression> {
   ParseResult parse(ParserState runes) {
     reset();
     try {
-      _expr = _parseExpression(runes);
+      _expr = _parseExpression(runes, _context);
     } on TypeCheckException catch (e) {
       failure = CompilerError(runes.position, e.message);
       return ParseResult.FAIL;
@@ -41,14 +41,15 @@ class ExpressionParser with WordBasedParser<Expression> {
         : ParseResult.CONTINUE;
   }
 
-  Expression _parseExpression(ParserState runes) {
+  Expression _parseExpression(ParserState runes, ParsingContext ctx) {
     whitespaces.parse(runes);
     if (runes.currentAsString == '(') {
       runes.moveNext();
+      ctx = ctx.createChild();
       final group = <Expression>[];
       while (true) {
         final end =
-            _parseToExpressionEnd(runes, _Grouping.withinParensImmediate);
+            _parseToExpressionEnd(runes, _Grouping.withinParensImmediate, ctx);
         if (end.done) {
           if (end.expr != Expression.empty()) {
             group.add(end.expr);
@@ -62,29 +63,30 @@ class ExpressionParser with WordBasedParser<Expression> {
           ? Expression.empty()
           : group.length == 1 ? group[0] : Expression.group(group);
     } else {
-      final end = _parseToExpressionEnd(runes, _Grouping.noParens);
+      final end = _parseToExpressionEnd(runes, _Grouping.noParens, ctx);
       return end.expr;
     }
   }
 
-  _ExpressionEnd _parseToExpressionEnd(ParserState runes, _Grouping grouping) {
+  _ExpressionEnd _parseToExpressionEnd(ParserState runes, _Grouping grouping,
+      ParsingContext ctx) {
     whitespaces.parse(runes);
 
     final firstWord = nextWord(runes);
     switch (firstWord) {
       case 'if':
-        return _parseIf(runes, grouping);
+        return _parseIf(runes, grouping, ctx);
       case 'loop':
-        return _parseLoop(runes, grouping);
+        return _parseLoop(runes, grouping, ctx);
       case 'let':
-        return _parseToAssignmentEnd(runes, AssignmentType.let, grouping);
+        return _parseToAssignmentEnd(runes, AssignmentType.let, grouping, ctx);
       case 'mut':
-        return _parseToAssignmentEnd(runes, AssignmentType.mut, grouping);
+        return _parseToAssignmentEnd(runes, AssignmentType.mut, grouping, ctx);
     }
 
     if (firstWord.isEmpty) {
       if (runes.currentAsString == '(') {
-        final expr = _parseExpression(runes);
+        final expr = _parseExpression(runes, ctx.createChild());
         return _ExpressionEnd(expr, false);
       } else if (grouping == _Grouping.withinParensImmediate) {
         final end = _verifyExpressionEnd(runes, grouping);
@@ -108,10 +110,10 @@ class ExpressionParser with WordBasedParser<Expression> {
     whitespaces.parse(runes);
     if (runes.currentAsString == '=') {
       runes.moveNext();
-      final value = _parseToExpressionEnd(runes, grouping);
+      final value = _parseToExpressionEnd(runes, grouping, ctx);
       return _ExpressionEnd(
           assignmentExpression(
-              AssignmentType.reassign, firstWord, value.expr, _context),
+              AssignmentType.reassign, firstWord, value.expr, ctx),
           value.done);
     }
 
@@ -122,12 +124,12 @@ class ExpressionParser with WordBasedParser<Expression> {
       final word = nextWord(runes);
       if (word.isEmpty) {
         if (runes.currentAsString == '(') {
-          args.add(_parseExpression(runes));
+          args.add(_parseExpression(runes, ctx.createChild()));
         } else {
           break;
         }
       } else {
-        args.add(singleMemberExpression(word, _context));
+        args.add(singleMemberExpression(word, ctx));
       }
     }
 
@@ -139,8 +141,8 @@ class ExpressionParser with WordBasedParser<Expression> {
 
     return _ExpressionEnd(
         args.isEmpty
-            ? singleMemberExpression(firstWord, _context)
-            : funCall(firstWord, args, _context),
+            ? singleMemberExpression(firstWord, ctx)
+            : funCall(firstWord, args, ctx),
         end.done);
   }
 
@@ -193,8 +195,8 @@ class ExpressionParser with WordBasedParser<Expression> {
     return expr;
   }
 
-  _ExpressionEnd _parseToAssignmentEnd(
-      ParserState runes, AssignmentType assignmentType, _Grouping grouping) {
+  _ExpressionEnd _parseToAssignmentEnd(ParserState runes,
+      AssignmentType assignmentType, _Grouping grouping, ParsingContext ctx) {
     var done = whitespaces.parse(runes) == ParseResult.DONE;
     if (done) {
       return _ExpressionEnd(
@@ -219,13 +221,14 @@ class ExpressionParser with WordBasedParser<Expression> {
     // consume '='
     runes.moveNext();
 
-    final end = _parseToExpressionEnd(runes, grouping);
+    final end = _parseToExpressionEnd(runes, grouping, ctx);
     return _ExpressionEnd(
-        assignmentExpression(assignmentType, id, end.expr, _context), end.done);
+        assignmentExpression(assignmentType, id, end.expr, ctx), end.done);
   }
 
-  _ExpressionEnd _parseIf(ParserState runes, _Grouping grouping) {
-    final condExprEnd = _parseToExpressionEnd(runes, grouping);
+  _ExpressionEnd _parseIf(ParserState runes, _Grouping grouping,
+      ParsingContext ctx) {
+    final condExprEnd = _parseToExpressionEnd(runes, grouping, ctx);
     if (grouping != _Grouping.noParens && condExprEnd.done) {
       return _ExpressionEnd(
           CompilerError(runes.position, 'then expression is missing'), true);
@@ -236,23 +239,23 @@ class ExpressionParser with WordBasedParser<Expression> {
           CompilerError(runes.position, 'Expected then expression, got EOF'),
           true);
     }
-    final thenExprEnd = _parseToExpressionEnd(runes, grouping);
+    final thenExprEnd = _parseToExpressionEnd(runes, grouping, ctx);
     if ((grouping != _Grouping.noParens && thenExprEnd.done) ||
         whitespaces.parse(runes) == ParseResult.DONE) {
       return _ExpressionEnd(
-          ifExpression(
-              _context.createChild(), condExprEnd.expr, thenExprEnd.expr),
+          ifExpression(condExprEnd.expr, thenExprEnd.expr),
           thenExprEnd.done);
     }
-    final elseExprEnd = _parseToExpressionEnd(runes, grouping);
+    final elseExprEnd = _parseToExpressionEnd(runes, grouping, ctx);
     return _ExpressionEnd(
-        ifExpression(_context.createChild(), condExprEnd.expr, thenExprEnd.expr,
+        ifExpression(condExprEnd.expr, thenExprEnd.expr,
             elseExprEnd.expr),
         elseExprEnd.done);
   }
 
-  _ExpressionEnd _parseLoop(ParserState runes, _Grouping grouping) {
-    final end = _parseToExpressionEnd(runes, grouping);
+  _ExpressionEnd _parseLoop(ParserState runes, _Grouping grouping,
+      ParsingContext ctx) {
+    final end = _parseToExpressionEnd(runes, grouping, ctx);
     return _ExpressionEnd(Expression.loopExpr(end.expr), end.done);
   }
 }

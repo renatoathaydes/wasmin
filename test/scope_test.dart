@@ -20,8 +20,8 @@ void main() {
       ]);
 
       for (final expression in [
-        '((let x = 0) (add x 1))',
-        '(((let x = 0)) ((add x 1)))',
+        '(let x = 0;(add x 1))',
+        '(((let x = 0;(add x 1))))',
         '(let x = 0;add x 1)',
       ]) {
         parser.parse(ParserState.fromString(expression));
@@ -83,8 +83,8 @@ void main() {
       ].iterator;
 
       for (final expression in [
-        '((let x = 0) loop(add x 1))',
-        '((let x = 0) (if (x) (add x 1) x))',
+        '(let x = 0; loop(add x 1))',
+        '(let x = 0; (if (x) (add x 1) x))',
         '(let x = 0; if 1; add x 1; add x 2)',
       ]) {
         parser.parse(ParserState.fromString(expression));

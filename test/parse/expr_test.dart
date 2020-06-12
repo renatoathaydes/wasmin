@@ -120,52 +120,34 @@ void main() {
           ])));
     });
 
-    test('can parse grouped, sequential expressions (Lisp-style)', () {
-      final result =
-          parser.parse(ParserState.fromString('((let n = 1)(mul n 2))'));
-      expect(parser.failure?.message, isNull);
-      expect(result, equals(ParseResult.DONE));
-      expect(
-          parser.consume(),
-          equals(Expression.group([
-            Expression.let('n', Expression.constant('1', ValueType.i32)),
-            Expression.funCall(
-              'mul',
-              [
-                Expression.variable('n', ValueType.i32),
-                Expression.constant('2', ValueType.i32),
-              ],
-              ValueType.i32,
-            )
-          ])));
-    });
-
     test('can parse complex grouped expressions', () {
-      final result = parser.parse(ParserState.fromString(
-          '(let x = 1; (let y = (add 1 2) )(add x y))X'));
+      final result = parser.parse(
+          ParserState.fromString('(let x = 1; (let y = (add 1 2) add x y))X'));
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.CONTINUE));
       expect(
           parser.consume(),
           equals(Expression.group([
             Expression.let('x', Expression.constant('1', ValueType.i32)),
-            Expression.let(
-                'y',
-                Expression.funCall(
-                    'add',
-                    [
-                      Expression.constant('1', ValueType.i32),
-                      Expression.constant('2', ValueType.i32),
-                    ],
-                    ValueType.i32)),
-            Expression.funCall(
-              'add',
-              [
-                Expression.variable('x', ValueType.i32),
-                Expression.variable('y', ValueType.i32),
-              ],
-              ValueType.i32,
-            )
+            Expression.group([
+              Expression.let(
+                  'y',
+                  Expression.funCall(
+                      'add',
+                      [
+                        Expression.constant('1', ValueType.i32),
+                        Expression.constant('2', ValueType.i32),
+                      ],
+                      ValueType.i32)),
+              Expression.funCall(
+                'add',
+                [
+                  Expression.variable('x', ValueType.i32),
+                  Expression.variable('y', ValueType.i32),
+                ],
+                ValueType.i32,
+              )
+            ])
           ])));
     });
 

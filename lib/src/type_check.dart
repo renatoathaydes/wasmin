@@ -118,9 +118,7 @@ Expression _matchFunCallWithArgs(
       ' of types ${_typeNames(args.map((a) => a.type))}$reason');
 }
 
-Expression ifExpression(
-    ParsingContext context, Expression cond, Expression then,
-    [Expression els]) {
+Expression ifExpression(Expression cond, Expression then, [Expression els]) {
   if (els != null) {
     if (then.type != els.type) {
       // try to convert the type of either branch so they match
