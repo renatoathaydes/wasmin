@@ -113,15 +113,9 @@ void main() {
 
     test('cannot parse let expression with no value', () {
       final result = parser.parse(ParserState.fromString('let one = '));
-      expect(result, equals(ParseResult.DONE));
-      expect(parser.failure, isNull);
-
-      final let = parser.consume().forceIntoTopLevelNode() as Let;
-
-      expect(
-          let.body,
-          isA<CompilerError>().having(
-              (err) => err.message, 'message', equals('missing expression')));
+      expect(parser.failure?.message,
+          equals('EOF encountered prematurely, incomplete expression'));
+      expect(result, equals(ParseResult.FAIL));
     });
 
     test('cannot parse let expression with no = (end with separator)', () {
@@ -132,17 +126,9 @@ void main() {
     });
 
     test('cannot parse let expression with no value (end with separator)', () {
-      final result = parser.parse(ParserState.fromString('let one=; foo'));
-
-      expect(result, equals(ParseResult.CONTINUE));
-      expect(parser.failure, isNull);
-
-      final let = parser.consume().forceIntoTopLevelNode() as Let;
-
-      expect(
-          let.body,
-          isA<CompilerError>().having(
-              (err) => err.message, 'message', equals('missing expression')));
+      final result = parser.parse(ParserState.fromString('let one=;'));
+      expect(parser.failure?.message, equals('Missing expression'));
+      expect(result, equals(ParseResult.FAIL));
     });
   });
 }

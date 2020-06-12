@@ -86,13 +86,22 @@ class ExpressionParser with WordBasedParser<Expression> {
       if (runes.currentAsString == '(') {
         final expr = _parseExpression(runes);
         return _ExpressionEnd(expr, false);
-      } else {
+      } else if (grouping == _Grouping.withinParensImmediate) {
         final end = _verifyExpressionEnd(runes, grouping);
         final error = end.expr;
         if (error != null) {
           return end;
         }
         return _ExpressionEnd(Expression.empty(), end.done);
+      } else {
+        // cannot have an empty expression that doesn't look like: ()
+        return _ExpressionEnd(
+            CompilerError(
+                runes.position,
+                runes.currentAsString == null
+                    ? 'EOF encountered prematurely, incomplete expression'
+                    : 'Missing expression'),
+            true);
       }
     }
     // check if this is a re-assignment
@@ -184,8 +193,8 @@ class ExpressionParser with WordBasedParser<Expression> {
     return expr;
   }
 
-  _ExpressionEnd _parseToAssignmentEnd(ParserState runes,
-      AssignmentType assignmentType, _Grouping grouping) {
+  _ExpressionEnd _parseToAssignmentEnd(
+      ParserState runes, AssignmentType assignmentType, _Grouping grouping) {
     var done = whitespaces.parse(runes) == ParseResult.DONE;
     if (done) {
       return _ExpressionEnd(
@@ -201,9 +210,6 @@ class ExpressionParser with WordBasedParser<Expression> {
     done = whitespaces.parse(runes) == ParseResult.DONE;
     final symbol = runes.currentAsString;
     if (done || symbol != '=') {
-      if (!done) {
-        done = _verifyExpressionEnd(runes, grouping).done;
-      }
       return _ExpressionEnd(
           '='.wasExpected(runes,
               quoteExpected: true, prefix: 'Incomplete assignment'),

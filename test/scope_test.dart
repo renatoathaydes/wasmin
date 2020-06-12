@@ -53,7 +53,8 @@ void main() {
                   Expression.variable('x', ValueType.i32),
                   Expression.constant('1', ValueType.i32),
                 ],
-                ValueType.i32)),
+                ValueType.i32),
+            Expression.variable('x', ValueType.i32)),
       ]);
       final expectedThirdResult = Expression.group([
         Expression.let('x', Expression.constant('0', ValueType.i32)),
@@ -83,7 +84,7 @@ void main() {
 
       for (final expression in [
         '((let x = 0) loop(add x 1))',
-        '((let x = 0) (if (x) (add x 1)))',
+        '((let x = 0) (if (x) (add x 1) x))',
         '(let x = 0; if 1; add x 1; add x 2)',
       ]) {
         parser.parse(ParserState.fromString(expression));

@@ -86,10 +86,13 @@ abstract class Expression {
     return matchExpr(
         onConst: (_) => null,
         onVariable: (_) => null,
-        onFunCall: (_) => null,
-        onAssign: (_) => null,
-        onIf: (_) => null,
-        onLoop: (_) => null,
+        onFunCall: (f) => f.args
+            .map((e) => e.findError())
+            .firstWhere((e) => e != null, orElse: () => null),
+        onAssign: (a) => a.body.findError(),
+        onIf: (i) =>
+            i.cond.findError() ?? i.then.findError() ?? i.els?.findError(),
+        onLoop: (l) => l.body.findError(),
         onBreak: () => null,
         onGroup: (g) => g.body
             .map((e) => e.findError())

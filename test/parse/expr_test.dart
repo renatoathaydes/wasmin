@@ -360,6 +360,29 @@ void main() {
           ])));
       expect(loopExpr.type, equals(ValueType.empty));
     });
+
+    test('can parse assignment to empty expression', () {
+      final iter = ParserState.fromString('let x = ()');
+      final result = parser.parse(iter);
+      expect(parser.failure?.message, isNull);
+      expect(result, equals(ParseResult.DONE));
+      final expr = parser.consume();
+      expect(expr, Expression.let('x', Expression.empty()));
+      expect(expr.type, equals(ValueType.empty));
+    });
+
+    test('can parse if expression with empty branches', () {
+      final iter = ParserState.fromString('if (1) () ()');
+      final result = parser.parse(iter);
+      expect(parser.failure?.message, isNull);
+      expect(result, equals(ParseResult.DONE));
+      final expr = parser.consume();
+      expect(
+          expr,
+          Expression.ifExpr(Expression.constant('1', ValueType.i32),
+              Expression.empty(), Expression.empty()));
+      expect(expr.type, equals(ValueType.empty));
+    });
   });
 
   group('failures', () {
@@ -437,6 +460,13 @@ void main() {
           parser.failure?.message,
           equals('if branches have different types '
               '(then: f32, else: i32)'));
+      expect(result, equals(ParseResult.FAIL));
+    });
+
+    test('cannot parse loop expression missing body', () {
+      final result = parser.parse(ParserState.fromString('loop '));
+      expect(parser.failure?.message,
+          equals('EOF encountered prematurely, incomplete expression'));
       expect(result, equals(ParseResult.FAIL));
     });
   });
