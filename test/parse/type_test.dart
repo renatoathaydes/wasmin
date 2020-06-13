@@ -19,8 +19,8 @@ void main() {
       expect(result, equals(ParseResult.CONTINUE));
       final type = parser.consume();
       expect(type, equals(ValueType.f64));
-      expect(iter.moveNext(), isTrue);
       expect(iter.currentAsString, equals('X'));
+      expect(iter.moveNext(), isFalse);
     });
 
     test('can parse simple function type', () {
@@ -34,7 +34,7 @@ void main() {
     test('can parse simple function type with whitespaces', () {
       final result = parser.parse(ParserState.fromString('[  ]  i32 '));
       expect(parser.failure?.message, isNull);
-      expect(result, equals(ParseResult.CONTINUE));
+      expect(result, equals(ParseResult.DONE));
       final type = parser.consume();
       expect(type, equals(FunType(ValueType.i32, const [])));
     });

@@ -15,7 +15,7 @@ class ExpressionParser with WordBasedParser<Expression> {
   Expression _expr;
 
   ExpressionParser(this.words, this._context)
-      : _declaration = DeclarationParser(words, _context);
+      : _declaration = DeclarationParser(words);
 
   @override
   ParseResult parse(ParserState runes) {
@@ -68,8 +68,8 @@ class ExpressionParser with WordBasedParser<Expression> {
     }
   }
 
-  _ExpressionEnd _parseToExpressionEnd(ParserState runes, _Grouping grouping,
-      ParsingContext ctx) {
+  _ExpressionEnd _parseToExpressionEnd(
+      ParserState runes, _Grouping grouping, ParsingContext ctx) {
     whitespaces.parse(runes);
 
     final firstWord = nextWord(runes);
@@ -82,6 +82,10 @@ class ExpressionParser with WordBasedParser<Expression> {
         return _parseToAssignmentEnd(runes, AssignmentType.let, grouping, ctx);
       case 'mut':
         return _parseToAssignmentEnd(runes, AssignmentType.mut, grouping, ctx);
+      case 'def':
+      case 'export':
+        _parseDeclaration(runes, ctx, firstWord.startsWith('e'));
+        return _parseToExpressionEnd(runes, grouping, ctx);
     }
 
     if (firstWord.isEmpty) {
@@ -195,6 +199,21 @@ class ExpressionParser with WordBasedParser<Expression> {
     return expr;
   }
 
+  void _parseDeclaration(ParserState runes, ParsingContext ctx,
+      bool isExported) {
+    _declaration.isExported = isExported;
+    final result = _declaration.parse(runes);
+    switch (result) {
+      case ParseResult.CONTINUE:
+        ctx.add(_declaration.consume());
+        break;
+      case ParseResult.DONE:
+        throw Exception('missing implementation for declaration');
+      case ParseResult.FAIL:
+        throw Exception('Malformed declaration: ${_declaration.failure}');
+    }
+  }
+
   _ExpressionEnd _parseToAssignmentEnd(ParserState runes,
       AssignmentType assignmentType, _Grouping grouping, ParsingContext ctx) {
     var done = whitespaces.parse(runes) == ParseResult.DONE;
@@ -243,13 +262,11 @@ class ExpressionParser with WordBasedParser<Expression> {
     if ((grouping != _Grouping.noParens && thenExprEnd.done) ||
         whitespaces.parse(runes) == ParseResult.DONE) {
       return _ExpressionEnd(
-          ifExpression(condExprEnd.expr, thenExprEnd.expr),
-          thenExprEnd.done);
+          ifExpression(condExprEnd.expr, thenExprEnd.expr), thenExprEnd.done);
     }
     final elseExprEnd = _parseToExpressionEnd(runes, grouping, ctx);
     return _ExpressionEnd(
-        ifExpression(condExprEnd.expr, thenExprEnd.expr,
-            elseExprEnd.expr),
+        ifExpression(condExprEnd.expr, thenExprEnd.expr, elseExprEnd.expr),
         elseExprEnd.done);
   }
 

@@ -1,6 +1,5 @@
 import '../ast.dart';
 import '../expression.dart';
-import '../type_context.dart';
 import 'base.dart';
 import 'iterator.dart';
 import 'type.dart';
@@ -15,11 +14,10 @@ class DeclarationParser with WordBasedParser<Declaration> {
   bool isExported = false;
 
   final TypeParser type;
-  final ParsingContext context;
 
   Declaration _declaration;
 
-  DeclarationParser(this.words, this.context) : type = TypeParser(words);
+  DeclarationParser(this.words) : type = TypeParser(words);
 
   @override
   ParseResult parse(ParserState runes) {
@@ -51,8 +49,6 @@ class DeclarationParser with WordBasedParser<Declaration> {
         onFunType: (type) => FunDeclaration(id, type, export),
         onValueType: (type) =>
             VarDeclaration(id, type, isExported: export, isGlobal: true));
-
-    context.add(_declaration);
 
     return result;
   }

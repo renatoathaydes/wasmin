@@ -33,8 +33,17 @@ class TypeParser with WordBasedParser<WasminType> {
         if (runes.currentAsString == ']') {
           runes.moveNext();
           final returns = nextWord(runes);
+          whitespaces.parse(runes);
           final returnType =
               returns.isEmpty ? ValueType.empty : ValueType(returns);
+          if (runes.currentAsString == null || runes.currentAsString == ';') {
+            runes.moveNext();
+          } else {
+            failure = ';'.wasExpected(runes,
+                quoteExpected: true,
+                prefix: 'Unexpected character after type declaration');
+            return ParseResult.FAIL;
+          }
           _type = FunType(returnType,
               args.map((a) => ValueType(a)).toList(growable: false));
         } else {
@@ -49,6 +58,7 @@ class TypeParser with WordBasedParser<WasminType> {
       }
     } else {
       if (runes.currentAsString == null || runes.currentAsString == ';') {
+        runes.moveNext();
         _type = ValueType(word);
       } else {
         failure = 'type declaration'

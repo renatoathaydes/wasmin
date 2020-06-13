@@ -23,6 +23,36 @@ void main() {
           equals(VarDeclaration('x', ValueType.i32, isGlobal: true)));
     });
 
+    test('can parse def then let expression', () {
+      final result =
+          parser.parse(ParserState.fromString('def int i64;\nlet int = 32'));
+      expect(parser.failure?.message, isNull);
+      expect(result, equals(ParseResult.DONE));
+
+      final let = parser.consume().forceIntoTopLevelNode() as Let;
+
+      expect(let.declaration.id, equals('int'));
+      expect(let.body, equals(Expression.constant('32', ValueType.i64)));
+      expect(context.declarationOf('int'),
+          equals(VarDeclaration('int', ValueType.i64, isGlobal: true)));
+    });
+
+    test('can parse exported let expression', () {
+      final result = parser.parse(
+          ParserState.fromString('export def num f64;\nlet num = 0.314159'));
+      expect(parser.failure?.message, isNull);
+      expect(result, equals(ParseResult.DONE));
+
+      final let = parser.consume().forceIntoTopLevelNode() as Let;
+
+      expect(let.declaration.id, equals('num'));
+      expect(let.body, equals(Expression.constant('0.314159', ValueType.f64)));
+      expect(
+          context.declarationOf('num'),
+          equals(VarDeclaration('num', ValueType.f64,
+              isExported: true, isGlobal: true)));
+    });
+
     test('can parse let expression with whitespace', () {
       final result = parser
           .parse(ParserState.fromString('let one_thousand  =     1000   '));

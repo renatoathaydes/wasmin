@@ -2,7 +2,7 @@ import 'package:test/test.dart';
 import 'package:wasmin/wasmin.dart';
 
 void main() {
-  final parser = DeclarationParser(WordParser(), ParsingContext());
+  final parser = DeclarationParser(WordParser());
 
   group('let declarations', () {
     test('can parse let declaration with simple type', () {
@@ -13,7 +13,6 @@ void main() {
       final expected = VarDeclaration('abc', ValueType.i32, isGlobal: true);
 
       expect(parser.consume(), equals(expected));
-      expect(parser.context.declarationOf('abc'), equals(expected));
     });
 
     test('can parse exported let declaration with simple type', () {
@@ -26,7 +25,6 @@ void main() {
           isExported: true, isGlobal: true);
 
       expect(parser.consume(), equals(expected));
-      expect(parser.context.declarationOf('variable'), equals(expected));
     });
   });
 
@@ -39,7 +37,6 @@ void main() {
       final expected = FunDeclaration('main', FunType(ValueType.i64, const []));
 
       expect(parser.consume(), equals(expected));
-      expect(parser.context.declarationOf('main'), equals(expected));
     });
 
     test('can parse exported function signature', () {
@@ -52,7 +49,6 @@ void main() {
           FunDeclaration('_start', FunType(ValueType.i64, const []), true);
 
       expect(parser.consume(), equals(expected));
-      expect(parser.context.declarationOf('_start'), equals(expected));
     });
 
     test('can parse function signature with no arg, no return type', () {
@@ -65,9 +61,8 @@ void main() {
           FunDeclaration('print-time', FunType(ValueType.empty, const []));
 
       expect(parser.consume(), equals(expected));
-      expect(parser.context.declarationOf('print-time'), equals(expected));
 
-      expect(iter.currentAsString, equals(';'));
+      expect(iter.currentAsString, equals('X'));
     });
 
     test('can parse function signature with one arg, no return type', () {
@@ -80,9 +75,8 @@ void main() {
           'log-time', FunType(ValueType.empty, const [ValueType.f64]));
 
       expect(parser.consume(), equals(expected));
-      expect(parser.context.declarationOf('log-time'), equals(expected));
 
-      expect(iter.currentAsString, equals(';'));
+      expect(iter.currentAsString, equals('X'));
     });
 
     test('can parse function signature with one arg, one return type', () {
@@ -95,9 +89,8 @@ void main() {
           'convert', FunType(ValueType.i32, const [ValueType.f64]));
 
       expect(parser.consume(), equals(expected));
-      expect(parser.context.declarationOf('convert'), equals(expected));
 
-      expect(iter.currentAsString, equals(';'));
+      expect(iter.currentAsString, equals('X'));
     });
 
     test('can parse function signature with many args, one return type', () {
@@ -117,7 +110,6 @@ void main() {
           ]));
 
       expect(parser.consume(), equals(expected));
-      expect(parser.context.declarationOf('f'), equals(expected));
 
       expect(iter.currentAsString, equals(' '));
     });
