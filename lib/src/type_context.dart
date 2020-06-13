@@ -23,6 +23,16 @@ const _i64BiOperator = FunType(ValueType.i64, [ValueType.i64, ValueType.i64]);
 const _f32BiOperator = FunType(ValueType.f32, [ValueType.f32, ValueType.f32]);
 const _f64BiOperator = FunType(ValueType.f64, [ValueType.f64, ValueType.f64]);
 
+const _f32Toi32Converter = FunType(ValueType.i32, [ValueType.f32]);
+const _f64Toi32Converter = FunType(ValueType.i32, [ValueType.f64]);
+const _f32Toi64Converter = FunType(ValueType.i64, [ValueType.f32]);
+const _f64Toi64Converter = FunType(ValueType.i64, [ValueType.f64]);
+const _i64Toi32Converter = FunType(ValueType.i32, [ValueType.i64]);
+const _f64Tof32Converter = FunType(ValueType.f32, [ValueType.f64]);
+const _f32Tof64Converter = FunType(ValueType.f64, [ValueType.f32]);
+const _i32Tof32Converter = FunType(ValueType.f32, [ValueType.i32]);
+const _i64Tof64Converter = FunType(ValueType.f64, [ValueType.i64]);
+
 mixin TypeContext {
   Set<FunType> typeOfFun(String funName, {int argsCount});
 
@@ -106,6 +116,30 @@ class WasmDefaultTypeContext with TypeContext {
     'gt': [_f32BiBoolOperator, _f64BiBoolOperator],
     'le': [_f32BiBoolOperator, _f64BiBoolOperator],
     'ge': [_f32BiBoolOperator, _f64BiBoolOperator],
+
+    // cvtop
+    'convert_i32_u': [_f32Toi32Converter, _f64Toi32Converter],
+    'convert_i32_s': [_f32Toi32Converter, _f64Toi32Converter],
+    'convert_i64_u': [_f32Toi64Converter, _f64Toi64Converter],
+    'convert_i64_s': [_f32Toi64Converter, _f64Toi64Converter],
+    'wrap_i64': [_i64Toi32Converter],
+    'extend_8s': [_i32UniOperator, _i64UniOperator],
+    'extend_16s': [_i32UniOperator, _i64UniOperator],
+    'extend_32s': [_i64UniOperator],
+    'trunc_f32_s': [_f32Toi32Converter, _f32Toi64Converter],
+    'trunc_f32_u': [_f32Toi32Converter, _f32Toi64Converter],
+    'trunc_f64_s': [_f64Toi32Converter, _f64Toi64Converter],
+    'trunc_f64_u': [_f64Toi32Converter, _f64Toi64Converter],
+    'trunc_sat_f32_s': [_f32Toi32Converter, _f32Toi64Converter],
+    'trunc_sat_f32_u': [_f32Toi32Converter, _f32Toi64Converter],
+    'trunc_sat_f64_s': [_f64Toi32Converter, _f64Toi64Converter],
+    'trunc_sat_f64_u': [_f64Toi32Converter, _f64Toi64Converter],
+    'demote_f64': [_f64Tof32Converter],
+    'promote_f32': [_f32Tof64Converter],
+    'reinterpret_i32': [_i32Tof32Converter],
+    'reinterpret_f32': [_f32Toi32Converter],
+    'reinterpret_i64': [_i64Tof64Converter],
+    'reinterpret_f64': [_f64Toi64Converter],
   };
 
   const WasmDefaultTypeContext();
