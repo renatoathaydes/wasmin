@@ -31,7 +31,7 @@ Feature Checklist:
 - [x] parenthesis-grouped expressions.
 - [x] ungrouped expressions.
 - [x] multi-expressions.
-- [ ] type declarations.
+- [x] type declarations.
 - [ ] generic type declarations.
 - [x] let assignments.
 - [x] mut assignments.
@@ -96,7 +96,6 @@ For example, these are all expressions:
 - `(0)` (same as previous).
 - `add 1 2` (calls function<sup><a href="#footnote-1">[1]</a></sup> `add` with arguments `1` and `2`).
 - `(let n = 1; add n 3)` (one expression grouping two others<sup><a href="#footnote-2">[2]</a></sup> - evaluates to the result of the last one).
-- `((let n = 1) (add n 3))` (same as previous).
 - `1 > 2 > add` (same as `add 1 2`, using concatenative style).
 
 Because Wasmin gives special meaning to only a few special symbols, identifiers can use almost any symbol,
@@ -130,7 +129,7 @@ Invalid identifiers:
 - `1a` (cannot start with number<sup><a href="#footnote-3">[3]</a></sup>).
 - `foo=bar` (`=` is the assignment operator, so this means _assign bar to foo_).
 - `big>small` (`>` is the stack operator, so this is valid, but is an expression, not an identifier).
-- `let`, `fun`, `mut`, `def`, `import`, `export`, `if`, `loop` (these are the only keywords in Wasmin).
+- `let`, `fun`, `mut`, `def`, `import`, `pub`, `if`, `loop` (these are the only keywords in Wasmin).
 - `get`, `set`, `remove`, `size`, `copy` (special functions).
 
 #### Footnotes
@@ -192,7 +191,7 @@ For example:
 mut counter = 0;
 
 # increment the counter
-counter = counter > add 1;
+set counter = counter > add 1;
 ```
 
 ### Functions
@@ -208,7 +207,7 @@ Functions have the form:
 
 ```
 def <identifier> [<arg-types>, ...] <return-type>
-fun <identifier> <args> = <expression>
+fun <identifier> [<arg> ...] = <expression>
 ```
 
 > Currently, WASM support only one return value, but it will allow multiple returns values in the future.
@@ -232,7 +231,7 @@ fun pythagoras2 a b = (
     sqrt (add sa sb)
 )
 
-# using the concatenative style, which can be the cleanest sometimes!
+# using the concatenative style, which can be the cleanest in certain cases!
 def pythagoras3 [f64, f64] f64;
 fun pythagoras3 a b = square a > square b > add > sqrt;
 ```
@@ -324,7 +323,7 @@ used the stack operator when talking about functions:
 fun pythagoras3 a b = square a > square b > add > sqrt;
 ```
 
-If we let a be `3.0`, b be `4.0`, the stack operations would look like this:
+If we let `a` be `3.0` and `b` be `4.0`, the stack operations would look like this:
 
 ```rust
 3.0 > square > 4.0 > square > add > sqrt;
@@ -372,17 +371,18 @@ values with the expected types on top of the stack when it returns.
 
 ### Imports and Exports
 
-Variables and functions may be exported by adding the `export` keyword before their type declarations:
+Variables and functions may be exported (i.e. made public) by adding the `pub` keyword before their type declarations:
 
 ```rust
 # export the main function, which does not take any arguments
 # and returns an i64
-export def main [] i64;
+pub def main [] i64;
 
 # export the variable `ten` of type `i64`
-export def ten i64;
+pub def ten i64;
 let ten = 10;
 
+# implementations don't need to immediately follow definitions  
 fun main = add ten 20;
 ```
 
@@ -409,12 +409,10 @@ import "./factorial.wasmin"
 ```
 
 In case a definition is external (i.e. not from another Wasmin file, but from the host environment), 
-its type must be declared explicitly, and the `show` clause is not optional
-(as Wasmin cannot know what the environment exposes):
+it is declared with `ext def`:
 
 ```rust
-def log [any];
-import "console" show log;
+ext def log [T];
 
 # use log
 fun main = log "hello world";
@@ -537,9 +535,9 @@ If a record is declared as mutable, its fields can be modified with the `set` fu
 def joe Person;
 mut joe = {name "Joe", age 35};
 
-set joe name "Johan";
+set joe name = "Johan";
 
-set joe age (get joe age > add 1);
+set joe age = get joe age > add 1;
 ```
 
 > Notice that special functions, like `set` and `get`, do not consume their first argument! See the `Special functions` Section
@@ -590,7 +588,7 @@ let large-array = [];
 
 # function that requires an array of length 100
 def use-array [i64(i32)(100)];
-use-array a = ...
+fun use-array a = ...
 ```
 
 To be able to mutate an array with the `set` function, it must be declared as mutable:
@@ -599,8 +597,8 @@ To be able to mutate an array with the `set` function, it must be declared as mu
 def large-array array(i32)(100);
 mut large-array = [];
 
-set large-array 0 1;
-set large-array 1 2;
+set large-array 0 = 1;
+set large-array 1 = 2;
 
 # large-array now looks like [1 2 0 0 ... ]
 ```
@@ -652,10 +650,10 @@ let y = if cond "true" else "false";
 ```
 
 If the `else` branch is missing, the `if` expression will always evaluate to `()`, which means its result cannot be
-assigned to a variable. This is only useful for performing side-effects:
+assigned to a variable. This is useful for performing side-effects:
 
-> To stop the Wasmin parser from interpreting the next expression as the `else` block, wrap the whole `if` expression into
-> parenthesis, as shown below, so it's clear where the `if` expression ends.
+> To stop the Wasmin parser from interpreting the next expression as the `else` block, you can either wrap the whole
+> `if` expression into parenthesis, as shown below, or add an extra `;` as in `if cond; then;;`.
 
 ```rust
 def log-if-greater-than-0 [i64];
@@ -673,7 +671,7 @@ loop <expression>
 
 The `expression` will be repeatedly evaluated until `break` is called.
 
-To avoid infinite loops, most `loop` expressions will start with a break check, as in this example:
+To avoid infinite loops, most `loop` expressions will start or end with a break check, as in this example:
 
 ```rust
 mut i = 0;
@@ -687,23 +685,22 @@ A more complex example:
 
 ```rust
 # implementing the traditional `map` function in Wasmin
-# with the `loop-if` construct
 def map [[T] V, array(T)] array(V);
 fun map function list = (
     mut index = 0;
     def result array(V)(list > size);
     mut result = [];
     loop (
-        (if index > ge_u (list > size); break)
+        if index > ge_u (list > size); break;;
         let item = get list index;
-        set result index (function item);
-        set index (add index 1)
+        set result index = function item;
+        set index = add index 1;
     )
     result
 )
 ```
 
-### Special functions (get, set, remove, size)
+### Special functions (get, get-or-default, set, remove, size)
 
 We already saw how to use `get` and `set` to read and write fields in records and items in arrays, and `size` to
 inspect the length of an array.
@@ -721,7 +718,7 @@ let Rec = {name string};
 def rec Rec;
 mut rec = {name "the record"};
 
-set rec name "another name";
+set rec name = "another name";
 ```
 
 Another function we haven't met yet is the `remove` function, which:
