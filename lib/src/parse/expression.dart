@@ -83,8 +83,8 @@ class ExpressionParser with WordBasedParser<Expression> {
       case 'mut':
         return _parseToAssignmentEnd(runes, AssignmentType.mut, grouping, ctx);
       case 'def':
-      case 'export':
-        _parseDeclaration(runes, ctx, firstWord.startsWith('e'));
+      case 'pub':
+        _parseDeclaration(runes, ctx, firstWord.startsWith('p'));
         return _parseToExpressionEnd(runes, grouping, ctx);
     }
 

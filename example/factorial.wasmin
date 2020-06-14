@@ -8,7 +8,8 @@ fun factorial n = if eq n 1; 1;
 #fun factorial-2 n = (
 #    mut result = 1;
 #    mut n' = n;
-#    loop-if (n' > gt 1) (
+#    loop (
+#        if n' > le_u 1; break;;
 #        let next-n = n' > sub 1;
 #        result = n' > mul next-n > add result;
 #        n' = next-n
@@ -17,6 +18,6 @@ fun factorial n = if eq n 1; 1;
 #)
 
 # _start is the main function in wasmtime
-export def _start [] i64;
+pub def _start [] i64;
 
 fun _start = factorial 20

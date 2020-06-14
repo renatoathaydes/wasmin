@@ -1,4 +1,3 @@
-def log [string];
-import "console" show log;
+ext def log [string];
 
 fun main = log "hello world";

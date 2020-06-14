@@ -27,7 +27,7 @@ class DeclarationParser with WordBasedParser<Declaration> {
     if (export) {
       final word = nextWord(runes);
       if (word != 'def') {
-        failure = 'def'.wasExpected(runes, prefix: 'Invalid export statement');
+        failure = 'def'.wasExpected(runes, prefix: 'Invalid pub statement');
         return ParseResult.FAIL;
       }
     }

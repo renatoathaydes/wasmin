@@ -39,7 +39,7 @@ void main() {
 
     test('can parse exported let expression', () {
       final result = parser.parse(
-          ParserState.fromString('export def num f64;\nlet num = 0.314159'));
+          ParserState.fromString('pub def num f64;\nlet num = 0.314159'));
       expect(parser.failure?.message, isNull);
       expect(result, equals(ParseResult.DONE));
 
