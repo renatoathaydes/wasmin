@@ -4,8 +4,8 @@ import 'type.dart';
 /// Top-level node in a Wasmin program.
 mixin WasminNode {
   T matchNode<T>({
-    T Function(Implementation) onImpl,
-    T Function(Declaration) onDeclaration,
+    required T Function(Implementation) onImpl,
+    required T Function(Declaration) onDeclaration,
   });
 }
 
@@ -14,14 +14,14 @@ abstract class Implementation with WasminNode {
   const Implementation._();
 
   T match<T>({
-    T Function(Let) onLet,
-    T Function(Fun) onFun,
+    required T Function(Let) onLet,
+    required T Function(Fun) onFun,
   });
 
   @override
   T matchNode<T>({
-    T Function(Implementation) onImpl,
-    T Function(Declaration) onDeclaration,
+    required T Function(Implementation) onImpl,
+    required T Function(Declaration) onDeclaration,
   }) {
     return onImpl(this);
   }
@@ -35,14 +35,14 @@ abstract class Declaration with WasminNode {
   const Declaration._(this.id, this.isExported);
 
   T match<T>({
-    T Function(FunDeclaration) onFun,
-    T Function(VarDeclaration) onVar,
+    required T Function(FunDeclaration) onFun,
+    required T Function(VarDeclaration) onVar,
   });
 
   @override
   T matchNode<T>({
-    T Function(Implementation) onImpl,
-    T Function(Declaration) onDeclaration,
+    required T Function(Implementation) onImpl,
+    required T Function(Declaration) onDeclaration,
   }) {
     return onDeclaration(this);
   }
@@ -85,7 +85,7 @@ class Let extends Implementation {
   int get hashCode => declaration.hashCode ^ body.hashCode;
 
   @override
-  T match<T>({T Function(Let) onLet, T Function(Fun) onFun}) {
+  T match<T>({required T Function(Let) onLet, required T Function(Fun) onFun}) {
     return onLet(this);
   }
 }
@@ -113,7 +113,7 @@ class Fun extends Implementation {
   int get hashCode => declaration.hashCode ^ body.hashCode;
 
   @override
-  T match<T>({T Function(Let) onLet, T Function(Fun) onFun}) {
+  T match<T>({required T Function(Let) onLet, required T Function(Fun) onFun}) {
     return onFun(this);
   }
 }
@@ -143,7 +143,8 @@ class FunDeclaration extends Declaration {
 
   @override
   T match<T>(
-      {T Function(FunDeclaration) onFun, T Function(VarDeclaration) onVar}) {
+      {required T Function(FunDeclaration) onFun,
+      required T Function(VarDeclaration) onVar}) {
     return onFun(this);
   }
 }
@@ -190,7 +191,8 @@ class VarDeclaration extends Declaration {
 
   @override
   T match<T>(
-      {T Function(FunDeclaration) onFun, T Function(VarDeclaration) onVar}) {
+      {required T Function(FunDeclaration) onFun,
+      required T Function(VarDeclaration) onVar}) {
     return onVar(this);
   }
 }

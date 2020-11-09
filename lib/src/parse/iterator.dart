@@ -11,7 +11,7 @@ class ParserPosition {
 mixin ParserState {
   ParserPosition get position;
 
-  String get currentAsString;
+  String? get currentAsString;
 
   bool moveNext();
 

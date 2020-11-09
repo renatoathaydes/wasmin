@@ -1,10 +1,9 @@
-import 'package:wasmin/src/type_context.dart';
-
 import 'ast.dart';
 import 'compile.dart';
 import 'expression.dart';
 import 'parse/parse.dart';
 import 'type.dart';
+import 'type_context.dart';
 
 class WasmTextSink {
   var _indent = '';

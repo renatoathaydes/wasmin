@@ -25,7 +25,7 @@ enum ParseResult { CONTINUE, DONE, FAIL }
 
 mixin Parser<N> {
   /// The last failure seem by this parser.
-  CompilerError get failure;
+  CompilerError? get failure;
 
   /// Parse the runes emitted by the given iterator.
   ParseResult parse(ParserState runes);
@@ -67,7 +67,7 @@ mixin RuneBasedParser<N> implements Parser<N> {
 mixin WordBasedParser<N> implements Parser<N> {
   final whitespaces = SkipWhitespaces();
   @override
-  CompilerError failure;
+  CompilerError? failure;
 
   WordParser get words;
 
@@ -84,7 +84,7 @@ class SkipWhitespaces with RuneBasedParser<void> {
   SkipWhitespaces();
 
   @override
-  final CompilerError failure = null;
+  final CompilerError? failure = null;
 
   @override
   ParseResult parse(ParserState runes) {
@@ -113,7 +113,7 @@ class WordParser with RuneBasedParser<String> {
   final _buffer = StringBuffer();
 
   @override
-  final CompilerError failure = null;
+  final CompilerError? failure = null;
 
   @override
   String consume() {

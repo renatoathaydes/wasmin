@@ -12,7 +12,7 @@ class ExpressionParser with WordBasedParser<Expression> {
   final ParsingContext _context;
   final DeclarationParser _declaration;
 
-  Expression _expr;
+  Expression? _expr;
 
   ExpressionParser(this.words, this._context)
       : _declaration = DeclarationParser(words);
@@ -20,8 +20,9 @@ class ExpressionParser with WordBasedParser<Expression> {
   @override
   ParseResult parse(ParserState runes) {
     reset();
+    Expression expr;
     try {
-      _expr = _parseExpression(runes, _context);
+      expr = _parseExpression(runes, _context);
     } on TypeCheckException catch (e) {
       failure = CompilerError(runes.position, e.message);
       return ParseResult.FAIL;
@@ -30,7 +31,8 @@ class ExpressionParser with WordBasedParser<Expression> {
       return ParseResult.FAIL;
     }
 
-    final error = _expr.findError();
+    _expr = expr;
+    final error = expr.findError();
     if (error != null) {
       failure = error;
       return ParseResult.FAIL;
@@ -61,7 +63,9 @@ class ExpressionParser with WordBasedParser<Expression> {
       }
       return group.isEmpty
           ? Expression.empty()
-          : group.length == 1 ? group[0] : Expression.group(group);
+          : group.length == 1
+              ? group[0]
+              : Expression.group(group);
     } else {
       final end = _parseToExpressionEnd(runes, _Grouping.noParens, ctx);
       return end.expr;
@@ -193,14 +197,13 @@ class ExpressionParser with WordBasedParser<Expression> {
 
   @override
   Expression consume() {
-    if (_expr == null) throw Exception('expression not parsed yet');
-    final expr = _expr;
+    final expr = _expr ?? (throw Exception('expression not parsed yet'));
     reset();
     return expr;
   }
 
-  void _parseDeclaration(ParserState runes, ParsingContext ctx,
-      bool isExported) {
+  void _parseDeclaration(
+      ParserState runes, ParsingContext ctx, bool isExported) {
     _declaration.isExported = isExported;
     final result = _declaration.parse(runes);
     switch (result) {
@@ -245,8 +248,8 @@ class ExpressionParser with WordBasedParser<Expression> {
         assignmentExpression(assignmentType, id, end.expr, ctx), end.done);
   }
 
-  _ExpressionEnd _parseIf(ParserState runes, _Grouping grouping,
-      ParsingContext ctx) {
+  _ExpressionEnd _parseIf(
+      ParserState runes, _Grouping grouping, ParsingContext ctx) {
     final condExprEnd = _parseToExpressionEnd(runes, grouping, ctx);
     if (grouping != _Grouping.noParens && condExprEnd.done) {
       return _ExpressionEnd(
@@ -270,8 +273,8 @@ class ExpressionParser with WordBasedParser<Expression> {
         elseExprEnd.done);
   }
 
-  _ExpressionEnd _parseLoop(ParserState runes, _Grouping grouping,
-      ParsingContext ctx) {
+  _ExpressionEnd _parseLoop(
+      ParserState runes, _Grouping grouping, ParsingContext ctx) {
     final end = _parseToExpressionEnd(runes, grouping, ctx);
     return _ExpressionEnd(Expression.loopExpr(end.expr), end.done);
   }
@@ -284,7 +287,7 @@ enum _Grouping {
 }
 
 class _ExpressionEnd {
-  final Expression expr;
+  final Expression? expr;
   final bool done;
 
   _ExpressionEnd(this.expr, this.done);

@@ -9,13 +9,13 @@ class DeclarationParser with WordBasedParser<Declaration> {
   final WordParser words;
 
   @override
-  CompilerError failure;
+  CompilerError? failure;
 
   bool isExported = false;
 
   final TypeParser type;
 
-  Declaration _declaration;
+  Declaration? _declaration;
 
   DeclarationParser(this.words) : type = TypeParser(words);
 

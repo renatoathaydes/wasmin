@@ -14,7 +14,7 @@ typedef WasminSink = Future<CompilationResult> Function(
     Future<WasminUnit> programUnit);
 
 Future<CompilationResult> compile(String inputFile,
-    [String outputFile, TargetFormat targetFormat = TargetFormat.wasm]) async {
+    [String? outputFile, TargetFormat targetFormat = TargetFormat.wasm]) async {
   final chunks =
       await File(inputFile).openRead().transform(utf8.decoder).toList();
 
@@ -53,7 +53,7 @@ mixin _WasminWriter {
 }
 
 class _SysoutWriter with _WasminWriter, StringSink {
-  final _toPrint = <Object>[];
+  final _toPrint = <Object?>[];
 
   @override
   FutureOr<T> use<T>(FutureOr<T> Function(StringSink) user) {
@@ -63,7 +63,7 @@ class _SysoutWriter with _WasminWriter, StringSink {
   }
 
   @override
-  void write(Object obj) {
+  void write(Object? obj) {
     _write(obj?.toString());
   }
 
@@ -82,12 +82,12 @@ class _SysoutWriter with _WasminWriter, StringSink {
   }
 
   @override
-  void writeln([Object obj = '']) {
+  void writeln([Object? obj = '']) {
     _write(obj.toString());
     _write('\n');
   }
 
-  void _write(String obj) {
+  void _write(String? obj) {
     _toPrint.add(obj);
     if (obj != null && obj.contains('\n')) {
       flush();

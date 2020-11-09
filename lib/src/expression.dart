@@ -50,7 +50,7 @@ abstract class Expression {
   }
 
   factory Expression.ifExpr(Expression cond, Expression then,
-      [Expression els]) {
+      [Expression? els]) {
     return IfExpression(cond, then, els);
   }
 
@@ -82,7 +82,7 @@ abstract class Expression {
     T Function(CompilerError) onError,
   });
 
-  CompilerError findError() {
+  CompilerError? findError() {
     return matchExpr(
         onConst: (_) => null,
         onVariable: (_) => null,
@@ -262,7 +262,7 @@ class AssignExpression extends Expression {
 class IfExpression extends Expression {
   final Expression cond;
   final Expression then;
-  final Expression els;
+  final Expression? els;
 
   // TODO each assignment needs a unique identifier outside its scope
   @override

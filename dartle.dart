@@ -60,8 +60,7 @@ Future<void> test(List<String> platforms) async {
     platforms = const ['chrome', 'vm'];
   }
   final platformArgs = platforms.expand((p) => ['-p', p]);
-  final code = await execProc(
-      Process.start('pub', ['run', 'test', ...platformArgs]),
+  final code = await execProc(Process.start('dart', ['test', ...platformArgs]),
       name: 'Dart Tests');
   if (code != 0) failBuild(reason: 'Tests failed');
 }
@@ -79,13 +78,13 @@ Future<void> checkImports(List<String> _) async {
 }
 
 Future<void> formatCode(List<String> _) async {
-  final code = await execProc(Process.start('dartfmt', const ['-w', '.']),
+  final code = await execProc(Process.start('dart', const ['format', '.']),
       name: 'Dart Formatter');
   if (code != 0) failBuild(reason: 'Dart Formatter failed');
 }
 
 Future<void> analyzeCode(List<String> _) async {
-  final code = await execProc(Process.start('dartanalyzer', const ['.']),
+  final code = await execProc(Process.start('dart', const ['analyze', '.']),
       name: 'Dart Analyzer', successMode: StreamRedirectMode.stdout_stderr);
   if (code != 0) failBuild(reason: 'Dart Analyzer failed');
 }

@@ -105,7 +105,8 @@ Expression _matchFunCallWithArgs(
     }).toList(growable: false);
 
     if (fixedArgs.every((arg) => arg != null)) {
-      return Expression.funCall(funName, fixedArgs, type.returns);
+      return Expression.funCall(
+          funName, fixedArgs.map((e) => e!).toList(), type.returns);
     }
   }
 
@@ -118,7 +119,7 @@ Expression _matchFunCallWithArgs(
       ' of types ${_typeNames(args.map((a) => a.type))}$reason');
 }
 
-Expression ifExpression(Expression cond, Expression then, [Expression els]) {
+Expression ifExpression(Expression cond, Expression then, [Expression? els]) {
   if (els != null) {
     if (then.type != els.type) {
       // try to convert the type of either branch so they match
@@ -168,7 +169,7 @@ ValueType inferValueType(String value) {
   throw TypeCheckException("unknown variable: '$value'");
 }
 
-Expression tryConvertType(Expression expr, ValueType type) {
+Expression? tryConvertType(Expression expr, ValueType type) {
   if (expr is Const) {
     if (type == ValueType.f64) {
       if (expr.type == ValueType.f32) {
